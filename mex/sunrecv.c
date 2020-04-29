@@ -32,6 +32,7 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
 
     n = recv(fd, buf, BUFLEN, 0);
     if (n < 0) {
+        free(buf);
         mexErrMsgTxt("recv: %s", strerror(errno));
     }
 
