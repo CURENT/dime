@@ -9,15 +9,14 @@ import weakref
 import collections
 import itertools
 
-# Set a 200MB receiver buffer size *
+# Set a 200MB receiver buffer size
 BUFLEN = 200000000
 
-class JSONSeqPacket:
+class JSON_ICP:
     def __init__(self, conn):
         self.conn = conn
         self.conn.setblocking(False)
 
-        self.sync = False
         self.closed = False
 
         self.wbuf = collections.deque()
@@ -28,12 +27,9 @@ class JSONSeqPacket:
                 self.conn.send(self.wbuf.popleft())
             except BrokenPipeError:
                 self.closed = True
-        else:
-            self.sync = False
 
     def recvpartial(self):
         msg = self.conn.recv(BUFLEN).decode("utf-8")
-        print(msg)
 
         if msg:
             return json.loads(msg)
@@ -44,10 +40,7 @@ class JSONSeqPacket:
         self.wbuf.append(json.dumps(msg).encode("utf-8"))
 
     def empty(self):
-        return self.sync
-
-    def synchronize(self):
-        self.sync = (len(self.wbuf) > 0)
+        return (len(self.wbuf) == 0)
 
     def fileno(self):
         return self.conn.fileno()
@@ -61,6 +54,9 @@ class JSONSeqPacket:
                 pass
 
         self.conn.close()
+
+class JSON_TCP:
+    pass
 
 '''
 class JSONStream:
@@ -107,67 +103,71 @@ class JSONStream:
         self.conn.close()
 '''
 
-def handle_message(clients, sender, msg):
-    cmd = msg["command"]
-
-    if cmd == "register":
-        clients[msg["name"]] = sender
-
-    elif cmd == "send":
-        try:
-            clients[msg["name"]].push(msg)
-        except KeyError:
-            pass
-
-    elif cmd == "sync":
-        sender.synchronize()
-
-    elif cmd == "broadcast":
-        for conn in clients.values():
-            if conn is not sender:
-                conn.push(msg)
-
-def serverloop(srv):
+def serverloop(srv, JSONClass):
     clients_by_fd = {}
     clients_by_name = weakref.WeakValueDictionary()
+    queues_by_fd = {}
+    queues_by_name = weakref.WeakValueDictionary()
 
     while True:
         xs = list(clients_by_fd.values())
 
         rs = [srv] + xs
-        ws = [conn for conn in clients_by_fd.values() if conn.sync]
-        print(ws)
+        ws = [conn for conn in clients_by_fd.values() if not conn.empty()]
 
         rs, ws, xs = select.select(rs, ws, xs)
 
         for r in rs:
             if r is srv:
                 conn, addr = srv.accept()
-                conn = JSONSeqPacket(conn)
-                print("c on %d" % conn.fileno())
+                conn = JSONClass(conn)
 
                 clients_by_fd[conn.fileno()] = conn
+                queues_by_fd[conn.fileno()] = collections.deque()
 
             else:
-                print("r on %d" % r.fileno())
                 msg = r.recvpartial()
 
                 if msg is not None:
-                    handle_message(clients_by_name, r, msg)
+                    cmd = msg["command"]
+
+                    if cmd == "register":
+                        name = cmd["name"]
+
+                        clients_by_name[name] = r
+                        queues_by_name[name] = queues_by_fd[r.fileno()]
+
+                    elif cmd == "send":
+                        name = cmd["name"]
+
+                        queues_by_name[name].append(msg)
+
+                    elif cmd == "broadcast":
+                        for fd, queue in queues_by_fd.items():
+                            if fd != r.fileno():
+                                queue.append(msg)
+
+                    elif cmd == "sync":
+                        queue = queues_by_fd[r.fileno()]
+
+                        while queue:
+                            r.push(queue.popleft())
 
         for w in ws:
             w.sendpartial()
 
         for conn in itertools.chain(rs, ws):
-            if  conn is not srv and conn.closed:
-                print("x on %d" % conn.fileno())
-                del clients_by_fd[conn.fileno()]
-                conn.close()
+            if conn is not srv and conn.closed:
+                xs.append(conn)
 
         for x in xs:
-            print("x on %d" % w.fileno())
-            del clients_by_fd[x.fileno()]
-            x.close()
+            try:
+                del clients_by_fd[x.fileno()]
+                del queues_by_fd[x.fileno()]
+            except KeyError:
+                pass
+            else:
+                x.close()
 
 if __name__ == "__main__":
     regex = re.compile(r"(?P<proto>[a-z]+)://(?P<hostname>([^:]|((?<=\\)(?:\\\\)*:))+)(:(?P<port>[0-9]+))?")
@@ -223,4 +223,4 @@ if __name__ == "__main__":
         srv.bind(address)
         srv.listen()
 
-        serverloop(srv)
+        serverloop(srv, JSON_ICP if family == socket.AF_UNIX else JSON_TCP)

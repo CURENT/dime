@@ -12,7 +12,7 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
     char *filename;
 
     if (nrhs != 1) {
-        mexErrMsgTxt("Wrong number of arguments (given %d, expected 1)", nrhs);
+        mexErrMsgTxt("Wrong number of arguments");
     }
 
     filename = mxArrayToString(prhs[0]);
@@ -22,7 +22,7 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
 
     fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
     if (fd < 0) {
-        mexErrMsgTxt("socket: %s", strerror(errno));
+        mexErrMsgTxt(strerror(errno));
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -32,9 +32,9 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
 
     if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
         close(fd);
-        mexErrMsgTxt("connect: %s", strerror(errno));
+        mexErrMsgTxt(strerror(errno));
     }
 
     plhs[0] = mxCreateNumericMatrix(1, 1, mxINT64_CLASS, 0);
-    mxGetInt64s(plhs[0])[0] = fd;
+    ((mxInt64 *)mxGetData(plhs[0]))[0] = fd;
 }

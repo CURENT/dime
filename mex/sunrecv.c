@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
+#include <stdio.h>
+
 #include "mex.h"
 
 /* Set a 200MB receiver buffer size */
@@ -10,11 +12,11 @@
 
 void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
     int fd;
-    void *buf;
     ssize_t n;
+    void *buf;
 
     if (nrhs != 1) {
-        mexErrMsgTxt("Wrong number of arguments (given %d, expected 1)", nrhs);
+        mexErrMsgTxt("Wrong number of arguments");
     }
 
     if (mxGetClassID(prhs[0]) != mxINT64_CLASS ||
@@ -23,17 +25,21 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
         mexErrMsgTxt("Invalid argument");
     }
 
-    fd = mxGetInt64s(prhs[0])[0];
+    fd = ((mxInt64 *)mxGetData(prhs[0]))[0];
 
     buf = malloc(BUFLEN);
     if (buf == NULL) {
-        mexErrMsgTxt("malloc: %s", strerror(errno));
+        mexErrMsgTxt(strerror(errno));
     }
 
     n = recv(fd, buf, BUFLEN, 0);
+
     if (n < 0) {
         free(buf);
-        mexErrMsgTxt("recv: %s", strerror(errno));
+        mexErrMsgTxt(strerror(errno));
+    } else if (n == 0) {
+        free(buf);
+        mexErrMsgTxt("Socket closed by server");
     }
 
     plhs[0] = mxCreateNumericMatrix(1, n, mxUINT8_CLASS, 0);
