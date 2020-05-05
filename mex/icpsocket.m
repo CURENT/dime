@@ -1,9 +1,9 @@
-classdef ICPSocket
+classdef icpsocket
     properties
         fd
     end
     methods
-        function obj = ICPSocket(filename)
+        function obj = icpsocket(filename)
             obj.fd = sunconnect(filename);
         end
 
@@ -12,13 +12,11 @@ classdef ICPSocket
         end
 
         function [] = send(obj, msg)
-            % Convert msg to uint8 here
-            sunsend(obj.fd, msg);
+            sunsend(obj.fd, uint8(json_dump(msg)));
         end
 
         function msg = recv(obj)
-            msg = sunrecv(obj.fd);
-            % Convert msg from uint8 here
+            msg = json_load(char(sunrecv(obj.fd)));
         end
     end
 end

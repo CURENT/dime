@@ -132,13 +132,19 @@ def serverloop(srv, JSONClass):
                     cmd = msg["command"]
 
                     if cmd == "register":
-                        name = cmd["name"]
+                        name = msg["name"]
 
-                        clients_by_name[name] = r
-                        queues_by_name[name] = queues_by_fd[r.fileno()]
+                        if name not in clients_by_name:
+                            clients_by_name[name] = r
+                            queues_by_name[name] = queues_by_fd[r.fileno()]
+
+                            r.push({"status": 0})
+
+                        else:
+                            r.push({"status": 1, "errmsg": name + " already in use"})
 
                     elif cmd == "send":
-                        name = cmd["name"]
+                        name = msg["name"]
 
                         queues_by_name[name].append(msg)
 
@@ -152,6 +158,8 @@ def serverloop(srv, JSONClass):
 
                         while queue:
                             r.push(queue.popleft())
+
+                        r.push({})
 
         for w in ws:
             w.sendpartial()

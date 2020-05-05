@@ -1,11 +1,11 @@
-classdef TCPSocket
+classdef tcpsocket
     properties
         fd
         rbuf
         wbuf
     end
     methods
-        function obj = TCPSocket(hostname, port)
+        function obj = tcpsocket(hostname, port)
             obj.fd = tcpclient(hostname, port, 'Timeout', 60);
             obj.rbuf = uint8.empty;
         end
