@@ -1,8 +1,8 @@
 #include <errno.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 #include "mex.h"
 
@@ -20,7 +20,7 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
         mexErrMsgTxt("Invalid argument");
     }
 
-    fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) {
         mexErrMsgTxt(strerror(errno));
     }
