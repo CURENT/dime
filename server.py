@@ -13,7 +13,7 @@ import struct
 class MessageStream:
     def __init__(self, conn):
         self.conn = conn
-        self.conn.setblocking(False)
+        #self.conn.setblocking(False)
 
         self.closed = False
 
@@ -30,7 +30,10 @@ class MessageStream:
                 self.wbuf = self.wbuf[n:]
 
     def recvpartial(self):
-        buf = self.conn.recv(16384)
+        try:
+            buf = self.conn.recv(16384)
+        except ConnectionResetError:
+            buf = b""
 
         if not buf:
             self.closed = True

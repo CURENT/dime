@@ -21,7 +21,7 @@ classdef dime
 
                 obj.send_ll = @(msg) write(conn, msg);
                 obj.recv_ll = @(n) read(conn, n);
-                obj.close_ll = @() clear(conn);
+                obj.close_ll = @() []; % TODO: does clear() close a TCP socket?
             end
 
             obj.name = name;
@@ -86,12 +86,14 @@ classdef dime
                     break;
                 end
 
-                assignin('base', msg.varname, getArrayFromByteStream(bindata));
+                x = getArrayFromByteStream(bindata);
+
+                assignin('base', msg.varname, x);
             end
         end
 
         function [] = send(obj, json, bindata)
-            json = uint8(json_dump(json));
+            json = uint8(jsonencode(json));
 
             json_len = uint32(length(json));
             bindata_len = uint32(length(bindata));
@@ -125,9 +127,8 @@ classdef dime
 
             % Faster to get both in one syscall
             msg = obj.recv_ll(json_len + bindata_len);
-            disp(msg);
 
-            json = json_load(char(msg(1:json_len)));
+            json = jsondecode(char(msg(1:json_len)));
             bindata = msg((json_len + 1):end);
         end
     end

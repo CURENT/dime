@@ -29,7 +29,7 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
 #endif
     if (m < 0) {
         mexErrMsgTxt(strerror(errno));
-    } else if (m < n) {
+    } else if (m != n) {
         mexErrMsgTxt("Socket closed by server");
     }
 }
