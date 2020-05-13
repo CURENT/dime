@@ -53,6 +53,8 @@ classdef dime
                 msg.name = name;
                 msg.varname = varargin{i};
 
+                % This may need to be replaced later so that we don't need
+                % Matlab to encode/decode messages
                 bindata = getByteStreamFromArray(evalin('base', varargin{i}));
 
                 send(obj, msg, bindata);

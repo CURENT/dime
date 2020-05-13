@@ -20,7 +20,7 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
         mexErrMsgTxt("Invalid argument");
     }
 
-    fd = socket(PF_UNIX, SOCK_STREAM, 0);
+    fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) {
         mexErrMsgTxt(strerror(errno));
     }
