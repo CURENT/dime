@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <sys/types.h>
 #include "table.h"
 
 enum dime_table_elem_use {
@@ -13,12 +14,15 @@ struct dime_table_elem {
 
     const void *key;
     void *val;
+
+    ssize_t prev, next;
 };
 
 struct dime_table {
     size_t ct;
 
     struct dime_table_elem *arr;
+    ssize_t head, tail;
 
     int (*cmp_f)(const void *, const void *);
     uint64_t (*hash_f)(const void *);
@@ -56,6 +60,18 @@ static void dime_table_relocate(dime_table_t *tb, size_t i0) {
     while (dime_table_relocate(tb, i), tb->arr[i].use == ELEM_OCCUPIED) {
         i = (i + k) & (tb->cap - 1);
         k++;
+    }
+
+    if (tmp.prev < 0) {
+        tb->head = i;
+    } else {
+        tb->arr[tmp.prev].next = i;
+    }
+
+    if (tmp.next < 0) {
+        tb->tail = i;
+    } else {
+        tb->arr[tmp.next].prev = i;
     }
 
     tb->arr[i] = tmp;
@@ -110,6 +126,7 @@ dime_table_t *dime_table_new(int (*cmp_f)(const void *, const void *), uint64_t 
     }
 
     tb->ct = 0;
+    tb->head = tb->tail = -1;
     tb->cmp_f = cmp_f;
     tb->hash_f = hash_f;
 
@@ -161,6 +178,16 @@ int dime_table_insert(dime_table_t *tb, const void *key, void *val) {
     tb->arr[i].hash = hash;
     tb->arr[i].key = key;
     tb->arr[i].val = val;
+    tb->arr[i].prev = tb->tail;
+    tb->arr[i].next = -1;
+
+    if (tb->head < 0) {
+        tb->head = i;
+    } else {
+        tb->arr[tb->tail].next = i;
+    }
+
+    tb->tail = i;
 
     tb->ct++;
 
@@ -190,34 +217,46 @@ int dime_table_insert(dime_table_t *tb, const void *key, void *val) {
 void *dime_table_search(dime_table_t *tb, const void *key) {
     int cmp;
     size_t i, k;
-    struct dime_table_elem *first, *firstavail;
-
-    k = 1;
-    firstavail = NULL;
+    ssize_t first, firstavail;
 
     i = tb->hash_f(key) & (tb->cap - 1);
-    first = &tb->arr[i];
+    k = 1;
+
+    first = i;
+    firstavail = -1;
 
     while (tb->arr[i].use != ELEM_FREE) {
         if (tb->arr[i].use == ELEM_OCCUPIED) {
             cmp = tb->cmp_f(key, tb->arr[i].key);
 
             if (cmp == 0) {
-                if (firstavail != NULL) {
-                    *firstavail = tb->arr[i];
+                if (firstavail >= 0) {
+                    tb->arr[firstavail] = tb->arr[i];
                     tb->arr[i].use = ELEM_REMOVED;
+
+                    if (tb->arr[firstavail].prev < 0) {
+                        tb->head = firstavail;
+                    } else {
+                        tb->arr[tb->arr[firstavail].prev].next = firstavail;
+                    }
+
+                    if (tb->arr[firstavail].next < 0) {
+                        tb->tail = firstavail;
+                    } else {
+                        tb->arr[tb->arr[firstavail].next].prev = firstavail;
+                    }
 
                     if (first == firstavail) {
                         tb->collisions--;
                     }
 
-                    return firstavail->val;
+                    return tb->arr[firstavail].val;
                 } else {
                     return tb->arr[i].val;
                 }
             }
-        } else if (firstavail == NULL) {
-            firstavail = &tb->arr[i];
+        } else if (firstavail < 0) {
+            firstavail = i;
         }
 
         i = (i + k) % tb->cap;
@@ -240,6 +279,19 @@ void *dime_table_remove(dime_table_t *tb, const void *key) {
 
             if (cmp == 0) {
                 tb->arr[i].use = ELEM_REMOVED;
+
+                if (tb->arr[i].prev < 0) {
+                    tb->head = tb->arr[i].next;
+                } else {
+                    tb->arr[tb->arr[i].prev].next = tb->arr[i].next;
+                }
+
+                if (tb->arr[i].next < 0) {
+                    tb->tail = tb->arr[i].prev;
+                } else {
+                    tb->arr[tb->arr[i].next].prev = tb->arr[i].prev;
+                }
+
                 tb->ct--;
 
                 return tb->arr[i].val;
@@ -258,10 +310,10 @@ size_t dime_table_size(const dime_table_t *tb) {
 }
 
 void dime_table_foreach(dime_table_t *tb, int(*f)(const void *, void *, void *), void *p) {
-    size_t i;
+    ssize_t i;
 
-    for (i = 0; i < tb->cap; i++) {
-        if (tb->arr[i].use == ELEM_OCCUPIED && !f(tb->arr[i].key, tb->arr[i].val, p)) {
+    for (i = tb->head; i >= 0; i = tb->arr[i].next) {
+        if (!f(tb->arr[i].key, tb->arr[i].val, p)) {
             break;
         }
     }
