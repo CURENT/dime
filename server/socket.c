@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <jansson.h>
+#include <assert.h>
 
 #include "fifobuffer.h"
 #include "socket.h"
@@ -13,8 +14,8 @@ struct dime_header {
     uint32_t bindata_len;
 };
 
-static const size_t SENDBUFLEN = 1 << 16;
-static const size_t RECVBUFLEN = 1 << 16;
+static const size_t SENDBUFLEN = 200000000;
+static const size_t RECVBUFLEN = 200000000;
 
 struct dime_socket {
     int fd;
@@ -119,7 +120,7 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock, json_t **jsondata, void **b
     struct dime_header hdr;
 
     if (dime_fifobuffer_peek(sock->rbuf, &hdr, 12) == 12) {
-        if (memcmp(hdr.magic, "DiME", 4) != 0) {
+        if (memcmp(&hdr, "DiME", 4) != 0) {
             return -1;
         }
 

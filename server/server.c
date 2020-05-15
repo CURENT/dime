@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <poll.h>
+#include <fcntl.h>
 
 #include <jansson.h>
 
@@ -18,6 +19,9 @@
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
 #define FAIL_LOUDLY() { perror(__FILE__ ":" STRINGIZE(__LINE__)); abort(); }
+
+#define puts(x)
+#define printf(x, ...)
 
 struct dime_rcmessage {
     int refcount;
@@ -180,11 +184,9 @@ int dime_server_loop(dime_server_t *srv) {
     pollfds_len = 1;
 
     while (1) {
-        printf("Polling... ");
         if (poll(pollfds, pollfds_len, -1) < 0) {
             FAIL_LOUDLY();
         }
-        printf("Done!\n");
 
         if (pollfds[0].revents & POLLIN) {
             struct dime_connection *conn = malloc(sizeof(struct dime_connection));
@@ -196,8 +198,6 @@ int dime_server_loop(dime_server_t *srv) {
             if (conn->fd < 0) {
                 FAIL_LOUDLY();
             }
-
-            printf("Opening socket %d\n", conn->fd);
 
             conn->sock = dime_socket_new(conn->fd);
             if (conn->sock == NULL) {
@@ -349,6 +349,19 @@ int dime_server_loop(dime_server_t *srv) {
                             node = next;
                         }
 
+                        conn->head = conn->tail = NULL;
+
+                        jsondata = json_object();
+                        if (jsondata == NULL) {
+                            FAIL_LOUDLY();
+                        }
+
+                        if (dime_socket_push(conn->sock, jsondata, NULL, 0) < 0) {
+                            FAIL_LOUDLY();
+                        }
+
+                        json_decref(jsondata);
+
                         pollfds[i].events |= POLLOUT;
                     } else {
                         FAIL_LOUDLY();
@@ -366,6 +379,7 @@ int dime_server_loop(dime_server_t *srv) {
                 if (dime_socket_sendsize(conn->sock) == 0) {
                     pollfds[i].events &= ~POLLOUT;
                 }
+                printf("Finished POLLOUT on %d\n", conn->fd);
             }
 
             if (pollfds[i].revents & POLLHUP) {

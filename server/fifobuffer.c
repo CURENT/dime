@@ -44,7 +44,7 @@ ssize_t dime_fifobuffer_write(dime_fifobuffer_t *fifo, const void *p, size_t siz
         return 0;
     }
 
-    if (fifo->ct + siz > fifo->cap) {
+    if (fifo->ct + siz >= fifo->cap) {
         size_t ncap = (3 * (fifo->ct + siz)) / 2;
 
         unsigned char *narr = realloc(fifo->arr, ncap);
