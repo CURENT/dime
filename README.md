@@ -10,7 +10,7 @@ Compiling client code is only necessary on Unix-like OSes if you wish to connect
 To compile the server executable, run `make` in the `server` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided). The server code has the following compile-time dependencies:
 
 * A SUSv2-compatible environment
-..* Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/)
+  * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/)
 * [Jansson](https://digip.org/jansson/)
 
 ## Running
