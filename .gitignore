@@ -1,2 +1,4 @@
 *.mexa64
+*.o
 __pycache__
+/server/dime
