@@ -49,7 +49,6 @@ classdef dime
                 msg = {};
 
                 msg.command = 'send';
-                %msg.from = obj.name;
                 msg.name = name;
                 msg.varname = varargin{i};
 
@@ -86,6 +85,8 @@ classdef dime
 
                 if ~isfield(msg, 'varname')
                     break;
+                else
+                    disp(msg);
                 end
 
                 x = getArrayFromByteStream(bindata);
