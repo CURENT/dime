@@ -158,7 +158,7 @@ int dime_server_init(dime_server_t *srv) {
         break;
 
     default:
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2conn);
         dime_table_destroy(&srv->name2conn);
 
         return -1;
@@ -166,7 +166,7 @@ int dime_server_init(dime_server_t *srv) {
 
     srv->fd = socket(socktype, SOCK_STREAM, proto);
     if (srv->fd < 0) {
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2conn);
         dime_table_destroy(&srv->name2conn);
 
         return -1;
@@ -174,7 +174,7 @@ int dime_server_init(dime_server_t *srv) {
 
     if (bind(srv->fd, (struct sockaddr *)&addr, addrlen) < 0) {
         close(srv->fd);
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2conn);
         dime_table_destroy(&srv->name2conn);
 
         return -1;
@@ -182,7 +182,7 @@ int dime_server_init(dime_server_t *srv) {
 
     if (listen(srv->fd, 5) < 0) {
         close(srv->fd);
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2conn);
         dime_table_destroy(&srv->name2conn);
 
         return -1;
@@ -209,11 +209,16 @@ int dime_server_loop(dime_server_t *srv) {
     struct pollfd *pollfds;
     size_t pollfds_len, pollfds_cap;
 
+    pollfds_cap = 16;
+    pollfds = malloc(pollfds_cap * sizeof(struct pollfd));
+    if (pollfds == NULL) {
+        return -1;
+    }
+
     void (*sigint_f)(int);
     void (*sigterm_f)(int);
     void (*sigpipe_f)(int);
 
-    pollfds = NULL;
     sigint_f = SIG_ERR;
     sigterm_f = SIG_ERR;
     sigpipe_f = SIG_ERR;
@@ -231,6 +236,7 @@ int dime_server_loop(dime_server_t *srv) {
             signal(SIGPIPE, sigpipe_f);
         }
 
+        printf("Freeing %p\n", pollfds);
         free(pollfds);
 
         return 0;
@@ -238,12 +244,15 @@ int dime_server_loop(dime_server_t *srv) {
 
     sigint_f = signal(SIGINT, ctrlc_handler);
     if (sigint_f == SIG_ERR) {
+        free(pollfds);
+
         return -1;
     }
 
     sigterm_f = signal(SIGTERM, ctrlc_handler);
     if (sigterm_f == SIG_ERR) {
         signal(SIGINT, sigint_f);
+        free(pollfds);
 
         return -1;
     }
@@ -252,16 +261,7 @@ int dime_server_loop(dime_server_t *srv) {
     if (sigpipe_f == SIG_ERR) {
         signal(SIGTERM, sigterm_f);
         signal(SIGINT, sigint_f);
-
-        return -1;
-    }
-
-    pollfds_cap = 16;
-    pollfds = malloc(pollfds_cap * sizeof(struct pollfd));
-    if (pollfds == NULL) {
-        signal(SIGPIPE, sigpipe_f);
-        signal(SIGTERM, sigterm_f);
-        signal(SIGINT, sigint_f);
+        free(pollfds);
 
         return -1;
     }
@@ -329,6 +329,8 @@ int dime_server_loop(dime_server_t *srv) {
             dime_client_t *conn = dime_table_search(&srv->fd2conn, &pollfds[i].fd);
 
             if (pollfds[i].revents & POLLHUP) {
+                printf("Closed socket %d\n", conn->fd);
+
                 if (dime_table_remove(&srv->fd2conn, &conn->fd) == NULL) {
                     FAIL_LOUDLY();
                 }
@@ -348,8 +350,6 @@ int dime_server_loop(dime_server_t *srv) {
                 pollfds[i] = pollfds[pollfds_len - 1];
                 pollfds_len--;
                 i--;
-
-                printf("Closed socket %d\n", conn->fd);
 
                 continue;
             }
