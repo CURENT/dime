@@ -5,52 +5,38 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <poll.h>
-#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <setjmp.h>
 
 #include <jansson.h>
 
 #include "server.h"
 #include "table.h"
+#include "deque.h"
 #include "socket.h"
-
 #include <stdio.h>
-#include <stdlib.h>
 
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
-#define FAIL_LOUDLY() { perror(__FILE__ ":" STRINGIZE(__LINE__)); abort(); }
+#define FAIL_LOUDLY() { perror(__FILE__ ":" STRINGIZE(__LINE__)); raise(SIGKILL); }
 
-#define puts(x)
-#define printf(x, ...)
-
-struct dime_rcmessage {
-    int refcount;
+typedef struct {
+    unsigned int refs;
 
     json_t *jsondata;
     void *bindata;
     size_t bindata_len;
-};
+} dime_rcmessage_t;
 
-struct dime_rcmessage_node {
-    struct dime_rcmessage *data;
-    struct dime_rcmessage_node *next;
-};
-
-struct dime_connection {
-    dime_socket_t *sock;
-
+typedef struct {
     int fd;
     char *name;
 
-    struct dime_rcmessage_node *head, *tail;
-};
-
-struct dime_server {
-    int fd;
-    int protocol;
-
-    dime_table_t *fd2conn, *name2conn;
-};
+    dime_socket_t sock;
+    dime_deque_t queue;
+} dime_client_t;
 
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
@@ -74,29 +60,69 @@ static uint64_t hash_name(const void *a) {
     return y;
 }
 
-dime_server_t *dime_server_new(int protocol, const char *socketfile, uint16_t port) {
-    dime_server_t *srv;
+static jmp_buf ctrlc_env;
 
-    srv = malloc(sizeof(dime_server_t));
-    if (srv == NULL) {
-        return NULL;
+static void ctrlc_handler(int signum) {
+    longjmp(ctrlc_env, 1);
+}
+
+static int rcmessage_foreach_destroy(void *val, void *p) {
+    dime_rcmessage_t *msg = val;
+
+    msg->refs--;
+
+    if (msg->refs == 0) {
+        json_decref(msg->jsondata);
+        free(msg->bindata);
+        free(msg);
     }
 
-    srv->protocol = protocol;
+    return 1;
+}
 
-    srv->fd2conn = dime_table_new(cmp_fd, hash_fd);
-    if (srv->fd2conn == NULL) {
-        free(srv);
+static int client_foreach_broadcast(const void *key, void *val, void *p) {
+    struct {
+        dime_client_t *client;
+        dime_rcmessage_t *msg;
+        int err;
+    } *pp = p;
 
-        return NULL;
+    dime_client_t *client = val;
+
+    if (client != pp->client) {
+        if (dime_deque_pushr(&client->queue, pp->msg) < 0) {
+            pp->err = 1;
+            return 0;
+        }
+
+        pp->msg->refs++;
     }
 
-    srv->name2conn = dime_table_new(cmp_name, hash_name);
-    if (srv->name2conn == NULL) {
-        dime_table_free(srv->fd2conn);
-        free(srv);
+    return 1;
+}
 
-        return NULL;
+static int client_foreach_destroy(const void *key, void *val, void *p) {
+    dime_client_t *client = val;
+
+    dime_deque_foreach(&client->queue, rcmessage_foreach_destroy, NULL);
+
+    dime_socket_destroy(&client->sock);
+    dime_deque_destroy(&client->queue);
+    free(client->name);
+    free(client);
+
+    return 1;
+}
+
+int dime_server_init(dime_server_t *srv) {
+    if (dime_table_init(&srv->fd2conn, cmp_fd, hash_fd) < 0) {
+        return -1;
+    }
+
+    if (dime_table_init(&srv->name2conn, cmp_name, hash_name) < 0) {
+        dime_table_destroy(&srv->fd2conn);
+
+        return -1;
     }
 
     union {
@@ -108,10 +134,10 @@ dime_server_t *dime_server_new(int protocol, const char *socketfile, uint16_t po
 
     memset(&addr, 0, sizeof(addr));
 
-    switch (protocol) {
+    switch (srv->protocol) {
     case DIME_UNIX:
         addr.uds.sun_family = AF_UNIX;
-        strncpy(addr.uds.sun_path, socketfile, sizeof(addr.uds.sun_path));
+        strncpy(addr.uds.sun_path, srv->pathname, sizeof(addr.uds.sun_path));
         addr.uds.sun_path[sizeof(addr.uds.sun_path) - 1] = '\0';
 
         socktype = AF_UNIX;
@@ -123,7 +149,7 @@ dime_server_t *dime_server_new(int protocol, const char *socketfile, uint16_t po
     case DIME_TCP:
         addr.inet.sin_family = AF_INET;
         addr.inet.sin_addr.s_addr = INADDR_ANY;
-        addr.inet.sin_port = htons(port);
+        addr.inet.sin_port = htons(srv->port);
 
         socktype = AF_INET;
         proto = IPPROTO_TCP;
@@ -132,64 +158,130 @@ dime_server_t *dime_server_new(int protocol, const char *socketfile, uint16_t po
         break;
 
     default:
-        dime_table_free(srv->name2conn);
-        dime_table_free(srv->fd2conn);
-        free(srv);
-        return NULL;
+        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->name2conn);
+
+        return -1;
     }
 
     srv->fd = socket(socktype, SOCK_STREAM, proto);
     if (srv->fd < 0) {
-        dime_table_free(srv->name2conn);
-        dime_table_free(srv->fd2conn);
-        free(srv);
+        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->name2conn);
 
-        return NULL;
+        return -1;
     }
 
     if (bind(srv->fd, (struct sockaddr *)&addr, addrlen) < 0) {
         close(srv->fd);
-        dime_table_free(srv->name2conn);
-        dime_table_free(srv->fd2conn);
-        free(srv);
+        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->name2conn);
 
-        return NULL;
+        return -1;
     }
 
     if (listen(srv->fd, 5) < 0) {
         close(srv->fd);
-        dime_table_free(srv->name2conn);
-        dime_table_free(srv->fd2conn);
-        free(srv);
+        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->name2conn);
 
-        return NULL;
+        return -1;
     }
 
-    return srv;
+    return 0;
+}
+
+void dime_server_destroy(dime_server_t *srv) {
+    if (srv->protocol == DIME_UNIX) {
+        unlink(srv->pathname);
+    }
+
+    shutdown(srv->fd, SHUT_RDWR);
+    close(srv->fd);
+
+    dime_table_foreach(&srv->fd2conn, client_foreach_destroy, NULL);
+
+    dime_table_destroy(&srv->fd2conn);
+    dime_table_destroy(&srv->name2conn);
 }
 
 int dime_server_loop(dime_server_t *srv) {
     struct pollfd *pollfds;
     size_t pollfds_len, pollfds_cap;
 
+    void (*sigint_f)(int);
+    void (*sigterm_f)(int);
+    void (*sigpipe_f)(int);
+
+    pollfds = NULL;
+    sigint_f = SIG_ERR;
+    sigterm_f = SIG_ERR;
+    sigpipe_f = SIG_ERR;
+
+    if (setjmp(ctrlc_env) != 0) {
+        if (sigint_f != SIG_ERR) {
+            signal(SIGINT, sigint_f);
+        }
+
+        if (sigterm_f != SIG_ERR) {
+            signal(SIGTERM, sigint_f);
+        }
+
+        if (sigpipe_f != SIG_ERR) {
+            signal(SIGPIPE, sigpipe_f);
+        }
+
+        free(pollfds);
+
+        return 0;
+    }
+
+    sigint_f = signal(SIGINT, ctrlc_handler);
+    if (sigint_f == SIG_ERR) {
+        return -1;
+    }
+
+    sigterm_f = signal(SIGTERM, ctrlc_handler);
+    if (sigterm_f == SIG_ERR) {
+        signal(SIGINT, sigint_f);
+
+        return -1;
+    }
+
+    sigpipe_f = signal(SIGPIPE, SIG_IGN);
+    if (sigpipe_f == SIG_ERR) {
+        signal(SIGTERM, sigterm_f);
+        signal(SIGINT, sigint_f);
+
+        return -1;
+    }
+
     pollfds_cap = 16;
     pollfds = malloc(pollfds_cap * sizeof(struct pollfd));
     if (pollfds == NULL) {
-        FAIL_LOUDLY();
+        signal(SIGPIPE, sigpipe_f);
+        signal(SIGTERM, sigterm_f);
+        signal(SIGINT, sigint_f);
+
+        return -1;
     }
 
     pollfds[0].fd = srv->fd;
     pollfds[0].events = POLLIN;
+    pollfds[0].revents = 0;
 
     pollfds_len = 1;
 
     while (1) {
+        printf("Polling... ");
+        fflush(stdout);
         if (poll(pollfds, pollfds_len, -1) < 0) {
             FAIL_LOUDLY();
         }
+        printf("Done!\n");
 
         if (pollfds[0].revents & POLLIN) {
-            struct dime_connection *conn = malloc(sizeof(struct dime_connection));
+            dime_client_t *conn = malloc(sizeof(dime_client_t));
             if (conn == NULL) {
                 FAIL_LOUDLY();
             }
@@ -199,15 +291,17 @@ int dime_server_loop(dime_server_t *srv) {
                 FAIL_LOUDLY();
             }
 
-            conn->sock = dime_socket_new(conn->fd);
-            if (conn->sock == NULL) {
+            if (dime_socket_init(&conn->sock, conn->fd) < 0) {
+                FAIL_LOUDLY();
+            }
+
+            if (dime_deque_init(&conn->queue) < 0) {
                 FAIL_LOUDLY();
             }
 
             conn->name = NULL;
-            conn->head = conn->tail = NULL;
 
-            if (dime_table_insert(srv->fd2conn, &conn->fd, conn) < 0) {
+            if (dime_table_insert(&srv->fd2conn, &conn->fd, conn) < 0) {
                 FAIL_LOUDLY();
             }
 
@@ -218,6 +312,7 @@ int dime_server_loop(dime_server_t *srv) {
 
             if (pollfds_len >= pollfds_cap) {
                 size_t ncap = (3 * pollfds_cap) / 2;
+
                 void *narr = realloc(pollfds, ncap * sizeof(struct pollfd));
                 if (narr == NULL) {
                     FAIL_LOUDLY();
@@ -226,19 +321,47 @@ int dime_server_loop(dime_server_t *srv) {
                 pollfds = narr;
                 pollfds_cap = ncap;
             }
+
+            printf("Opened socket %d\n", conn->fd);
         }
 
         for (size_t i = 1; i < pollfds_len; i++) {
-            struct dime_connection *conn = dime_table_search(srv->fd2conn, &pollfds[i].fd);
+            dime_client_t *conn = dime_table_search(&srv->fd2conn, &pollfds[i].fd);
+
+            if (pollfds[i].revents & POLLHUP) {
+                if (dime_table_remove(&srv->fd2conn, &conn->fd) == NULL) {
+                    FAIL_LOUDLY();
+                }
+
+                if (conn->name != NULL) {
+                    dime_table_remove(&srv->name2conn, conn->name);
+                }
+
+                dime_deque_foreach(&conn->queue, rcmessage_foreach_destroy, NULL);
+
+                close(conn->fd);
+                free(conn->name);
+                dime_socket_destroy(&conn->sock);
+                dime_deque_destroy(&conn->queue);
+                free(conn);
+
+                pollfds[i] = pollfds[pollfds_len - 1];
+                pollfds_len--;
+                i--;
+
+                printf("Closed socket %d\n", conn->fd);
+
+                continue;
+            }
 
             if (pollfds[i].revents & POLLIN) {
-                printf("Got POLLIN on socket %d\n", conn->fd);
+                printf("Got POLLIN on %d\n", conn->fd);
 
                 json_t *jsondata;
                 void *bindata;
                 size_t bindata_len;
 
-                ssize_t n = dime_socket_recvpartial(conn->sock, &jsondata, &bindata, &bindata_len);
+                ssize_t n = dime_socket_recvpartial(&conn->sock, &jsondata, &bindata, &bindata_len);
 
                 if (n < 0) {
                     FAIL_LOUDLY();
@@ -249,7 +372,7 @@ int dime_server_loop(dime_server_t *srv) {
                         FAIL_LOUDLY();
                     }
 
-                    puts(cmd);
+                    printf("Got message on %d: %s\n", conn->fd, cmd);
 
                     if (strcmp(cmd, "register") == 0) {
                         if (conn->name != NULL) {
@@ -267,23 +390,21 @@ int dime_server_loop(dime_server_t *srv) {
                             FAIL_LOUDLY();
                         }
 
-                        if (dime_table_insert(srv->name2conn, conn->name, conn) < 0) {
+                        if (dime_table_insert(&srv->name2conn, conn->name, conn) < 0) {
                             FAIL_LOUDLY();
                         }
+
+                        json_t *response = json_pack("{si}", "status", 0);
+                        if (response == NULL) {
+                            FAIL_LOUDLY();
+                        }
+
+                        dime_socket_sendfuture(&conn->sock, response, NULL, 0);
+
+                        json_decref(response);
 
                         json_decref(jsondata);
                         free(bindata);
-
-                        jsondata = json_pack("{si}", "status", 0);
-                        if (jsondata == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        dime_socket_push(conn->sock, jsondata, NULL, 0);
-
-                        json_decref(jsondata);
-
-                        pollfds[i].events |= POLLOUT;
                     } else if (strcmp(cmd, "send") == 0) {
                         const char *name;
 
@@ -291,78 +412,86 @@ int dime_server_loop(dime_server_t *srv) {
                             FAIL_LOUDLY();
                         }
 
-                        struct dime_connection *other = dime_table_search(srv->name2conn, name);
+                        dime_client_t *other = dime_table_search(&srv->name2conn, name);
                         if (other == NULL) {
                             FAIL_LOUDLY();
                         }
 
-                        struct dime_rcmessage *msg = malloc(sizeof(struct dime_rcmessage));
+                        dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
                         if (msg == NULL) {
                             FAIL_LOUDLY();
                         }
 
-                        msg->refcount = 1;
+                        msg->refs = 1;
                         msg->jsondata = jsondata;
                         msg->bindata = bindata;
                         msg->bindata_len = bindata_len;
 
-                        struct dime_rcmessage_node *node = malloc(sizeof(struct dime_rcmessage_node));
-                        if (node == NULL) {
+                        if (dime_deque_pushr(&other->queue, msg) < 0) {
+                            FAIL_LOUDLY();
+                        }
+                    } else if (strcmp(cmd, "broadcast") == 0) {
+                        dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
+                        if (msg == NULL) {
                             FAIL_LOUDLY();
                         }
 
-                        node->data = msg;
-                        node->next = NULL;
+                        msg->refs = 0;
+                        msg->jsondata = jsondata;
+                        msg->bindata = bindata;
+                        msg->bindata_len = bindata_len;
 
-                        if (other->tail == NULL) {
-                            other->head = node;
-                        } else {
-                            other->tail->next = node;
+                        struct {
+                            dime_client_t *client;
+                            dime_rcmessage_t *msg;
+                            int err;
+                        } pp;
+
+                        pp.client = conn;
+                        pp.msg = msg;
+                        pp.err = 0;
+
+                        dime_table_foreach(&srv->name2conn, client_foreach_broadcast, &pp);
+
+                        if (pp.err) {
+                            FAIL_LOUDLY();
                         }
 
-                        other->tail = node;
-                    } else if (strcmp(cmd, "broadcast") == 0) {
-                        /* TODO: Implement this */
-                        FAIL_LOUDLY();
+                        if (msg->refs == 0) {
+                            json_decref(msg->jsondata);
+                            free(msg->bindata);
+                            free(msg);
+                        }
                     } else if (strcmp(cmd, "sync") == 0) {
                         json_decref(jsondata);
                         free(bindata);
 
-                        struct dime_rcmessage_node *node = conn->head;
+                        dime_rcmessage_t *msg;
 
-                        while (node != NULL) {
-                            struct dime_rcmessage *msg = node->data;
-
-                            if (dime_socket_push(conn->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
+                        while ((msg = dime_deque_popl(&conn->queue)) != NULL) {
+                            if (dime_socket_sendfuture(&conn->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
                                 FAIL_LOUDLY();
                             }
 
-                            msg->refcount--;
-                            if (msg->refcount <= 0) {
+                            msg->refs--;
+
+                            if (msg->refs == 0) {
                                 json_decref(msg->jsondata);
                                 free(msg->bindata);
                                 free(msg);
                             }
-
-                            struct dime_rcmessage_node *next = node->next;
-                            free(node);
-                            node = next;
                         }
 
-                        conn->head = conn->tail = NULL;
-
-                        jsondata = json_object();
-                        if (jsondata == NULL) {
+                        json_t *response = json_object();
+                        if (response == NULL) {
                             FAIL_LOUDLY();
                         }
 
-                        if (dime_socket_push(conn->sock, jsondata, NULL, 0) < 0) {
+                        if (dime_socket_sendfuture(&conn->sock, response, NULL, 0) < 0) {
                             FAIL_LOUDLY();
                         }
 
-                        json_decref(jsondata);
-
-                        pollfds[i].events |= POLLOUT;
+                        json_decref(response);
                     } else {
                         FAIL_LOUDLY();
                     }
@@ -370,64 +499,22 @@ int dime_server_loop(dime_server_t *srv) {
             }
 
             if (pollfds[i].revents & POLLOUT) {
-                printf("Got POLLOUT on socket %d\n", conn->fd);
+                printf("Got POLLOUT on %d\n", conn->fd);
 
-                if (dime_socket_sendpartial(conn->sock) < 0) {
+                if (dime_socket_sendpartial(&conn->sock) < 0) {
                     FAIL_LOUDLY();
                 }
-
-                if (dime_socket_sendsize(conn->sock) == 0) {
-                    pollfds[i].events &= ~POLLOUT;
-                }
-                printf("Finished POLLOUT on %d\n", conn->fd);
             }
 
-            if (pollfds[i].revents & POLLHUP) {
-                printf("Got POLLHUP on socket %d\n", conn->fd);
-
-                if (dime_table_remove(srv->fd2conn, &pollfds[i].fd) == NULL) {
-                    FAIL_LOUDLY();
-                }
-
-                if (conn->name != NULL) {
-                    dime_table_remove(srv->name2conn, conn->name);
-                    free(conn->name);
-                }
-
-                struct dime_rcmessage_node *node = conn->head;
-
-                while (node != NULL) {
-                    struct dime_rcmessage *msg = node->data;
-
-                    msg->refcount--;
-                    if (msg->refcount <= 0) {
-                        json_decref(msg->jsondata);
-                        free(msg->bindata);
-                        free(msg);
-                    }
-
-                    struct dime_rcmessage_node *next = node->next;
-                    free(node);
-                    node = next;
-                }
-
-                printf("Closing socket %d\n", conn->fd);
-
-                dime_socket_free(conn->sock);
-                close(conn->fd);
-                free(conn);
-
-                pollfds_len--;
-                pollfds[i] = pollfds[pollfds_len];
+            if (dime_socket_sendlen(&conn->sock) > 0) {
+                printf("POLLOUT is ON on socket %d\n", conn->fd);
+                pollfds[i].events |= POLLOUT;
+            } else {
+                printf("POLLOUT is OFF on socket %d\n", conn->fd);
+                pollfds[i].events &= ~POLLOUT;
             }
 
             pollfds[i].revents = 0;
         }
     }
-}
-
-void dime_server_free(dime_server_t *srv) {
-    shutdown(srv->fd, SHUT_RDWR);
-    close(srv->fd);
-    free(srv);
 }

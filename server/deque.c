@@ -3,7 +3,7 @@
 
 #include "deque.h"
 
-struct deque_ringbuffer {
+struct dime_deque {
     size_t len;
 
     void **arr;
@@ -12,7 +12,7 @@ struct deque_ringbuffer {
     size_t begin, end;
 };
 
-int deque_ringbuffer_init(dime_deque_t *deck) {
+int dime_deque_init(dime_deque_t *deck) {
     deck->len = 0;
 
     deck->cap = 16;
@@ -22,13 +22,15 @@ int deque_ringbuffer_init(dime_deque_t *deck) {
     }
 
     deck->begin = deck->end = 0;
+
+    return 0;
 }
 
-void deque_ringbuffer_destroy(dime_deque_t *deck) {
+void dime_deque_destroy(dime_deque_t *deck) {
     free(deck->arr);
 }
 
-int deque_ringbuffer_pushl(dime_deque_t *deck, void *p) {
+int dime_deque_pushl(dime_deque_t *deck, void *p) {
     if (deck->len >= deck->cap) {
         size_t ncap = (3 * deck->cap) / 2;
         void **narr = realloc(deck->arr, ncap * sizeof(void *));
@@ -60,7 +62,7 @@ int deque_ringbuffer_pushl(dime_deque_t *deck, void *p) {
     return 0;
 }
 
-int deque_ringbuffer_pushr(dime_deque_t *deck, void *p) {
+int dime_deque_pushr(dime_deque_t *deck, void *p) {
     if (deck->len >= deck->cap) {
         size_t ncap = (3 * deck->cap) / 2;
         void **narr = realloc(deck->arr, ncap * sizeof(void *));
@@ -92,7 +94,7 @@ int deque_ringbuffer_pushr(dime_deque_t *deck, void *p) {
     return 0;
 }
 
-void *deque_ringbuffer_popl(dime_deque_t *deck) {
+void *dime_deque_popl(dime_deque_t *deck) {
     if (deck->len == 0) {
         return NULL;
     }
@@ -109,7 +111,7 @@ void *deque_ringbuffer_popl(dime_deque_t *deck) {
     return p;
 }
 
-void *deque_ringbuffer_popr(dime_deque_t *deck) {
+void *dime_deque_popr(dime_deque_t *deck) {
     if (deck->len == 0) {
         return NULL;
     }
@@ -126,6 +128,22 @@ void *deque_ringbuffer_popr(dime_deque_t *deck) {
     return p;
 }
 
-size_t deque_ringbuffer_len(dime_deque_t *deck) {
+void dime_deque_foreach(dime_deque_t *deck, int(*f)(void *, void *), void *p) {
+    size_t i = deck->begin;
+
+    while (i != deck->end) {
+        if (!f(deck->arr[i], p)) {
+            break;
+        }
+
+        i++;
+
+        if (i == deck->cap) {
+            i = 0;
+        }
+    }
+}
+
+size_t dime_deque_len(dime_deque_t *deck) {
     return deck->len;
 }

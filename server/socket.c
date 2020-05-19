@@ -3,9 +3,7 @@
 #include <string.h>
 
 #include <jansson.h>
-#include <assert.h>
-
-#include "fifobuffer.h"
+#include "ringbuffer.h"
 #include "socket.h"
 
 struct dime_header {
@@ -17,44 +15,29 @@ struct dime_header {
 static const size_t SENDBUFLEN = 200000000;
 static const size_t RECVBUFLEN = 200000000;
 
-struct dime_socket {
-    int fd;
-    dime_fifobuffer_t *rbuf, *wbuf;
-};
-
-dime_socket_t *dime_socket_new(int fd) {
-    dime_socket_t *sock = malloc(sizeof(dime_socket_t));
-    if (sock == NULL) {
-        return NULL;
-    }
-
+int dime_socket_init(dime_socket_t *sock, int fd) {
     sock->fd = fd;
 
-    sock->rbuf = dime_fifobuffer_new();
-    if (sock->rbuf == NULL) {
-        free(sock);
 
-        return NULL;
+    if (dime_ringbuffer_init(&sock->rbuf) < 0) {
+        return -1;
     }
 
-    sock->wbuf = dime_fifobuffer_new();
-    if (sock->wbuf == NULL) {
-        free(sock->rbuf);
-        free(sock);
+    if (dime_ringbuffer_init(&sock->wbuf) < 0) {
+        dime_ringbuffer_destroy(&sock->rbuf);
 
-        return NULL;
+        return -1;
     }
 
-    return sock;
+    return 0;
 }
 
-void dime_socket_free(dime_socket_t *sock) {
-    dime_fifobuffer_free(sock->rbuf);
-    dime_fifobuffer_free(sock->wbuf);
-    free(sock);
+void dime_socket_destroy(dime_socket_t *sock) {
+    dime_ringbuffer_destroy(&sock->rbuf);
+    dime_ringbuffer_destroy(&sock->wbuf);
 }
 
-int dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len) {
+int dime_socket_sendfuture(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len) {
     struct dime_header hdr;
 
     memcpy(hdr.magic, "DiME", 4);
@@ -69,9 +52,9 @@ int dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void *bi
     hdr.jsondata_len = htonl(jsondata_len);
     hdr.bindata_len = htonl(bindata_len);
 
-    if (dime_fifobuffer_write(sock->wbuf, &hdr, 12) < 12 ||
-        dime_fifobuffer_write(sock->wbuf, jsonstr, jsondata_len) < jsondata_len ||
-        dime_fifobuffer_write(sock->wbuf, bindata, bindata_len) < bindata_len) {
+    if (dime_ringbuffer_write(&sock->wbuf, &hdr, 12) < 12 ||
+        dime_ringbuffer_write(&sock->wbuf, jsonstr, jsondata_len) < jsondata_len ||
+        dime_ringbuffer_write(&sock->wbuf, bindata, bindata_len) < bindata_len) {
 
         free(jsonstr);
         return -1;
@@ -87,7 +70,7 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
         return -1;
     }
 
-    size_t nread = dime_fifobuffer_peek(sock->wbuf, buf, SENDBUFLEN);
+    size_t nread = dime_ringbuffer_peek(&sock->wbuf, buf, SENDBUFLEN);
     ssize_t nsent = send(sock->fd, buf, nread, 0);
 
     if (nsent < 0) {
@@ -95,7 +78,7 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
         return -1;
     }
 
-    dime_fifobuffer_discard(sock->wbuf, nsent);
+    dime_ringbuffer_discard(&sock->wbuf, nsent);
     free(buf);
 
     return nsent;
@@ -114,12 +97,12 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock, json_t **jsondata, void **b
         return -1;
     }
 
-    dime_fifobuffer_write(sock->rbuf, buf, nrecvd);
+    dime_ringbuffer_write(&sock->rbuf, buf, nrecvd);
 
     /* Attempt to get a message from the read buffer */
     struct dime_header hdr;
 
-    if (dime_fifobuffer_peek(sock->rbuf, &hdr, 12) == 12) {
+    if (dime_ringbuffer_peek(&sock->rbuf, &hdr, 12) == 12) {
         if (memcmp(&hdr, "DiME", 4) != 0) {
             return -1;
         }
@@ -138,9 +121,9 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock, json_t **jsondata, void **b
             }
         }
 
-        if (dime_fifobuffer_peek(sock->rbuf, buf, msgsiz) == msgsiz) {
+        if (dime_ringbuffer_peek(&sock->rbuf, buf, msgsiz) == msgsiz) {
             json_error_t jsonerr;
-            json_t *jsondata_p = json_loadb(buf + 12, hdr.jsondata_len, 0, &jsonerr);
+            json_t *jsondata_p = json_loadb((unsigned char *)buf + 12, hdr.jsondata_len, 0, &jsonerr);
             if (jsondata_p == NULL) {
                 free(buf);
 
@@ -158,7 +141,7 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock, json_t **jsondata, void **b
                     return -1;
                 }
 
-                memcpy(bindata_p, buf + 12 + hdr.jsondata_len, hdr.bindata_len);
+                memcpy(bindata_p, (unsigned char *)buf + 12 + hdr.jsondata_len, hdr.bindata_len);
             } else {
                 bindata_p = NULL;
             }
@@ -167,13 +150,11 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock, json_t **jsondata, void **b
             *bindata = bindata_p;
             *bindata_len = hdr.bindata_len;
 
-            dime_fifobuffer_discard(sock->rbuf, msgsiz);
+            dime_ringbuffer_discard(&sock->rbuf, msgsiz);
 
             free(buf);
-
             return msgsiz;
         }
-
     }
 
     free(buf);
@@ -184,6 +165,10 @@ int dime_socket_fd(const dime_socket_t *sock) {
     return sock->fd;
 }
 
-size_t dime_socket_sendsize(const dime_socket_t *sock) {
-    return dime_fifobuffer_size(sock->wbuf);
+size_t dime_socket_sendlen(const dime_socket_t *sock) {
+    return dime_ringbuffer_len(&sock->wbuf);
+}
+
+size_t dime_socket_recvlen(const dime_socket_t *sock) {
+    return dime_ringbuffer_len(&sock->rbuf);
 }

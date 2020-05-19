@@ -1,6 +1,6 @@
 /*
  * table.h - Hash table
- * Copyright (c) 2020 Nicholas West, CURENT, et. al.
+ * Copyright (c) 2020 Nicholas West, Hantao Cui, CURENT, et. al.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,15 +17,9 @@
 
 /**
  * @file table.h
- * @brief Implements a hash table
+ * @brief Hash table
  * @author Nicholas West
  * @date 2020
- *
- * A hash table is one method for implementing an associative array, also known as a map or dictionary, an abstract container type that allows for random access of a set of keys. Associative arrays allow for three general operations: insertion of a new key-value pair, removal of a key-value pair based on its key, and search/modification of a value based on its key. Because these operations can be generalized to a plethora of uses, such as databases, object instances, and mathematical sets, associative arrays are among the most versatile container types in computing.
- *
- * Compared to @link tree.h binary search trees @endlink , hash tables have several advantages and drawbacks, the most significant one being that hash tables have a significantly better asymptotic performance of @f$ O(1) @f$ amortized time for all operations, as opposed to the best case of @f$ O(\log n) @f$ for a binary search tree. Additionally, hash tables exhibit better spatial locality, resulting in fewer cache misses. However, in the worst case, a hash table can store all of its entries in a single bucket, resulting in @f$ O(n) @f$ time. This is in stark contrast of binary search trees, which, if a self-balancing version is used, keeps its average-case complexity of @f$ O(\log n) @f$ regardless of the input data. That having been said, hash tables turn out to be slightly faster in most practical scenarios, and are the usual choice if the intended usage primarily consists of random access.
- *
- * This implementation of a hash table uses open addressing with quadratic probing and lazy deletion. More specifically, the internal array size is always a power of two, and the probing sequence is based on the triangular numbers, i.e. positive integers of the form @f$ \sum_{i = 1}^{n} i @f$ or @f$ {n(n + 1)} \over 2 @f$. Unlike most other quadratic probing methods, this assures that every index is eventually visited when probing for a certain element. Even so, this implementation maintains a maximum load factor of @f$ 1 \over 2 @f$ and a maximum ratio of bucket collisions to total elements of @f$ \varphi \over 8 @f$ to ensure optimal performance.
  */
 
 #include <stddef.h>
@@ -38,21 +32,97 @@
 extern "C" {
 #endif
 
-typedef struct dime_table dime_table_t;
+typedef struct {
+    int use; /** Internal use of this element */
 
-dime_table_t *dime_table_new(int (*cmp_f)(const void *, const void *), uint64_t (*hash_f)(const void *));
+    uint64_t hash;   /** Memoized hash of the key */
+    const void *key; /** Key */
+    void *val;       /** Value */
+} dime_table_elem_t;
 
-void dime_table_free(dime_table_t *tb);
+typedef struct {
+    size_t len; /** Number of elements in the hash table */
 
-int dime_table_insert(dime_table_t *tb, const void *key, void *val);
+    int (*cmp_f)(const void *, const void *); /** Comparison function */
+    uint64_t (*hash_f)(const void *);         /** Hashing function */
 
-void *dime_table_search(dime_table_t *tb, const void *key);
+    dime_table_elem_t *arr; /** Array of elements */
 
-void *dime_table_remove(dime_table_t *tb, const void *key);
+    size_t cap;        /** Capacity of the array */
+    size_t collisions; /** Number of collisions */
+    size_t nfree;      /** Number of free (not removed) elements */
+} dime_table_t;
 
-size_t dime_table_size(const dime_table_t *tb);
+/**
+ * @brief Initialize a new table
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ * @param cmp_f Pointer to a comparison function for the keys
+ * @param hash_f Pointer to a hashing function for the keys
+ *
+ * @return A nonnegative value on success, or a negative value on failure
+ */
+int dime_table_init(dime_table_t *tbl,
+                    int (*cmp_f)(const void *, const void *),
+                    uint64_t (*hash_f)(const void *));
 
-void dime_table_foreach(dime_table_t *tb, int(*f)(const void *, void *, void *), void *p);
+/**
+ * @brief Free resources used by a table
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ */
+void dime_table_destroy(dime_table_t *tbl);
+
+/**
+ * @brief Insert a key-value pair into the table
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ * @param key Key
+ * @param val Value
+ *
+ * @return A nonnegative value on success, or a negative value on failure
+ */
+int dime_table_insert(dime_table_t *tbl, const void *key, void *val);
+
+/**
+ * @brief Search for a value in the table via its key
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ * @param key Key
+ *
+ * @return A pointer to the value on success, or @c NULL on failure
+ */
+void *dime_table_search(dime_table_t *tbl, const void *key);
+
+/**
+ * @brief Remove a value in the table via its key
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ * @param key Key
+ *
+ * @return A pointer to the value on success, or @c NULL on failure
+ */
+void *dime_table_remove(dime_table_t *tbl, const void *key);
+
+/**
+ * @brief Apply a function for each key-value pair in the table
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ * @param f Function to apply
+ * @param p Pointer passed as third argument to @em f
+ */
+void dime_table_foreach(dime_table_t *tbl,
+                        int(*f)(const void *, void *, void *),
+                        void *p);
+
+/**
+ * @brief Get the number of elements in the table
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ *
+ * @return Number of elements in the table
+ */
+size_t dime_table_len(const dime_table_t *tbl);
 
 #ifdef __cplusplus
 }

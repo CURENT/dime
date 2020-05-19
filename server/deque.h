@@ -1,5 +1,5 @@
 /*
- * table.h - Hash table
+ * deque.h - Double-ended queue
  * Copyright (c) 2020 Nicholas West, Hantao Cui, CURENT, et. al.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -16,8 +16,8 @@
  */
 
 /**
- * @file table.h
- * @brief Hash table
+ * @file deque.h
+ * @brief Double-ended queue
  * @author Nicholas West
  * @date 2020
  */
@@ -32,28 +32,88 @@ extern "C" {
 #endif
 
 typedef struct {
-    size_t len;
+    size_t len; /** Number of elements in the deque */
 
-    void **arr;
-    size_t cap;
+    void **arr; /** Array of elements */
+    size_t cap; /** Capacity of array */
 
-    size_t begin;
-    size_t end;
+    size_t begin; /** Index of head of the deque in the array */
+    size_t end;   /** One plus index of the tail of the deque in the array */
 } dime_deque_t;
 
-int deque_ringbuffer_init(dime_deque_t *deck);
+/**
+ * @brief Initialize a new deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ *
+ * @return A nonnegative value on success, or a negative value on failure
+ */
+int dime_deque_init(dime_deque_t *deck);
 
-void deque_ringbuffer_destroy(dime_deque_t *deck);
+/**
+ * @brief Free resources used by a deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ */
+void dime_deque_destroy(dime_deque_t *deck);
 
-int deque_ringbuffer_pushl(dime_deque_t *deck, void *p);
+/**
+ * @brief Prepend an element to the deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ * @param p Element
+ *
+ * @return A nonnegative value on success, or a negative value on failure
+ */
+int dime_deque_pushl(dime_deque_t *deck, void *p);
 
-int deque_ringbuffer_pushr(dime_deque_t *deck, void *p);
+/**
+ * @brief Append an element to the deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ * @param p Element
+ *
+ * @return A nonnegative value on success, or a negative value on failure
+ */
+int dime_deque_pushr(dime_deque_t *deck, void *p);
 
-void *deque_ringbuffer_popl(dime_deque_t *deck);
+/**
+ * @brief Pop an element from the head of the deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ *
+ * @return The element at the head of the deque, or NULL if the deque is empty
+ */
+void *dime_deque_popl(dime_deque_t *deck);
 
-void *deque_ringbuffer_popr(dime_deque_t *deck);
+/**
+ * @brief Pop an element from the tail of the deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ *
+ * @return The element at the tail of the deque, or NULL if the deque is empty
+ */
+void *dime_deque_popr(dime_deque_t *deck);
 
-size_t deque_ringbuffer_len(dime_deque_t *deck);
+/**
+ * @brief Apply a function for each element in the deque
+ *
+ * @param deck Pointer to a @c dime_deque_t struct
+ * @param f Function to apply
+ * @param p Pointer passed as second argument to @em f
+ */
+void dime_deque_foreach(dime_deque_t *deck,
+                        int(*f)(void *, void *),
+                        void *p);
+
+/**
+ * @brief Get the number of elements in the deque
+ *
+ * @param tbl Pointer to a @c dime_deque_t struct
+ *
+ * @return Number of elements in the deque
+ */
+size_t dime_deque_len(dime_deque_t *deck);
 
 #ifdef __cplusplus
 }

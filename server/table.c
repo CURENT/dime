@@ -1,4 +1,22 @@
+/*
+ * table.c - Hash table
+ * Copyright (c) 2020 Nicholas West, Hantao Cui, CURENT, et. al.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * This software is provided "as is" and the author disclaims all
+ * warranties with regard to this software including all implied warranties
+ * of merchantability and fitness. In no event shall the author be liable
+ * for any special, direct, indirect, or consequential damages or any
+ * damages whatsoever resulting from loss of use, data or profits, whether
+ * in an action of contract, negligence or other tortious action, arising
+ * out of or in connection with the use or performance of this software.
+ */
+
 #include <stdlib.h>
+
 #include "table.h"
 
 enum dime_table_elem_use {
@@ -7,179 +25,147 @@ enum dime_table_elem_use {
     ELEM_REMOVED
 };
 
-struct dime_table_elem {
-    int use;
-    uint64_t hash;
-
-    const void *key;
-    void *val;
-};
-
-struct dime_table {
-    size_t ct;
-
-    struct dime_table_elem *arr;
-
-    int (*cmp_f)(const void *, const void *);
-    uint64_t (*hash_f)(const void *);
-
-    size_t cap;
-    size_t collisions;
-    size_t nfree;
-};
-
 /* Maximum ratio of used buckets to total buckets; 1 / 2 */
 static const double MAX_LOAD_FACTOR = 0.5;
 
 /* Maximum ratio of hash collisions to used buckets; φ / 8 */
 static const double MAX_OVERFLOW_FACTOR = 0.20225424859373685602;
 
-static void dime_table_relocate(dime_table_t *tb, size_t i0) {
+static void dime_table_relocate(dime_table_t *tbl, size_t i0) {
     size_t i, k;
-    struct dime_table_elem tmp;
+    dime_table_elem_t tmp;
 
-    if (tb->arr[i0].use != ELEM_OCCUPIED) {
-        tb->arr[i0].use = ELEM_FREE;
+    if (tbl->arr[i0].use != ELEM_OCCUPIED) {
+        tbl->arr[i0].use = ELEM_FREE;
         return;
     }
 
-    i = tb->arr[i0].hash & (tb->cap - 1);
+    i = tbl->arr[i0].hash & (tbl->cap - 1);
     k = 1;
 
     if (i == i0) {
         return;
     }
 
-    tmp = tb->arr[i0];
-    tb->arr[i0].use = ELEM_FREE;
+    tmp = tbl->arr[i0];
+    tbl->arr[i0].use = ELEM_FREE;
 
-    while (dime_table_relocate(tb, i), tb->arr[i].use == ELEM_OCCUPIED) {
-        i = (i + k) & (tb->cap - 1);
+    while (dime_table_relocate(tbl, i), tbl->arr[i].use == ELEM_OCCUPIED) {
+        i = (i + k) & (tbl->cap - 1);
         k++;
     }
 
-    tb->arr[i] = tmp;
+    tbl->arr[i] = tmp;
 
     if (k > 1) {
-        tb->collisions++;
+        tbl->collisions++;
     }
 }
 
-static int dime_table_grow(dime_table_t *tb) {
-    struct dime_table_elem *arr;
-    size_t i, cap;
+static int dime_table_grow(dime_table_t *tbl) {
+    dime_table_elem_t *arr;
+    size_t cap;
 
-    cap = tb->cap;
-    arr = realloc(tb->arr, (cap << 1) * sizeof(struct dime_table_elem));
+    cap = tbl->cap;
+    arr = realloc(tbl->arr, (cap << 1) * sizeof(dime_table_elem_t));
 
     if (arr == NULL) {
         return 0;
     }
 
-    tb->arr = arr;
-    tb->cap <<= 1;
+    tbl->arr = arr;
+    tbl->cap <<= 1;
 
-    tb->collisions = 0;
-    tb->nfree = tb->cap - tb->ct;
+    tbl->collisions = 0;
+    tbl->nfree = tbl->cap - tbl->len;
 
-    for (i = cap; i < tb->cap; i++) {
-        tb->arr[i].use = ELEM_FREE;
+    for (size_t i = cap; i < tbl->cap; i++) {
+        tbl->arr[i].use = ELEM_FREE;
     }
 
-    for (i = cap; i > 0; i--) {
-        dime_table_relocate(tb, i - 1);
+    for (size_t i = cap; i > 0; i--) {
+        dime_table_relocate(tbl, i - 1);
     }
 
     return 1;
 }
 
-dime_table_t *dime_table_new(int (*cmp_f)(const void *, const void *), uint64_t (*hash_f)(const void *)) {
-    dime_table_t *tb;
-    size_t i;
-
-    tb = malloc(sizeof(dime_table_t));
-    if (tb == NULL) {
-        return NULL;
+int dime_table_init(dime_table_t *tbl, int (*cmp_f)(const void *, const void *), uint64_t (*hash_f)(const void *)) {
+    tbl->cap = 32;
+    tbl->arr = malloc(tbl->cap * sizeof(dime_table_elem_t));
+    if (tbl->arr == NULL) {
+        return -1;
     }
 
-    tb->cap = 32;
-    tb->arr = malloc(tb->cap * sizeof(struct dime_table_elem));
-    if (tb->arr == NULL) {
-        free(tb);
-        return NULL;
+    tbl->len = 0;
+    tbl->cmp_f = cmp_f;
+    tbl->hash_f = hash_f;
+
+    for (size_t i = 0; i < tbl->cap; i++) {
+        tbl->arr[i].use = ELEM_FREE;
     }
 
-    tb->ct = 0;
-    tb->cmp_f = cmp_f;
-    tb->hash_f = hash_f;
+    tbl->collisions = 0;
+    tbl->nfree = tbl->cap;
 
-    for (i = 0; i < tb->cap; i++) {
-        tb->arr[i].use = ELEM_FREE;
-    }
-
-    tb->collisions = 0;
-    tb->nfree = tb->cap;
-
-    return tb;
+    return 0;
 }
 
-void dime_table_free(dime_table_t *tb) {
-    free(tb->arr);
-    free(tb);
+void dime_table_destroy(dime_table_t *tbl) {
+    free(tbl->arr);
 }
 
-int dime_table_insert(dime_table_t *tb, const void *key, void *val) {
+int dime_table_insert(dime_table_t *tbl, const void *key, void *val) {
+    if (tbl->len >= tbl->cap) {
+        if (!dime_table_grow(tbl)) {
+            return -1;
+        }
+    } else if ((double)tbl->len > MAX_LOAD_FACTOR * tbl->cap) {
+        dime_table_grow(tbl);
+    }
+
     size_t i, k;
     uint64_t hash;
-    int prevuse;
 
-    if (tb->ct >= tb->cap) {
-        if (!dime_table_grow(tb)) {
-            return -1;
-        }
-    } else if ((double)tb->ct > MAX_LOAD_FACTOR * tb->cap) {
-        dime_table_grow(tb);
-    }
+    hash = tbl->hash_f(key);
 
-    hash = tb->hash_f(key);
-
-    i = hash & (tb->cap - 1);
+    i = hash & (tbl->cap - 1);
     k = 1;
 
-    while (tb->arr[i].use == ELEM_OCCUPIED) {
-        if (tb->cmp_f(key, tb->arr[i].key) == 0) {
+    while (tbl->arr[i].use == ELEM_OCCUPIED) {
+        if (tbl->cmp_f(key, tbl->arr[i].key) == 0) {
             return -1;
         }
 
-        i = (i + k) & (tb->cap - 1);
+        i = (i + k) & (tbl->cap - 1);
         k++;
     }
 
-    prevuse = tb->arr[i].use;
+    int prevuse = tbl->arr[i].use;
 
-    tb->arr[i].use = ELEM_OCCUPIED;
-    tb->arr[i].hash = hash;
-    tb->arr[i].key = key;
-    tb->arr[i].val = val;
+    tbl->arr[i].use = ELEM_OCCUPIED;
+    tbl->arr[i].hash = hash;
+    tbl->arr[i].key = key;
+    tbl->arr[i].val = val;
 
-    tb->ct++;
+    tbl->len++;
 
     if (k > 1) {
-        tb->collisions++;
+        tbl->collisions++;
 
-        if ((double)tb->collisions > MAX_OVERFLOW_FACTOR * tb->ct) {
-            dime_table_grow(tb);
+        if ((double)tbl->collisions > MAX_OVERFLOW_FACTOR * tbl->len) {
+            dime_table_grow(tbl);
         }
     }
 
     if (prevuse == ELEM_FREE) {
-        tb->nfree--;
+        tbl->nfree--;
 
-        if ((double)tb->nfree < MAX_LOAD_FACTOR * tb->cap) {
-            tb->nfree = tb->cap - tb->ct;
+        if ((double)tbl->nfree < MAX_LOAD_FACTOR * tbl->cap) {
+            tbl->nfree = tbl->cap - tbl->len;
 
-            for (i = 0; i < tb->cap; i++) {
-                dime_table_relocate(tb, i);
+            for (i = 0; i < tbl->cap; i++) {
+                dime_table_relocate(tbl, i);
             }
         }
     }
@@ -187,81 +173,76 @@ int dime_table_insert(dime_table_t *tb, const void *key, void *val) {
     return 0;
 }
 
-void *dime_table_search(dime_table_t *tb, const void *key) {
-    int cmp;
-    size_t i, k;
-    struct dime_table_elem *first, *firstavail;
+void *dime_table_search(dime_table_t *tbl, const void *key) {
+    size_t i, k, first, firstavail;
 
+    i = tbl->hash_f(key) & (tbl->cap - 1);
     k = 1;
-    firstavail = NULL;
 
-    i = tb->hash_f(key) & (tb->cap - 1);
-    first = &tb->arr[i];
+    first = i;
+    firstavail = ((size_t)-1);
 
-    while (tb->arr[i].use != ELEM_FREE) {
-        if (tb->arr[i].use == ELEM_OCCUPIED) {
-            cmp = tb->cmp_f(key, tb->arr[i].key);
+    while (tbl->arr[i].use != ELEM_FREE) {
+        if (tbl->arr[i].use == ELEM_OCCUPIED) {
+            int cmp = tbl->cmp_f(key, tbl->arr[i].key);
 
             if (cmp == 0) {
-                if (firstavail != NULL) {
-                    *firstavail = tb->arr[i];
-                    tb->arr[i].use = ELEM_REMOVED;
+                if (firstavail != ((size_t)-1)) {
+                    tbl->arr[firstavail] = tbl->arr[i];
+                    tbl->arr[i].use = ELEM_REMOVED;
 
                     if (first == firstavail) {
-                        tb->collisions--;
+                        tbl->collisions--;
                     }
 
-                    return firstavail->val;
-                } else {
-                    return tb->arr[i].val;
+                    i = firstavail;
                 }
+
+                return tbl->arr[i].val;
             }
-        } else if (firstavail == NULL) {
-            firstavail = &tb->arr[i];
+        } else if (firstavail == ((size_t)-1)) {
+            firstavail = i;
         }
 
-        i = (i + k) % tb->cap;
+        i = (i + k) & (tbl->cap - 1);
         k++;
     }
 
     return NULL;
 }
 
-void *dime_table_remove(dime_table_t *tb, const void *key) {
-    int cmp;
+void *dime_table_remove(dime_table_t *tbl, const void *key) {
     size_t i, k;
 
-    i = tb->hash_f(key) & (tb->cap - 1);
+    i = tbl->hash_f(key) & (tbl->cap - 1);
     k = 1;
 
-    while (tb->arr[i].use != ELEM_FREE) {
-        if (tb->arr[i].use == ELEM_OCCUPIED) {
-            cmp = tb->cmp_f(key, tb->arr[i].key);
+    while (tbl->arr[i].use != ELEM_FREE) {
+        if (tbl->arr[i].use == ELEM_OCCUPIED) {
+            int cmp = tbl->cmp_f(key, tbl->arr[i].key);
 
             if (cmp == 0) {
-                tb->arr[i].use = ELEM_REMOVED;
-                tb->ct--;
+                tbl->arr[i].use = ELEM_REMOVED;
+                tbl->len--;
 
-                return tb->arr[i].val;
+                return tbl->arr[i].val;
             }
         }
 
-        i = (i + k) & (tb->cap - 1);
+        i = (i + k) & (tbl->cap - 1);
         k++;
     }
 
     return NULL;
 }
 
-size_t dime_table_size(const dime_table_t *tb) {
-    return tb->ct;
+size_t dime_table_size(const dime_table_t *tbl) {
+    return tbl->len;
 }
 
-void dime_table_foreach(dime_table_t *tb, int(*f)(const void *, void *, void *), void *p) {
-    size_t i;
-
-    for (i = 0; i < tb->cap; i++) {
-        if (tb->arr[i].use == ELEM_OCCUPIED && !f(tb->arr[i].key, tb->arr[i].val, p)) {
+void dime_table_foreach(dime_table_t *tbl, int(*f)(const void *, void *, void *), void *p) {
+    for (size_t i = 0; i < tbl->cap; i++) {
+        if (tbl->arr[i].use == ELEM_OCCUPIED && !f(tbl->arr[i].key, tbl->arr[i].val, p)) {
             break;
         }
     }

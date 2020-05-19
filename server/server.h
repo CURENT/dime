@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include "table.h"
+
 #ifndef __DIME_server_H
 #define __DIME_server_H
 
@@ -17,11 +19,25 @@ enum dime_protocol {
     */
 };
 
-typedef struct dime_server dime_server_t;
+typedef struct {
+    int ipv6 : 1;
+    int ssl : 1;
+    int verbose : 1;
+    char : 0;
 
-dime_server_t *dime_server_new(int protocol, const char *socketfile, uint16_t port);
+    int protocol;
+    const char *pathname;
+    uint16_t port;
 
-void dime_server_free(dime_server_t *srv);
+    char *err;
+
+    int fd;
+    dime_table_t fd2conn, name2conn;
+} dime_server_t;
+
+int dime_server_init(dime_server_t *srv);
+
+void dime_server_destroy(dime_server_t *srv);
 
 int dime_server_loop(dime_server_t *srv);
 

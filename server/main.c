@@ -3,24 +3,20 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #include "server.h"
 
 int main(int argc, char **argv) {
-    int protocol;
-    uint16_t port;
-    const char *socketfile;
+    dime_server_t srv;
 
-    signal(SIGPIPE, SIG_IGN);
+    srv.pathname = "/tmp/dime.sock";
+    srv.port = 5000;
 
 #ifdef _WIN32
-    protocol = DIME_TCP;
+    srv.protocol = DIME_TCP;
 #else
-    protocol = DIME_UNIX;
+    srv.protocol = DIME_UNIX;
 #endif
-    socketfile = "/tmp/dime.sock";
-    port = 5000;
 
     int opt;
 
@@ -48,9 +44,9 @@ int main(int argc, char **argv) {
 
         case 'P':
             if (strcasecmp(optarg, "unix") == 0) {
-                protocol = DIME_UNIX;
+                srv.protocol = DIME_UNIX;
             } else if (strcasecmp(optarg, "tcp") == 0) {
-                protocol = DIME_TCP;
+                srv.protocol = DIME_TCP;
             } else {
                 goto usage_err;
             }
@@ -58,15 +54,15 @@ int main(int argc, char **argv) {
             break;
 
         case 'p':
-            port = strtoul(optarg, NULL, 0);
-            if (port == 0) {
+            srv.port = strtoul(optarg, NULL, 0);
+            if (srv.port == 0) {
                 goto usage_err;
             }
 
             break;
 
         case 'f':
-            socketfile = optarg;
+            srv.pathname = optarg;
             break;
 
         default:
@@ -78,18 +74,24 @@ int main(int argc, char **argv) {
         goto usage_err;
     }
 
-    dime_server_t *srv = dime_server_new(protocol, socketfile, port);
-    if (srv == NULL) {
-        perror("Failed to setup server");
+    if (dime_server_init(&srv) < 0) {
+        perror("dime_server_init");
+
         return -1;
     }
 
-    dime_server_loop(srv);
-    dime_server_free(srv);
+    if (dime_server_loop(&srv) < 0) {
+        perror("dime_server_loop");
+        dime_server_destroy(&srv);
+
+        return -1;
+    }
+
+    dime_server_destroy(&srv);
     return 0;
 
 usage_err:
-    fprintf(stderr, "Usage: %s [-h] [-P unix/tcp] [-p port] [-f socketfile]\n",
-            argv[0]);
+    fprintf(stderr, "Usage: %s [options]\nTry \"%s -h\" for more information\n",
+            argv[0], argv[0]);
     return -1;
 }
