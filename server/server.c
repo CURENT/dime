@@ -463,12 +463,24 @@ int dime_server_loop(dime_server_t *srv) {
                             free(msg);
                         }
                     } else if (strcmp(cmd, "sync") == 0) {
+                        json_int_t n;
+
+                        if (json_unpack(jsondata, "{sI}", "n", &n) < 0) {
+                            FAIL_LOUDLY();
+                        }
+
                         json_decref(jsondata);
                         free(bindata);
 
-                        dime_rcmessage_t *msg;
+                        size_t max = (n >= 0 ? n : (size_t)-1);
 
-                        while ((msg = dime_deque_popl(&conn->queue)) != NULL) {
+                        for (size_t i = 0; i < max; i++) {
+                            dime_rcmessage_t *msg = dime_deque_popl(&conn->queue);
+
+                            if (msg == NULL) {
+                                break;
+                            }
+
                             if (dime_socket_sendfuture(&conn->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
                                 FAIL_LOUDLY();
                             }

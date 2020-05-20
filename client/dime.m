@@ -27,7 +27,7 @@ classdef dime
             obj.name = name;
             [~, ~, obj.endianness] = computer;
 
-            msg = {};
+            msg = struct();
 
             msg.command = 'register';
             msg.name = name;
@@ -46,7 +46,7 @@ classdef dime
 
         function [] = send_var(obj, name, varargin)
             for i = 1:length(varargin)
-                msg = {};
+                msg = struct();
 
                 msg.command = 'send';
                 msg.name = name;
@@ -62,7 +62,7 @@ classdef dime
 
         function [] = broadcast(obj, varargin)
             for i = 1:length(varargin)
-                msg = {};
+                msg = struct();
 
                 msg.command = 'broadcast';
                 msg.varname = varargin{i};
@@ -73,10 +73,17 @@ classdef dime
             end
         end
 
-        function [] = sync(obj)
-            msg = {};
+        function [] = sync(obj, varargin)
+            n = -1;
+
+            if length(varargin) >= 1
+                n = varargin{1};
+            end
+
+            msg = struct();
 
             msg.command = 'sync';
+            msg.n = n;
 
             send(obj, msg, uint8.empty);
 
@@ -85,8 +92,6 @@ classdef dime
 
                 if ~isfield(msg, 'varname')
                     break;
-                else
-                    disp(msg);
                 end
 
                 x = getArrayFromByteStream(bindata);
