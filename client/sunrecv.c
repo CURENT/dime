@@ -28,8 +28,8 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
     m = recv(fd, mxGetData(buf), n, MSG_WAITALL);
     if (m < 0) {
         mexErrMsgTxt(strerror(errno));
-    } else if (m != n) {
-        mexErrMsgTxt("Socket closed by server");
+    } else if (m == 0) {
+        mexErrMsgTxt(strerror(EPIPE));
     }
 
     plhs[0] = buf;

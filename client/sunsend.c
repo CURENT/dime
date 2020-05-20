@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
 
@@ -8,6 +9,9 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
     int fd;
     size_t n;
     ssize_t m;
+    unsigned char *data;
+
+    void (*handler)(int);
 
     if (nrhs != 2) {
         mexErrMsgTxt("Wrong number of arguments");
@@ -21,15 +25,21 @@ void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs) {
 
     fd = ((mxInt64 *)mxGetData(prhs[0]))[0];
     n = mxGetM(prhs[1]) * mxGetN(prhs[1]) * mxGetElementSize(prhs[1]);
+    data = mxGetData(prhs[1]);
 
-#ifdef MSG_NOSIGNAL
-    m = send(fd, mxGetData(prhs[1]), n, MSG_NOSIGNAL);
-#else
-    m = send(fd, mxGetData(prhs[1]), n, 0);
-#endif
-    if (m < 0) {
-        mexErrMsgTxt(strerror(errno));
-    } else if (m != n) {
-        mexErrMsgTxt("Socket closed by server");
+    handler = signal(SIGPIPE, SIG_IGN);
+
+    while (n > 0) {
+        m = send(fd, data, n, 0);
+
+        if (m < 0) {
+            signal(SIGPIPE, handler);
+            mexErrMsgTxt(strerror(errno));
+        }
+
+        data += m;
+        n -= m;
     }
+
+    signal(SIGPIPE, handler);
 }
