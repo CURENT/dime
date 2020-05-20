@@ -1,5 +1,5 @@
 # dime2
-A re-write of the Distributed Matlab Environment, a library enabling multiple Matlab processes to share data across an operating system or over a network. The original DiME code can be found [here](https://github.com/CURENT/dime). This re-write includes a number of enhancements with regard to simplicity and efficiency, including single-threadedness, (I/O multiplexing is done via `poll()`) fewer dependencies, and significantly higher throughput.
+A re-write of the Distributed Matlab Environment, a library enabling multiple Matlab processes to share data across an operating system or over a network. The original DiME code can be found [here](https://github.com/CURENT/dime). This re-write includes a number of enhancements with regard to simplicity and efficiency, including single-threadedness, (I/O multiplexing is done via [`poll(2)`](https://pubs.opengroup.org/onlinepubs/007908799/xsh/poll.html)) fewer dependencies, and significantly higher throughput.
 
 ## Compiling
 
