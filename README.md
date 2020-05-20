@@ -15,6 +15,19 @@ To compile the server executable, run `make` in the `server` directory. Build op
 
 ## Running
 To use the software, simply add `client` to your Matlab path. The following code demonstrates the library in use:
-(TODO)
+```
+% Suppose the DiME server is running on the Unix domain socket at /tmp/dime.sock
+d = dime('matlab', 'ipc', '/tmp/dime.sock');
 
+a = [1, 2, 3; 4, 5, 6; 7, 8, 9];
+d.send_var('matlab', 'a');
+clear a;
 
+d.sync();
+a
+
+% a = 
+%      1     2     3
+%      4     5     6
+%      7     8     9
+```
