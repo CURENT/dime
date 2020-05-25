@@ -100,6 +100,18 @@ classdef dime
             end
         end
 
+        function [devices] = get_devices(obj)
+            msg = struct();
+
+            msg.command = 'devices';
+
+            send(obj, msg, uint8.empty);
+
+            [msg, ~] = recv(obj);
+
+            devices = msg.devices;
+        end
+
         function [] = send(obj, json, bindata)
             json = uint8(jsonencode(json));
 
@@ -121,7 +133,7 @@ classdef dime
             header = obj.recv_ll(12);
 
             if header(1:4) ~= uint8('DiME')
-                error('Invalid DiME message')
+                error('Invalid DiME message');
             end
 
             json_len = typecast(header(5:8), 'uint32');

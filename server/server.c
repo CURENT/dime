@@ -80,6 +80,20 @@ static int rcmessage_foreach_destroy(void *val, void *p) {
     return 1;
 }
 
+static int client_foreach_appendname(const void *key, void *val, void *p) {
+    json_t *str = json_string(key);
+
+    if (str == NULL) {
+        FAIL_LOUDLY();
+    }
+
+    if (json_array_append_new(p, str) < 0) {
+        FAIL_LOUDLY();
+    }
+
+    return 1;
+}
+
 static int client_foreach_broadcast(const void *key, void *val, void *p) {
     struct {
         dime_client_t *client;
@@ -495,6 +509,27 @@ int dime_server_loop(dime_server_t *srv) {
                         }
 
                         json_t *response = json_object();
+                        if (response == NULL) {
+                            FAIL_LOUDLY();
+                        }
+
+                        if (dime_socket_sendfuture(&conn->sock, response, NULL, 0) < 0) {
+                            FAIL_LOUDLY();
+                        }
+
+                        json_decref(response);
+                    } else if (strcmp(cmd, "devices") == 0) {
+                        json_decref(jsondata);
+                        free(bindata);
+
+                        jsondata = json_array();
+                        if (jsondata == NULL) {
+                            FAIL_LOUDLY();
+                        }
+
+                        dime_table_foreach(&srv->name2conn, client_foreach_appendname, jsondata);
+
+                        json_t *response = json_pack("{so}", "devices", jsondata);
                         if (response == NULL) {
                             FAIL_LOUDLY();
                         }
