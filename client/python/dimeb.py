@@ -1,4 +1,5 @@
 import collections.abc
+import ctypes
 import struct
 import sys
 
@@ -46,7 +47,7 @@ TYPE_STRING     = 0x20
 TYPE_ARRAY      = 0x21
 TYPE_ASSOCARRAY = 0x22
 
-def loads_none(s):
+def loads_null(s):
     return None, 1
 
 def loads_true(s):
@@ -56,34 +57,34 @@ def loads_false(s):
     return False, 1
 
 def loads_i8(s):
-    return struct.unpack("!b", s[1]), 2
+    return ctypes.c_int8(s[1]).value, 2
 
 def loads_i16(s):
-    return struct.unpack("!h", s[1:3]), 3
+    return struct.unpack("!h", s[1:3])[0], 3
 
 def loads_i32(s):
-    return struct.unpack("!i", s[1:5]), 5
+    return struct.unpack("!i", s[1:5])[0], 5
 
 def loads_i64(s):
-    return struct.unpack("!q", s[1:9]), 9
+    return struct.unpack("!q", s[1:9])[0], 9
 
 def loads_u8(s):
-    return struct.unpack("!B", s[1]), 2
+    return s[1], 2
 
 def loads_u16(s):
-    return struct.unpack("!H", s[1:3]), 3
+    return struct.unpack("!H", s[1:3])[0], 3
 
 def loads_u32(s):
-    return struct.unpack("!I", s[1:5]), 5
+    return struct.unpack("!I", s[1:5])[0], 5
 
 def loads_u64(s):
-    return struct.unpack("!Q", s[1:9]), 9
+    return struct.unpack("!Q", s[1:9])[0], 9
 
 def loads_single(s):
-    return struct.unpack("!f", s[1:5]), 5
+    return struct.unpack("!f", s[1:5])[0], 5
 
 def loads_double(s):
-    return struct.unpack("!d", s[1:9]), 9
+    return struct.unpack("!d", s[1:9])[0], 9
 
 def loads_complex_single(s):
     real, imag = struct.unpack("!ff", s[1:9])
@@ -94,17 +95,16 @@ def loads_complex_double(s):
     return complex(real, imag), 17
 
 def loads_mat(s, dtype):
-    rank = struct.unpack("!B", s[1])
-    shape = struct.unpack("!" + "I" * rank, s[2:(4 * rank + 2)])
-
-    count = dtype.itemsize * np.prod(rank)
+    rank = s[1]
     offset = 4 * rank + 2
+    shape = struct.unpack("!" + "I" * rank, s[2:offset])
+    count = np.prod(shape)
 
-    arr = np.frombuffer(s, dtype, count, offset).reshape(shape, "F")
+    arr = np.frombuffer(s, dtype, count, offset).reshape(shape, order = "F")
     if sys.byteorder != "big":
-        arr.byteswap(True)
+        arr = arr.byteswap()
 
-    return arr, count + offset
+    return arr, count * dtype.itemsize + offset
 
 def loads_mat_i8(s):
     return loads_mat(s, np.dtype(np.int8))
@@ -143,11 +143,11 @@ def loads_mat_complex_double(s):
     return loads_mat(s, np.dtype(np.complex128))
 
 def loads_string(s):
-    siz = struct.unpack("!I", s[1:5])
+    siz = struct.unpack("!I", s[1:5])[0]
     return s[5:(siz + 5)].decode("utf-8"), siz + 5
 
 def loads_array(s):
-    siz = struct.unpack("!I", s[1:5])
+    siz = struct.unpack("!I", s[1:5])[0]
 
     ret = []
     i = 5
@@ -161,7 +161,7 @@ def loads_array(s):
     return ret, i
 
 def loads_assocarray(s):
-    siz = struct.unpack("!I", s[1:5])
+    siz = struct.unpack("!I", s[1:5])[0]
 
     ret = {}
     i = 5
@@ -223,13 +223,13 @@ def loads(x):
 
 def dumps(x):
     if x is None:
-        return bytes([TYPE_NULL])
+        return bytes((TYPE_NULL,))
 
     elif x is True:
-        return bytes([TYPE_TRUE])
+        return bytes((TYPE_TRUE,))
 
     elif x is False:
-        return bytes([TYPE_FALSE])
+        return bytes((TYPE_FALSE,))
 
     elif isinstance(x, int):
         return struct.pack("!Bq", TYPE_I64, x)
@@ -261,7 +261,7 @@ def dumps(x):
 
         shapedata = struct.pack("!BB" + "I" * len(x.shape), tab[(x.dtype.kind, x.dtype.itemsize)], len(x.shape), *x.shape)
 
-        return shapedata + x.tobytes()
+        return shapedata + x.tobytes(order = "F")
 
     elif isinstance(x, str):
         x = x.encode("utf-8")
@@ -282,7 +282,7 @@ def dumps(x):
             keyvalpairs += dumps(key)
             keyvalpairs += dumps(val)
 
-        return struct.pack("!BI", TYPE_ASSOCARRAY, len(x)) + bytes(elements)
+        return struct.pack("!BI", TYPE_ASSOCARRAY, len(x)) + bytes(keyvalpairs)
 
     else:
         raise TypeError

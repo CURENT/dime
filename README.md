@@ -26,8 +26,25 @@ clear a;
 d.sync();
 a
 
-% a = 
+% a =
 %      1     2     3
 %      4     5     6
 %      7     8     9
 ```
+
+## Caveats
+
+### Matlab/Python intercommunication
+The following types can be transmitted between Matlab and Python clients, and
+translate according to the following table:
+
+| Matlab                 | Python                 |
+| ---------------------- | ---------------------- |
+| Logical                | `bool`                 |
+| Any integer type       | `int`                  |
+| Single/double          | `float`                |
+| Complex                | `complex`              |
+| String/Character array | `str`                  |
+| Cell array             | `list`                 |
+| Struct/container.Map   | `dict`                 |
+| Matrix                 | `numpy.ndarray`        |
