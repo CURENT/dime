@@ -40,11 +40,12 @@ translate according to the following table:
 
 | Matlab                 | Python                 |
 | ---------------------- | ---------------------- |
+| Empty matrix           | `None`                 |
 | Logical                | `bool`                 |
-| Any integer type       | `int`                  |
+| Integers               | `int`                  |
 | Single/double          | `float`                |
 | Complex                | `complex`              |
+| Matrix                 | `numpy.ndarray`        |
 | String/Character array | `str`                  |
 | Cell array             | `list`                 |
 | Struct/container.Map   | `dict`                 |
-| Matrix                 | `numpy.ndarray`        |
