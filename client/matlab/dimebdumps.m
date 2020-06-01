@@ -42,12 +42,12 @@ function [bytes] = dimebdumps(obj)
     [~, ~, ENDIANNESS] = computer;
 
     if isempty(obj)
-        obj = [TYPE_NULL];
+        bytes = [TYPE_NULL];
     elseif islogical(obj) && isscalar(obj)
         if obj
-            obj = [TYPE_TRUE];
+            bytes = [TYPE_TRUE];
         else
-            obj = [TYPE_FALSE];
+            bytes = [TYPE_FALSE];
         end
     elseif isreal(obj) && ~ischar(obj)
         if isscalar(obj)
@@ -135,8 +135,8 @@ function [bytes] = dimebdumps(obj)
                 obj = swapbytes(obj);
             end
 
-            bytes = typecast(obj, 'uint8');
-            bytes = [type uint8(length(shape)) typecast(shape, 'uint8') bytes(:).'];
+            obj = obj(:).';
+            bytes = [type uint8(length(shape)) typecast(shape, 'uint8') typecast(obj, 'uint8')];
         end
     elseif isnumeric(obj) && ~ischar(obj)
         if isscalar(obj)
@@ -204,22 +204,24 @@ function [bytes] = dimebdumps(obj)
         bytes = [TYPE_ARRAY typecast(siz, 'uint8') obj{:}];
     elseif isstruct(obj) || isa(obj, 'containers.Map')
         if isstruct(obj)
-            keys = fieldnames(obj);
-            vals = struct2cell(obj);
+            k = fieldnames(obj);
+            v = struct2cell(obj);
         else
-            keys = keys(obj);
-            vals = values(obj);
+            k = keys(obj);
+            v = values(obj);
         end
 
-        siz = uint32(length(keys));
+        siz = uint32(length(k));
         if ENDIANNESS == 'L'
             siz = swapbytes(siz);
         end
 
         bytes = [TYPE_ASSOCARRAY typecast(siz, 'uint8')];
 
-        for i = 1:length(keys)
-            bytes = [bytes dimebdumps(keys{i}) dimebdumps(vals{i})];
+        for i = 1:length(k)
+            disp(k{i})
+            disp(v{i})
+            bytes = [bytes dimebdumps(k{i}) dimebdumps(v{i})];
         end
     end
 end

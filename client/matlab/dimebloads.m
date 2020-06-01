@@ -266,7 +266,12 @@ function [obj, nread] = loads(bytes)
                 try
                     obj.(key) = val;
                 catch
-                    obj = containers.Map(fieldnames(obj), struct2cell(obj));
+                    if ~isempty(fieldnames(obj))
+                        obj = containers.Map(fieldnames(obj), struct2cell(obj), 'UniformValues', false);
+                    else
+                        obj = containers.Map('KeyType', char(class(key)), 'ValueType', 'any');
+                    end
+
                     obj(key) = val;
                 end
             else
@@ -284,16 +289,17 @@ function [obj, nread] = loads_mat(bytes, dtype, itemsize)
     rank = bytes(2);
     shape = typecast(bytes(3:(4 * rank + 2)), 'uint32');
 
-    if length(shape) == 1
-        shape = [shape, 1];
-    end
-
     if ENDIANNESS == 'L'
         shape = swapbytes(shape);
     end
 
+    if length(shape) == 1
+        shape = [shape, 1];
+    end
+
     nread = 4 * rank + 2 + prod(shape) * itemsize;
     obj = typecast(bytes((4 * rank + 3):nread), dtype);
+
     if ENDIANNESS == 'L'
         obj = swapbytes(obj);
     end

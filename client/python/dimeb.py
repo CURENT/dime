@@ -100,6 +100,12 @@ def loads_mat(s, dtype):
     shape = struct.unpack("!" + "I" * rank, s[2:offset])
     count = np.prod(shape)
 
+    if len(shape) == 2:
+        if shape[0] == 1:
+            shape = (shape[1],)
+        elif shape[1] == 1:
+            shape = (shape[0],)
+
     arr = np.frombuffer(s, dtype, count, offset).reshape(shape, order = "F")
     if sys.byteorder != "big":
         arr = arr.byteswap()
