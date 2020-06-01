@@ -1,20 +1,5 @@
-function [obj, nread] = loads_mat(bytes, dtype, itemsize)
-    [~, ~, ENDIANNESS] = computer;
-
-    rank = bytes(2);
-    shape = typecast(bytes(3:(4 * rank + 2)), 'uint32');
-
-    if ENDIANNESS == 'L'
-        shape = swapbytes(shape);
-    end
-
-    nread = 4 * rank + 2 + prod(shape) * itemsize;
-    obj = typecast(bytes((4 * rank + 3):nread), dtype);
-    if ENDIANNESS == 'L'
-        obj = swapbytes(obj);
-    end
-
-    obj = reshape(obj, shape);
+function [obj] = dimebloads(bytes)
+    [obj, ~] = loads(bytes);
 end
 
 function [obj, nread] = loads(bytes)
@@ -147,25 +132,23 @@ function [obj, nread] = loads(bytes)
         nread = 9;
 
     case TYPE_COMPLEX_SINGLE
-        [real, imag] = typecast(bytes(2:9), 'single');
+        realimag = typecast(bytes(2:9), 'single');
 
         if ENDIANNESS == 'L'
-            real = swapbytes(real);
-            imag = swapbytes(imag);
+            realimag = swapbytes(realimag);
         end
 
-        obj = complex(real, imag);
+        obj = complex(realimag(1), realimag(2));
         nread = 9;
 
     case TYPE_COMPLEX_DOUBLE
-        [real, imag] = typecast(bytes(2:17), 'double');
+        realimag = typecast(bytes(2:17), 'double');
 
         if ENDIANNESS == 'L'
-            real = swapbytes(real);
-            imag = swapbytes(imag);
+            realimag = swapbytes(realimag);
         end
 
-        obj = complex(real, imag);
+        obj = complex(realimag(1), realimag(2));
         nread = 17;
 
     case TYPE_MAT_I8
@@ -198,7 +181,7 @@ function [obj, nread] = loads(bytes)
     case TYPE_MAT_DOUBLE
         [obj, nread] = loads_mat(bytes, 'double', 8);
 
-    case TYPE_MAT_COMPLEX_DOUBLE
+    case TYPE_MAT_COMPLEX_SINGLE
         rank = bytes(2);
         shape = typecast(bytes(3:(4 * rank + 2)), 'uint32');
 
@@ -208,15 +191,15 @@ function [obj, nread] = loads(bytes)
 
         nread = 4 * rank + 2 + prod(shape) * 8;
         realimag = typecast(bytes((4 * rank + 3):nread), 'single');
-        real = realimag(1:2:length(realimag));
-        imag = realimag(2:2:length(realimag));
+        realpart = realimag(1:2:length(realimag));
+        imagpart = realimag(2:2:length(realimag));
 
         if ENDIANNESS == 'L'
-            real = swapbytes(real);
-            imag = swapbytes(imag);
+            realpart = swapbytes(realpart);
+            imagpart = swapbytes(imagpart);
         end
 
-        obj = reshape(complex(real, imag), shape);
+        obj = reshape(complex(realpart, imagpart), shape);
 
     case TYPE_MAT_COMPLEX_DOUBLE
         rank = bytes(2);
@@ -291,8 +274,29 @@ function [obj, nread] = loads(bytes)
             end
         end
     end
+
+    nread = double(nread);
 end
 
-function [obj] = dimebloads(bytes)
-    [obj, ~] = loads(bytes);
+function [obj, nread] = loads_mat(bytes, dtype, itemsize)
+    [~, ~, ENDIANNESS] = computer;
+
+    rank = bytes(2);
+    shape = typecast(bytes(3:(4 * rank + 2)), 'uint32');
+
+    if length(shape) == 1
+        shape = [shape, 1];
+    end
+
+    if ENDIANNESS == 'L'
+        shape = swapbytes(shape);
+    end
+
+    nread = 4 * rank + 2 + prod(shape) * itemsize;
+    obj = typecast(bytes((4 * rank + 3):nread), dtype);
+    if ENDIANNESS == 'L'
+        obj = swapbytes(obj);
+    end
+
+    obj = reshape(obj, shape);
 end
