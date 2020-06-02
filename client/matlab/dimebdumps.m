@@ -41,7 +41,7 @@ function [bytes] = dimebdumps(obj)
 
     [~, ~, ENDIANNESS] = computer;
 
-    if isempty(obj)
+    if isempty(obj) && ~iscell(obj)
         bytes = [TYPE_NULL];
     elseif islogical(obj) && isscalar(obj)
         if obj
@@ -122,13 +122,6 @@ function [bytes] = dimebdumps(obj)
             end
 
             shape = uint32(size(obj));
-            %if length(shape) == 2
-            %    if shape(1) == 1
-            %        shape = shape(2)
-            %    elseif shape(2) == 1
-            %        shape = shape(1)
-            %    end
-            %end
 
             if ENDIANNESS == 'L'
                 shape = swapbytes(shape);
@@ -219,8 +212,6 @@ function [bytes] = dimebdumps(obj)
         bytes = [TYPE_ASSOCARRAY typecast(siz, 'uint8')];
 
         for i = 1:length(k)
-            disp(k{i})
-            disp(v{i})
             bytes = [bytes dimebdumps(k{i}) dimebdumps(v{i})];
         end
     end

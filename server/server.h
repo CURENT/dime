@@ -19,6 +19,13 @@ enum dime_protocol {
     */
 };
 
+enum dime_serialization {
+    DIME_NO_SERIALIZATION,
+    DIME_MATLAB,
+    DIME_PICKLE,
+    DIME_DIMEB
+};
+
 typedef struct {
     int ipv6 : 1;
     int ssl : 1;
@@ -33,6 +40,8 @@ typedef struct {
 
     int fd;
     dime_table_t fd2conn, name2conn;
+
+    int serialization;
 } dime_server_t;
 
 int dime_server_init(dime_server_t *srv);

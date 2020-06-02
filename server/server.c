@@ -94,6 +94,14 @@ static int client_foreach_appendname(const void *key, void *val, void *p) {
     return 1;
 }
 
+static int client_foreach_meta_dimeb(const void *key, void *val, void *p) {
+    dime_client_t *client = val;
+
+    dime_socket_sendfuture(&client->sock, p, NULL, 0);
+
+    return 1;
+}
+
 static int client_foreach_broadcast(const void *key, void *val, void *p) {
     struct {
         dime_client_t *client;
@@ -201,6 +209,8 @@ int dime_server_init(dime_server_t *srv) {
 
         return -1;
     }
+
+    srv->serialization = DIME_NO_SERIALIZATION;
 
     return 0;
 }
@@ -393,9 +403,10 @@ int dime_server_loop(dime_server_t *srv) {
                             FAIL_LOUDLY();
                         }
 
-                        const char *name;
+                        const char *name, *serialization;
+                        int serialization_i;
 
-                        if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
+                        if (json_unpack(jsondata, "{ssss}", "name", &name, "serialization", &serialization) < 0) {
                             FAIL_LOUDLY();
                         }
 
@@ -408,7 +419,48 @@ int dime_server_loop(dime_server_t *srv) {
                             FAIL_LOUDLY();
                         }
 
-                        json_t *response = json_pack("{si}", "status", 0);
+                        if (strcmp(serialization, "matlab") == 0) {
+                            serialization_i = DIME_MATLAB;
+                        } else if (strcmp(serialization, "pickle") == 0) {
+                            serialization_i = DIME_PICKLE;
+                        } else if (strcmp(serialization, "dimeb") == 0) {
+                            serialization_i = DIME_DIMEB;
+                        } else {
+                            FAIL_LOUDLY();
+                        }
+
+                        if (srv->serialization == DIME_NO_SERIALIZATION) {
+                            srv->serialization = serialization_i;
+                        } else if (srv->serialization != serialization_i) {
+                            if (srv->serialization != DIME_DIMEB) {
+                                json_t *meta = json_pack("{sbss}", "meta", 1, "serialization", "dimeb");
+                                if (meta == NULL) {
+                                    FAIL_LOUDLY();
+                                }
+
+                                dime_table_foreach(&srv->name2conn, client_foreach_meta_dimeb, meta);
+
+                                json_decref(meta);
+                            }
+
+                            srv->serialization = DIME_DIMEB;
+                        }
+
+                        switch (srv->serialization) {
+                        case DIME_MATLAB:
+                            serialization = "matlab";
+                            break;
+
+                        case DIME_PICKLE:
+                            serialization = "pickle";
+                            break;
+
+                        case DIME_DIMEB:
+                            serialization = "dimeb";
+                            break;
+                        }
+
+                        json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
                         if (response == NULL) {
                             FAIL_LOUDLY();
                         }
@@ -416,7 +468,6 @@ int dime_server_loop(dime_server_t *srv) {
                         dime_socket_sendfuture(&conn->sock, response, NULL, 0);
 
                         json_decref(response);
-
                         json_decref(jsondata);
                         free(bindata);
                     } else if (strcmp(cmd, "send") == 0) {
