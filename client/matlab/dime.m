@@ -1,11 +1,12 @@
 classdef dime
     properties
         name
+        serialization
         send_ll
         recv_ll
         close_ll
-        endianness
     end
+
     methods
         function obj = dime(name, proto, varargin)
             switch (proto)
@@ -25,12 +26,12 @@ classdef dime
             end
 
             obj.name = name;
-            [~, ~, obj.endianness] = computer;
 
             msg = struct();
 
             msg.command = 'register';
             msg.name = name;
+            msg.serialization = 'matlab';
 
             send(obj, msg, uint8.empty);
             [msg, ~] = recv(obj);
@@ -38,6 +39,9 @@ classdef dime
             if msg.status ~= 0
                 error(msg.errmsg);
             end
+
+            obj.serialization = msg.serialization;
+            disp(obj.serialization);
         end
 
         function delete(obj)
@@ -51,10 +55,17 @@ classdef dime
                 msg.command = 'send';
                 msg.name = name;
                 msg.varname = varargin{i};
+                msg.serialization = obj.serialization;
 
-                % This may need to be replaced later so that we don't need
-                % Matlab to encode/decode messages
-                bindata = getByteStreamFromArray(evalin('base', varargin{i}));
+                x = evalin('base', varargin{i});
+
+                switch obj.serialization
+                case 'matlab'
+                    bindata = getByteStreamFromArray(x);
+
+                case 'dimeb'
+                    bindata = dimebdumps(x);
+                end
 
                 send(obj, msg, bindata);
             end
@@ -66,8 +77,17 @@ classdef dime
 
                 msg.command = 'broadcast';
                 msg.varname = varargin{i};
+                msg.serialization = obj.serialization;
 
-                bindata = getByteStreamFromArray(evalin('base', varargin{i}));
+                x = evalin('base', varargin{i});
+
+                switch obj.serialization
+                case 'matlab'
+                    bindata = getByteStreamFromArray(x);
+
+                case 'dimeb'
+                    bindata = dimebdumps(x);
+                end
 
                 send(obj, msg, bindata);
             end
@@ -94,7 +114,16 @@ classdef dime
                     break;
                 end
 
-                x = getArrayFromByteStream(bindata);
+                switch msg.serialization
+                case 'matlab'
+                    x = getArrayFromByteStream(bindata);
+
+                case 'dimeb'
+                    x = dimebloads(bindata);
+
+                otherwise
+                    continue
+                end
 
                 assignin('base', msg.varname, x);
             end
@@ -113,13 +142,15 @@ classdef dime
         end
 
         function [] = send(obj, json, bindata)
+            [~, ~, endianness] = computer;
+
             json = uint8(jsonencode(json));
 
             json_len = uint32(length(json));
             bindata_len = uint32(length(bindata));
 
             % Convert to network (big) endianness
-            if obj.endianness == 'L'
+            if endianness == 'L'
                 json_len = swapbytes(json_len);
                 bindata_len = swapbytes(bindata_len);
             end
@@ -130,6 +161,8 @@ classdef dime
         end
 
         function [json, bindata] = recv(obj)
+            [~, ~, endianness] = computer;
+
             header = obj.recv_ll(12);
 
             if header(1:4) ~= uint8('DiME')
@@ -140,7 +173,7 @@ classdef dime
             bindata_len = typecast(header(9:12), 'uint32');
 
             % Convert from network (big) endianness
-            if obj.endianness == 'L'
+            if endianness == 'L'
                 json_len = swapbytes(json_len);
                 bindata_len = swapbytes(bindata_len);
             end
@@ -150,6 +183,15 @@ classdef dime
 
             json = jsondecode(char(msg(1:json_len)));
             bindata = msg((json_len + 1):end);
+
+            if isfield(json, 'meta') && json.meta
+                if isfield(json, 'serialization')
+                    obj.serialization = json.serialization;
+                    [json, bindata] = recv(obj);
+                else
+                    error('Received unknown meta instruction');
+                end
+            end
         end
     end
 end
