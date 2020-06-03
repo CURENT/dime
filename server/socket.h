@@ -71,7 +71,10 @@ void dime_socket_destroy(dime_socket_t *sock);
  *
  * @return A nonnegative value on success, or a negative value on failure
  */
-ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len);
+ssize_t dime_socket_push(dime_socket_t *sock,
+                         const json_t *jsondata,
+                         const void *bindata,
+                         size_t bindata_len);
 
 /**
  * @brief Adds a DiME message to the outbuffer (string version)
@@ -85,12 +88,15 @@ ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void
  *
  * @return A nonnegative value on success, or a negative value on failure
  */
-ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const void *bindata, size_t bindata_len);
+ssize_t dime_socket_push_str(dime_socket_t *sock,
+                             const char *jsonstr,
+                             const void *bindata,
+                             size_t bindata_len);
 
 /**
  * @brief Attempts to get a DiME message from the inbuffer
  *
- * Attempts to construct a DiME message from the data in the inbuffer. If there is enough data to construct a message, @em jsondata, @em bindata, and @em bindata_len are updated with the corresponding data read from the message. If a message is received, @em jsondata and @em bindata should be freed with @c json_decref and @em free, respectively, once they are no longer needed.
+ * Attempts to construct a DiME message from the data in the inbuffer. If there is enough data to construct a message, @em jsondata, @em bindata, and @em bindata_len are updated with the corresponding data read from the message. If a message is received, @em jsondata and @em bindata should be freed with @c json_decref and @c free, respectively, once they are no longer needed.
  *
  * @param sock Pointer to a @c dime_socket_t struct
  * @param jsondata Pointer to the JSON portion of the message received
@@ -99,7 +105,10 @@ ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const voi
  *
  * @return A positive value on success, zero if there is no complete message in the inbuffer, or a negative value on failure
  */
-ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, size_t *bindata_len);
+ssize_t dime_socket_pop(dime_socket_t *sock,
+                        json_t **jsondata,
+                        void **bindata,
+                        size_t *bindata_len);
 
 /**
  * @brief Sends data in the outbuffer

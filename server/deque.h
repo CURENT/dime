@@ -95,6 +95,17 @@ void *dime_deque_popl(dime_deque_t *deck);
  */
 void *dime_deque_popr(dime_deque_t *deck);
 
+typedef struct {
+    void *val;
+
+    dime_deque_t *deck;
+    size_t i;
+} dime_deque_iter_t;
+
+void dime_deque_iter_init(dime_deque_iter_t *it, dime_deque_t *deck);
+
+int dime_deque_iter_next(dime_deque_iter_t *it);
+
 /**
  * @brief Apply a function for each element in the deque
  *
@@ -102,9 +113,7 @@ void *dime_deque_popr(dime_deque_t *deck);
  * @param f Function to apply
  * @param p Pointer passed as second argument to @em f
  */
-void dime_deque_foreach(dime_deque_t *deck,
-                        int(*f)(void *, void *),
-                        void *p);
+void dime_deque_apply(dime_deque_t *deck, int(*f)(void *, void *), void *p);
 
 /**
  * @brief Get the number of elements in the deque

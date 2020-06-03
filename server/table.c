@@ -58,7 +58,7 @@ static void dime_table_relocate(dime_table_t *tbl, size_t i0) {
     tbl->arr[i] = tmp;
 
     if (k > 1) {
-        tbl->collisions++;
+        tbl->ncollisions++;
     }
 }
 
@@ -76,7 +76,7 @@ static int dime_table_grow(dime_table_t *tbl) {
     tbl->arr = arr;
     tbl->cap <<= 1;
 
-    tbl->collisions = 0;
+    tbl->ncollisions = 0;
     tbl->nfree = tbl->cap - tbl->len;
 
     for (size_t i = cap; i < tbl->cap; i++) {
@@ -105,7 +105,7 @@ int dime_table_init(dime_table_t *tbl, int (*cmp_f)(const void *, const void *),
         tbl->arr[i].use = ELEM_FREE;
     }
 
-    tbl->collisions = 0;
+    tbl->ncollisions = 0;
     tbl->nfree = tbl->cap;
 
     return 0;
@@ -151,9 +151,9 @@ int dime_table_insert(dime_table_t *tbl, const void *key, void *val) {
     tbl->len++;
 
     if (k > 1) {
-        tbl->collisions++;
+        tbl->ncollisions++;
 
-        if ((double)tbl->collisions > MAX_OVERFLOW_FACTOR * tbl->len) {
+        if ((double)tbl->ncollisions > MAX_OVERFLOW_FACTOR * tbl->len) {
             dime_table_grow(tbl);
         }
     }
@@ -192,7 +192,7 @@ void *dime_table_search(dime_table_t *tbl, const void *key) {
                     tbl->arr[i].use = ELEM_REMOVED;
 
                     if (first == firstavail) {
-                        tbl->collisions--;
+                        tbl->ncollisions--;
                     }
 
                     i = firstavail;
@@ -236,11 +236,31 @@ void *dime_table_remove(dime_table_t *tbl, const void *key) {
     return NULL;
 }
 
-size_t dime_table_size(const dime_table_t *tbl) {
+size_t dime_table_len(const dime_table_t *tbl) {
     return tbl->len;
 }
 
-void dime_table_foreach(dime_table_t *tbl, int(*f)(const void *, void *, void *), void *p) {
+void dime_table_iter_init(dime_table_iter_t *it, dime_table_t *tbl) {
+    it->tbl = tbl;
+    it->i = (size_t)-1;
+}
+
+int dime_table_iter_next(dime_table_iter_t *it) {
+    do {
+        it->i++;
+    } while (it->i < it->tbl->cap && it->tbl->arr[it->i].use != ELEM_OCCUPIED);
+
+    if (it->i == it->tbl->cap) {
+        return 0;
+    }
+
+    it->key = it->tbl->arr[it->i].key;
+    it->val = it->tbl->arr[it->i].val;
+
+    return 1;
+}
+
+void dime_table_apply(dime_table_t *tbl, int(*f)(const void *, void *, void *), void *p) {
     for (size_t i = 0; i < tbl->cap; i++) {
         if (tbl->arr[i].use == ELEM_OCCUPIED && !f(tbl->arr[i].key, tbl->arr[i].val, p)) {
             break;

@@ -47,10 +47,9 @@ typedef struct {
     uint64_t (*hash_f)(const void *);         /** Hashing function */
 
     dime_table_elem_t *arr; /** Array of elements */
-
-    size_t cap;        /** Capacity of the array */
-    size_t collisions; /** Number of collisions */
-    size_t nfree;      /** Number of free (not removed) elements */
+    size_t cap;             /** Capacity of the array */
+    size_t ncollisions;     /** Number of collisions */
+    size_t nfree;           /** Number of free (not removed) elements */
 } dime_table_t;
 
 /**
@@ -105,17 +104,6 @@ void *dime_table_search(dime_table_t *tbl, const void *key);
 void *dime_table_remove(dime_table_t *tbl, const void *key);
 
 /**
- * @brief Apply a function for each key-value pair in the table
- *
- * @param tbl Pointer to a @c dime_table_t struct
- * @param f Function to apply
- * @param p Pointer passed as third argument to @em f
- */
-void dime_table_foreach(dime_table_t *tbl,
-                        int(*f)(const void *, void *, void *),
-                        void *p);
-
-/**
  * @brief Get the number of elements in the table
  *
  * @param tbl Pointer to a @c dime_table_t struct
@@ -123,6 +111,29 @@ void dime_table_foreach(dime_table_t *tbl,
  * @return Number of elements in the table
  */
 size_t dime_table_len(const dime_table_t *tbl);
+
+typedef struct {
+    const void *key;
+    void *val;
+
+    dime_table_t *tbl;
+    size_t i;
+} dime_table_iter_t;
+
+void dime_table_iter_init(dime_table_iter_t *it, dime_table_t *tbl);
+
+int dime_table_iter_next(dime_table_iter_t *it);
+
+/**
+ * @brief Apply a function for each key-value pair in the table
+ *
+ * @param tbl Pointer to a @c dime_table_t struct
+ * @param f Function to apply
+ * @param p Pointer passed as third argument to @em f
+ */
+void dime_table_apply(dime_table_t *tbl,
+                      int(*f)(const void *, void *, void *),
+                      void *p);
 
 #ifdef __cplusplus
 }

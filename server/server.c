@@ -66,7 +66,7 @@ static void ctrlc_handler(int signum) {
     longjmp(ctrlc_env, 1);
 }
 
-static int rcmessage_foreach_destroy(void *val, void *p) {
+static int rcmessage_apply_destroy(void *val, void *p) {
     dime_rcmessage_t *msg = val;
 
     msg->refs--;
@@ -80,7 +80,7 @@ static int rcmessage_foreach_destroy(void *val, void *p) {
     return 1;
 }
 
-static int client_foreach_appendname(const void *key, void *val, void *p) {
+static int client_apply_appendname(const void *key, void *val, void *p) {
     json_t *str = json_string(key);
 
     if (str == NULL) {
@@ -94,7 +94,7 @@ static int client_foreach_appendname(const void *key, void *val, void *p) {
     return 1;
 }
 
-static int client_foreach_meta_dimeb(const void *key, void *val, void *p) {
+static int client_apply_meta_dimeb(const void *key, void *val, void *p) {
     dime_client_t *client = val;
 
     dime_socket_push(&client->sock, p, NULL, 0);
@@ -102,7 +102,7 @@ static int client_foreach_meta_dimeb(const void *key, void *val, void *p) {
     return 1;
 }
 
-static int client_foreach_broadcast(const void *key, void *val, void *p) {
+static int client_apply_broadcast(const void *key, void *val, void *p) {
     struct {
         dime_client_t *client;
         dime_rcmessage_t *msg;
@@ -123,10 +123,10 @@ static int client_foreach_broadcast(const void *key, void *val, void *p) {
     return 1;
 }
 
-static int client_foreach_destroy(const void *key, void *val, void *p) {
+static int client_apply_destroy(const void *key, void *val, void *p) {
     dime_client_t *client = val;
 
-    dime_deque_foreach(&client->queue, rcmessage_foreach_destroy, NULL);
+    dime_deque_apply(&client->queue, rcmessage_apply_destroy, NULL);
 
     dime_socket_destroy(&client->sock);
     dime_deque_destroy(&client->queue);
@@ -223,7 +223,7 @@ void dime_server_destroy(dime_server_t *srv) {
     shutdown(srv->fd, SHUT_RDWR);
     close(srv->fd);
 
-    dime_table_foreach(&srv->fd2conn, client_foreach_destroy, NULL);
+    dime_table_apply(&srv->fd2conn, client_apply_destroy, NULL);
 
     dime_table_destroy(&srv->fd2conn);
     dime_table_destroy(&srv->name2conn);
@@ -363,7 +363,7 @@ int dime_server_loop(dime_server_t *srv) {
                     dime_table_remove(&srv->name2conn, conn->name);
                 }
 
-                dime_deque_foreach(&conn->queue, rcmessage_foreach_destroy, NULL);
+                dime_deque_apply(&conn->queue, rcmessage_apply_destroy, NULL);
 
                 close(conn->fd);
                 free(conn->name);
@@ -443,7 +443,7 @@ int dime_server_loop(dime_server_t *srv) {
                                         FAIL_LOUDLY();
                                     }
 
-                                    dime_table_foreach(&srv->name2conn, client_foreach_meta_dimeb, meta);
+                                    dime_table_apply(&srv->name2conn, client_apply_meta_dimeb, meta);
 
                                     json_decref(meta);
                                 }
@@ -521,7 +521,7 @@ int dime_server_loop(dime_server_t *srv) {
                             pp.msg = msg;
                             pp.err = 0;
 
-                            dime_table_foreach(&srv->name2conn, client_foreach_broadcast, &pp);
+                            dime_table_apply(&srv->name2conn, client_apply_broadcast, &pp);
 
                             if (pp.err) {
                                 FAIL_LOUDLY();
@@ -583,7 +583,7 @@ int dime_server_loop(dime_server_t *srv) {
                                 FAIL_LOUDLY();
                             }
 
-                            dime_table_foreach(&srv->name2conn, client_foreach_appendname, jsondata);
+                            dime_table_apply(&srv->name2conn, client_apply_appendname, jsondata);
 
                             json_t *response = json_pack("{so}", "devices", jsondata);
                             if (response == NULL) {

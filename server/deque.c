@@ -128,7 +128,32 @@ void *dime_deque_popr(dime_deque_t *deck) {
     return p;
 }
 
-void dime_deque_foreach(dime_deque_t *deck, int(*f)(void *, void *), void *p) {
+size_t dime_deque_len(dime_deque_t *deck) {
+    return deck->len;
+}
+
+void dime_deque_iter_init(dime_deque_iter_t *it, dime_deque_t *deck) {
+    it->deck = deck;
+    it->i = deck->begin - 1;
+}
+
+int dime_deque_iter_next(dime_deque_iter_t *it) {
+    it->i++;
+
+    if (it->i == it->deck->cap) {
+        it->i = 0;
+    }
+
+    if (it->i == it->deck->end) {
+        return 0;
+    }
+
+    it->val = it->deck->arr[it->i];
+
+    return 1;
+}
+
+void dime_deque_apply(dime_deque_t *deck, int(*f)(void *, void *), void *p) {
     size_t i = deck->begin;
 
     while (i != deck->end) {
@@ -142,8 +167,4 @@ void dime_deque_foreach(dime_deque_t *deck, int(*f)(void *, void *), void *p) {
             i = 0;
         }
     }
-}
-
-size_t dime_deque_len(dime_deque_t *deck) {
-    return deck->len;
 }
