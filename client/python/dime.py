@@ -74,8 +74,6 @@ class DimeClient(collections.abc.MutableMapping):
             if "varname" not in jsondata:
                 break
 
-            print(jsondata["serialization"])
-
             if jsondata["serialization"] == "pickle":
                 var = pickle.loads(bindata)
             elif jsondata["serialization"] == "dimeb":

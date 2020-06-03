@@ -1,4 +1,4 @@
-classdef dime
+classdef dime < handle
     properties
         name
         serialization
