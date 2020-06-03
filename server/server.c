@@ -97,7 +97,7 @@ static int client_foreach_appendname(const void *key, void *val, void *p) {
 static int client_foreach_meta_dimeb(const void *key, void *val, void *p) {
     dime_client_t *client = val;
 
-    dime_socket_sendfuture(&client->sock, p, NULL, 0);
+    dime_socket_push(&client->sock, p, NULL, 0);
 
     return 1;
 }
@@ -381,217 +381,227 @@ int dime_server_loop(dime_server_t *srv) {
             if (pollfds[i].revents & POLLIN) {
                 printf("Got POLLIN on %d\n", conn->fd);
 
-                json_t *jsondata;
-                void *bindata;
-                size_t bindata_len;
-
-                ssize_t n = dime_socket_recvpartial(&conn->sock, &jsondata, &bindata, &bindata_len);
+                ssize_t n = dime_socket_recvpartial(&conn->sock);
 
                 if (n < 0) {
                     FAIL_LOUDLY();
-                } else if (n > 0) {
-                    const char *cmd;
+                }
 
-                    if (json_unpack(jsondata, "{ss}", "command", &cmd) < 0) {
-                        FAIL_LOUDLY();
-                    }
+                while (1) {
+                    json_t *jsondata;
+                    void *bindata;
+                    size_t bindata_len;
 
-                    printf("Got message on %d: %s\n", conn->fd, cmd);
+                    n = dime_socket_pop(&conn->sock, &jsondata, &bindata, &bindata_len);
 
-                    if (strcmp(cmd, "register") == 0) {
-                        if (conn->name != NULL) {
+                    if (n > 0) {
+                        const char *cmd;
+
+                        if (json_unpack(jsondata, "{ss}", "command", &cmd) < 0) {
                             FAIL_LOUDLY();
                         }
 
-                        const char *name, *serialization;
-                        int serialization_i;
+                        printf("Got message on %d: %s\n", conn->fd, cmd);
 
-                        if (json_unpack(jsondata, "{ssss}", "name", &name, "serialization", &serialization) < 0) {
-                            FAIL_LOUDLY();
-                        }
-
-                        conn->name = strdup(name);
-                        if (conn->name == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        if (dime_table_insert(&srv->name2conn, conn->name, conn) < 0) {
-                            FAIL_LOUDLY();
-                        }
-
-                        if (strcmp(serialization, "matlab") == 0) {
-                            serialization_i = DIME_MATLAB;
-                        } else if (strcmp(serialization, "pickle") == 0) {
-                            serialization_i = DIME_PICKLE;
-                        } else if (strcmp(serialization, "dimeb") == 0) {
-                            serialization_i = DIME_DIMEB;
-                        } else {
-                            FAIL_LOUDLY();
-                        }
-
-                        if (srv->serialization == DIME_NO_SERIALIZATION) {
-                            srv->serialization = serialization_i;
-                        } else if (srv->serialization != serialization_i) {
-                            if (srv->serialization != DIME_DIMEB) {
-                                json_t *meta = json_pack("{sbss}", "meta", 1, "serialization", "dimeb");
-                                if (meta == NULL) {
-                                    FAIL_LOUDLY();
-                                }
-
-                                dime_table_foreach(&srv->name2conn, client_foreach_meta_dimeb, meta);
-
-                                json_decref(meta);
-                            }
-
-                            srv->serialization = DIME_DIMEB;
-                        }
-
-                        switch (srv->serialization) {
-                        case DIME_MATLAB:
-                            serialization = "matlab";
-                            break;
-
-                        case DIME_PICKLE:
-                            serialization = "pickle";
-                            break;
-
-                        case DIME_DIMEB:
-                            serialization = "dimeb";
-                            break;
-                        }
-
-                        json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
-                        if (response == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        dime_socket_sendfuture(&conn->sock, response, NULL, 0);
-
-                        json_decref(response);
-                        json_decref(jsondata);
-                        free(bindata);
-                    } else if (strcmp(cmd, "send") == 0) {
-                        const char *name;
-
-                        if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
-                            FAIL_LOUDLY();
-                        }
-
-                        dime_client_t *other = dime_table_search(&srv->name2conn, name);
-                        if (other == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
-                        if (msg == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        msg->refs = 1;
-                        msg->jsondata = jsondata;
-                        msg->bindata = bindata;
-                        msg->bindata_len = bindata_len;
-
-                        if (dime_deque_pushr(&other->queue, msg) < 0) {
-                            FAIL_LOUDLY();
-                        }
-                    } else if (strcmp(cmd, "broadcast") == 0) {
-                        dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
-                        if (msg == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        msg->refs = 0;
-                        msg->jsondata = jsondata;
-                        msg->bindata = bindata;
-                        msg->bindata_len = bindata_len;
-
-                        struct {
-                            dime_client_t *client;
-                            dime_rcmessage_t *msg;
-                            int err;
-                        } pp;
-
-                        pp.client = conn;
-                        pp.msg = msg;
-                        pp.err = 0;
-
-                        dime_table_foreach(&srv->name2conn, client_foreach_broadcast, &pp);
-
-                        if (pp.err) {
-                            FAIL_LOUDLY();
-                        }
-
-                        if (msg->refs == 0) {
-                            json_decref(msg->jsondata);
-                            free(msg->bindata);
-                            free(msg);
-                        }
-                    } else if (strcmp(cmd, "sync") == 0) {
-                        json_int_t n;
-
-                        if (json_unpack(jsondata, "{sI}", "n", &n) < 0) {
-                            FAIL_LOUDLY();
-                        }
-
-                        json_decref(jsondata);
-                        free(bindata);
-
-                        size_t max = (n >= 0 ? n : (size_t)-1);
-
-                        for (size_t i = 0; i < max; i++) {
-                            dime_rcmessage_t *msg = dime_deque_popl(&conn->queue);
-
-                            if (msg == NULL) {
-                                break;
-                            }
-
-                            if (dime_socket_sendfuture(&conn->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
+                        if (strcmp(cmd, "register") == 0) {
+                            if (conn->name != NULL) {
                                 FAIL_LOUDLY();
                             }
 
-                            msg->refs--;
+                            const char *name, *serialization;
+                            int serialization_i;
+
+                            if (json_unpack(jsondata, "{ssss}", "name", &name, "serialization", &serialization) < 0) {
+                                FAIL_LOUDLY();
+                            }
+
+                            conn->name = strdup(name);
+                            if (conn->name == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            if (dime_table_insert(&srv->name2conn, conn->name, conn) < 0) {
+                                FAIL_LOUDLY();
+                            }
+
+                            if (strcmp(serialization, "matlab") == 0) {
+                                serialization_i = DIME_MATLAB;
+                            } else if (strcmp(serialization, "pickle") == 0) {
+                                serialization_i = DIME_PICKLE;
+                            } else if (strcmp(serialization, "dimeb") == 0) {
+                                serialization_i = DIME_DIMEB;
+                            } else {
+                                FAIL_LOUDLY();
+                            }
+
+                            if (srv->serialization == DIME_NO_SERIALIZATION) {
+                                srv->serialization = serialization_i;
+                            } else if (srv->serialization != serialization_i) {
+                                if (srv->serialization != DIME_DIMEB) {
+                                    json_t *meta = json_pack("{sbss}", "meta", 1, "serialization", "dimeb");
+                                    if (meta == NULL) {
+                                        FAIL_LOUDLY();
+                                    }
+
+                                    dime_table_foreach(&srv->name2conn, client_foreach_meta_dimeb, meta);
+
+                                    json_decref(meta);
+                                }
+
+                                srv->serialization = DIME_DIMEB;
+                            }
+
+                            switch (srv->serialization) {
+                            case DIME_MATLAB:
+                                serialization = "matlab";
+                                break;
+
+                            case DIME_PICKLE:
+                                serialization = "pickle";
+                                break;
+
+                            case DIME_DIMEB:
+                                serialization = "dimeb";
+                                break;
+                            }
+
+                            json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
+                            if (response == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            dime_socket_push(&conn->sock, response, NULL, 0);
+
+                            json_decref(response);
+                            json_decref(jsondata);
+                            free(bindata);
+                        } else if (strcmp(cmd, "send") == 0) {
+                            const char *name;
+
+                            if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
+                                FAIL_LOUDLY();
+                            }
+
+                            dime_client_t *other = dime_table_search(&srv->name2conn, name);
+                            if (other == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
+                            if (msg == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            msg->refs = 1;
+                            msg->jsondata = jsondata;
+                            msg->bindata = bindata;
+                            msg->bindata_len = bindata_len;
+
+                            if (dime_deque_pushr(&other->queue, msg) < 0) {
+                                FAIL_LOUDLY();
+                            }
+                        } else if (strcmp(cmd, "broadcast") == 0) {
+                            dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
+                            if (msg == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            msg->refs = 0;
+                            msg->jsondata = jsondata;
+                            msg->bindata = bindata;
+                            msg->bindata_len = bindata_len;
+
+                            struct {
+                                dime_client_t *client;
+                                dime_rcmessage_t *msg;
+                                int err;
+                            } pp;
+
+                            pp.client = conn;
+                            pp.msg = msg;
+                            pp.err = 0;
+
+                            dime_table_foreach(&srv->name2conn, client_foreach_broadcast, &pp);
+
+                            if (pp.err) {
+                                FAIL_LOUDLY();
+                            }
 
                             if (msg->refs == 0) {
                                 json_decref(msg->jsondata);
                                 free(msg->bindata);
                                 free(msg);
                             }
-                        }
+                        } else if (strcmp(cmd, "sync") == 0) {
+                            json_int_t n;
 
-                        json_t *response = json_object();
-                        if (response == NULL) {
+                            if (json_unpack(jsondata, "{sI}", "n", &n) < 0) {
+                                FAIL_LOUDLY();
+                            }
+
+                            json_decref(jsondata);
+                            free(bindata);
+
+                            size_t max = (n >= 0 ? n : (size_t)-1);
+
+                            for (size_t i = 0; i < max; i++) {
+                                dime_rcmessage_t *msg = dime_deque_popl(&conn->queue);
+
+                                if (msg == NULL) {
+                                    break;
+                                }
+
+                                if (dime_socket_push(&conn->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
+                                    FAIL_LOUDLY();
+                                }
+
+                                msg->refs--;
+
+                                if (msg->refs == 0) {
+                                    json_decref(msg->jsondata);
+                                    free(msg->bindata);
+                                    free(msg);
+                                }
+                            }
+
+                            json_t *response = json_object();
+                            if (response == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            if (dime_socket_push(&conn->sock, response, NULL, 0) < 0) {
+                                FAIL_LOUDLY();
+                            }
+
+                            json_decref(response);
+                        } else if (strcmp(cmd, "devices") == 0) {
+                            json_decref(jsondata);
+                            free(bindata);
+
+                            jsondata = json_array();
+                            if (jsondata == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            dime_table_foreach(&srv->name2conn, client_foreach_appendname, jsondata);
+
+                            json_t *response = json_pack("{so}", "devices", jsondata);
+                            if (response == NULL) {
+                                FAIL_LOUDLY();
+                            }
+
+                            if (dime_socket_push(&conn->sock, response, NULL, 0) < 0) {
+                                FAIL_LOUDLY();
+                            }
+
+                            json_decref(response);
+                        } else {
                             FAIL_LOUDLY();
                         }
-
-                        if (dime_socket_sendfuture(&conn->sock, response, NULL, 0) < 0) {
-                            FAIL_LOUDLY();
-                        }
-
-                        json_decref(response);
-                    } else if (strcmp(cmd, "devices") == 0) {
-                        json_decref(jsondata);
-                        free(bindata);
-
-                        jsondata = json_array();
-                        if (jsondata == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        dime_table_foreach(&srv->name2conn, client_foreach_appendname, jsondata);
-
-                        json_t *response = json_pack("{so}", "devices", jsondata);
-                        if (response == NULL) {
-                            FAIL_LOUDLY();
-                        }
-
-                        if (dime_socket_sendfuture(&conn->sock, response, NULL, 0) < 0) {
-                            FAIL_LOUDLY();
-                        }
-
-                        json_decref(response);
-                    } else {
+                    } else if (n < 0) {
                         FAIL_LOUDLY();
+                    } else {
+                        break;
                     }
                 }
             }

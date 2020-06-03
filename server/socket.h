@@ -71,7 +71,35 @@ void dime_socket_destroy(dime_socket_t *sock);
  *
  * @return A nonnegative value on success, or a negative value on failure
  */
-int dime_socket_sendfuture(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len);
+ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len);
+
+/**
+ * @brief Adds a DiME message to the outbuffer (string version)
+ *
+ * Functions identically to @link dime_socket_push @endlink, but a pre-encoded JSON string is provided instead of a @em json_t handle. Useful for saving computational power if the same message is sent over multiple sockets.
+ *
+ * @param sock Pointer to a @c dime_socket_t struct
+ * @param jsonstr JSON portion of the message to send, as a NUL-terminated string
+ * @param bindata Binary portion of the message to send
+ * @param bindata_len Length of binary data
+ *
+ * @return A nonnegative value on success, or a negative value on failure
+ */
+ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const void *bindata, size_t bindata_len);
+
+/**
+ * @brief Attempts to get a DiME message from the inbuffer
+ *
+ * Attempts to construct a DiME message from the data in the inbuffer. If there is enough data to construct a message, @em jsondata, @em bindata, and @em bindata_len are updated with the corresponding data read from the message. If a message is received, @em jsondata and @em bindata should be freed with @c json_decref and @em free, respectively, once they are no longer needed.
+ *
+ * @param sock Pointer to a @c dime_socket_t struct
+ * @param jsondata Pointer to the JSON portion of the message received
+ * @param bindata Pointer to the binary portion of the message received
+ * @param bindata_len Pointer to the length of the binary data
+ *
+ * @return A positive value on success, zero if there is no complete message in the inbuffer, or a negative value on failure
+ */
+ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, size_t *bindata_len);
 
 /**
  * @brief Sends data in the outbuffer
@@ -87,16 +115,13 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock);
 /**
  * @brief Recieves data and writes it to the inbuffer
  *
- * Attempts to receive a given amount of data. If data is received, it is written to the inbuffer and the program attempts to construct a DiME message from the data in the inbuffer. If there is enough data to construct a message, @em jsondata, @em bindata, and @em bindata_len are updated with the corresponding data read from the message. If a message is received, @em jsondata and @em bindata should be freed with @c json_decref and @em free, respectively, once they are no longer needed.
+ * Attempts to receive a given amount of data. If data is received, it is written to the inbuffer and can be interpreted by a later call to @link dime_socket_pop @endlink.
  *
  * @param sock Pointer to a @c dime_socket_t struct
- * @param jsondata Pointer to the JSON portion of the message received
- * @param bindata Pointer to the binary portion of the message received
- * @param bindata_len Pointer to the length of the binary data
  *
- * @return Number of bytes read on a successful message decoding, a negative value on failure, zero otherwise
+ * @return Number of bytes received on success, or a negative value on failure
  */
-ssize_t dime_socket_recvpartial(dime_socket_t *sock, json_t **jsondata, void **bindata, size_t *bindata_len);
+ssize_t dime_socket_recvpartial(dime_socket_t *sock);
 
 /**
  * @brief Get the file descriptor of the socket
