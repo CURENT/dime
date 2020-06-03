@@ -50,6 +50,11 @@ static int cmp_name(const void *a, const void *b) {
     return strcmp(a, b);
 }
 
+/*
+ * Note: FNV1a is currently used here to hash strings, but since this is a
+ * network-enabled program, we may want to use a randomized hashing algorithm
+ * like SipHash
+ */
 static uint64_t hash_name(const void *a) {
     uint64_t y = 0xCBF29CE484222325;
 
