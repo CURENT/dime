@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 
+#include "error.h"
 #include "table.h"
 
 enum dime_table_elem_use {
@@ -94,6 +95,7 @@ int dime_table_init(dime_table_t *tbl, int (*cmp_f)(const void *, const void *),
     tbl->cap = 32;
     tbl->arr = malloc(tbl->cap * sizeof(dime_table_elem_t));
     if (tbl->arr == NULL) {
+        dime_errorstring("Out of memory");
         return -1;
     }
 
@@ -118,6 +120,7 @@ void dime_table_destroy(dime_table_t *tbl) {
 int dime_table_insert(dime_table_t *tbl, const void *key, void *val) {
     if (tbl->len >= tbl->cap) {
         if (!dime_table_grow(tbl)) {
+            dime_errorstring("Out of memory");
             return -1;
         }
     } else if ((double)tbl->len > MAX_LOAD_FACTOR * tbl->cap) {
@@ -134,6 +137,7 @@ int dime_table_insert(dime_table_t *tbl, const void *key, void *val) {
 
     while (tbl->arr[i].use == ELEM_OCCUPIED) {
         if (tbl->cmp_f(key, tbl->arr[i].key) == 0) {
+            dime_errorstring("Key collision");
             return -1;
         }
 

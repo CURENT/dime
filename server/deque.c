@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "deque.h"
+#include "error.h"
 
 struct dime_deque {
     size_t len;
@@ -18,6 +19,7 @@ int dime_deque_init(dime_deque_t *deck) {
     deck->cap = 16;
     deck->arr = malloc(deck->cap * sizeof(void *));
     if (deck->arr == NULL) {
+        dime_errorstring("Out of memory");
         return -1;
     }
 
@@ -35,6 +37,7 @@ int dime_deque_pushl(dime_deque_t *deck, void *p) {
         size_t ncap = (3 * deck->cap) / 2;
         void **narr = realloc(deck->arr, ncap * sizeof(void *));
         if (narr == NULL) {
+            dime_errorstring("Out of memory");
             return -1;
         }
 
@@ -67,6 +70,7 @@ int dime_deque_pushr(dime_deque_t *deck, void *p) {
         size_t ncap = (3 * deck->cap) / 2;
         void **narr = realloc(deck->arr, ncap * sizeof(void *));
         if (narr == NULL) {
+            dime_errorstring("Out of memory");
             return -1;
         }
 

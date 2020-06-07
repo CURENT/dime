@@ -9,34 +9,15 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <setjmp.h>
+#include <assert.h>
 
 #include <jansson.h>
 
+#include "client.h"
 #include "server.h"
 #include "table.h"
 #include "deque.h"
 #include "socket.h"
-#include <stdio.h>
-
-#define STRINGIZE(x) STRINGIZE2(x)
-#define STRINGIZE2(x) #x
-#define FAIL_LOUDLY() { perror(__FILE__ ":" STRINGIZE(__LINE__)); raise(SIGKILL); }
-
-typedef struct {
-    unsigned int refs;
-
-    json_t *jsondata;
-    void *bindata;
-    size_t bindata_len;
-} dime_rcmessage_t;
-
-typedef struct {
-    int fd;
-    char *name;
-
-    dime_socket_t sock;
-    dime_deque_t queue;
-} dime_client_t;
 
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
@@ -71,83 +52,13 @@ static void ctrlc_handler(int signum) {
     longjmp(ctrlc_env, 1);
 }
 
-static int rcmessage_apply_destroy(void *val, void *p) {
-    dime_rcmessage_t *msg = val;
-
-    msg->refs--;
-
-    if (msg->refs == 0) {
-        json_decref(msg->jsondata);
-        free(msg->bindata);
-        free(msg);
-    }
-
-    return 1;
-}
-
-static int client_apply_appendname(const void *key, void *val, void *p) {
-    json_t *str = json_string(key);
-
-    if (str == NULL) {
-        FAIL_LOUDLY();
-    }
-
-    if (json_array_append_new(p, str) < 0) {
-        FAIL_LOUDLY();
-    }
-
-    return 1;
-}
-
-static int client_apply_meta_dimeb(const void *key, void *val, void *p) {
-    dime_client_t *client = val;
-
-    dime_socket_push(&client->sock, p, NULL, 0);
-
-    return 1;
-}
-
-static int client_apply_broadcast(const void *key, void *val, void *p) {
-    struct {
-        dime_client_t *client;
-        dime_rcmessage_t *msg;
-        int err;
-    } *pp = p;
-
-    dime_client_t *client = val;
-
-    if (client != pp->client) {
-        if (dime_deque_pushr(&client->queue, pp->msg) < 0) {
-            pp->err = 1;
-            return 0;
-        }
-
-        pp->msg->refs++;
-    }
-
-    return 1;
-}
-
-static int client_apply_destroy(const void *key, void *val, void *p) {
-    dime_client_t *client = val;
-
-    dime_deque_apply(&client->queue, rcmessage_apply_destroy, NULL);
-
-    dime_socket_destroy(&client->sock);
-    dime_deque_destroy(&client->queue);
-    free(client->name);
-    free(client);
-
-    return 1;
-}
-
 int dime_server_init(dime_server_t *srv) {
-    if (dime_table_init(&srv->fd2conn, cmp_fd, hash_fd) < 0) {
+    if (dime_table_init(&srv->fd2clnt, cmp_fd, hash_fd) < 0) {
         return -1;
     }
 
-    if (dime_table_init(&srv->name2conn, cmp_name, hash_name) < 0) {
-        dime_table_destroy(&srv->fd2conn);
+    if (dime_table_init(&srv->name2clnt, cmp_name, hash_name) < 0) {
+        dime_table_destroy(&srv->fd2clnt);
 
         return -1;
     }
@@ -185,32 +96,32 @@ int dime_server_init(dime_server_t *srv) {
         break;
 
     default:
-        dime_table_destroy(&srv->fd2conn);
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2clnt);
+        dime_table_destroy(&srv->name2clnt);
 
         return -1;
     }
 
     srv->fd = socket(socktype, SOCK_STREAM, proto);
     if (srv->fd < 0) {
-        dime_table_destroy(&srv->fd2conn);
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2clnt);
+        dime_table_destroy(&srv->name2clnt);
 
         return -1;
     }
 
     if (bind(srv->fd, (struct sockaddr *)&addr, addrlen) < 0) {
         close(srv->fd);
-        dime_table_destroy(&srv->fd2conn);
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2clnt);
+        dime_table_destroy(&srv->name2clnt);
 
         return -1;
     }
 
     if (listen(srv->fd, 5) < 0) {
         close(srv->fd);
-        dime_table_destroy(&srv->fd2conn);
-        dime_table_destroy(&srv->name2conn);
+        dime_table_destroy(&srv->fd2clnt);
+        dime_table_destroy(&srv->name2clnt);
 
         return -1;
     }
@@ -221,6 +132,7 @@ int dime_server_init(dime_server_t *srv) {
 }
 
 void dime_server_destroy(dime_server_t *srv) {
+
     if (srv->protocol == DIME_UNIX) {
         unlink(srv->pathname);
     }
@@ -228,10 +140,17 @@ void dime_server_destroy(dime_server_t *srv) {
     shutdown(srv->fd, SHUT_RDWR);
     close(srv->fd);
 
-    dime_table_apply(&srv->fd2conn, client_apply_destroy, NULL);
+    dime_table_iter_t it;
 
-    dime_table_destroy(&srv->fd2conn);
-    dime_table_destroy(&srv->name2conn);
+    dime_table_iter_init(&it, &srv->fd2clnt);
+
+    while (dime_table_iter_next(&it)) {
+        dime_client_destroy(it.val);
+        free(it.val);
+    }
+
+    dime_table_destroy(&srv->fd2clnt);
+    dime_table_destroy(&srv->name2clnt);
 }
 
 int dime_server_loop(dime_server_t *srv) {
@@ -265,9 +184,7 @@ int dime_server_loop(dime_server_t *srv) {
             signal(SIGPIPE, sigpipe_f);
         }
 
-        printf("Freeing %p\n", pollfds);
         free(pollfds);
-
         return 0;
     }
 
@@ -302,79 +219,97 @@ int dime_server_loop(dime_server_t *srv) {
     pollfds_len = 1;
 
     while (1) {
-        printf("Polling... ");
-        fflush(stdout);
         if (poll(pollfds, pollfds_len, -1) < 0) {
-            FAIL_LOUDLY();
+            signal(SIGPIPE, sigpipe_f);
+            signal(SIGTERM, sigterm_f);
+            signal(SIGINT, sigint_f);
+            free(pollfds);
+
+            return -1;
         }
-        printf("Done!\n");
 
         if (pollfds[0].revents & POLLIN) {
-            dime_client_t *conn = malloc(sizeof(dime_client_t));
-            if (conn == NULL) {
-                FAIL_LOUDLY();
+            dime_client_t *clnt = malloc(sizeof(dime_client_t));
+            if (clnt == NULL) {
+                signal(SIGPIPE, sigpipe_f);
+                signal(SIGTERM, sigterm_f);
+                signal(SIGINT, sigint_f);
+                free(pollfds);
+
+                return -1;
             }
 
-            conn->fd = accept(srv->fd, NULL, NULL);
-            if (conn->fd < 0) {
-                FAIL_LOUDLY();
+            int fd = accept(srv->fd, NULL, NULL);
+            if (fd < 0) {
+                free(clnt);
+                signal(SIGPIPE, sigpipe_f);
+                signal(SIGTERM, sigterm_f);
+                signal(SIGINT, sigint_f);
+                free(pollfds);
+
+                return -1;
             }
 
-            if (dime_socket_init(&conn->sock, conn->fd) < 0) {
-                FAIL_LOUDLY();
+            if (dime_client_init(clnt, fd) < 0) {
+                close(fd);
+                free(clnt);
+                signal(SIGPIPE, sigpipe_f);
+                signal(SIGTERM, sigterm_f);
+                signal(SIGINT, sigint_f);
+                free(pollfds);
+
+                return -1;
             }
 
-            if (dime_deque_init(&conn->queue) < 0) {
-                FAIL_LOUDLY();
+            if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
+                dime_client_destroy(clnt);
+                free(clnt);
+                signal(SIGPIPE, sigpipe_f);
+                signal(SIGTERM, sigterm_f);
+                signal(SIGINT, sigint_f);
+                free(pollfds);
+
+                return -1;
             }
-
-            conn->name = NULL;
-
-            if (dime_table_insert(&srv->fd2conn, &conn->fd, conn) < 0) {
-                FAIL_LOUDLY();
-            }
-
-            pollfds[pollfds_len].fd = conn->fd;
-            pollfds[pollfds_len].events = POLLIN;
-            pollfds[pollfds_len].revents = 0;
-            pollfds_len++;
 
             if (pollfds_len >= pollfds_cap) {
                 size_t ncap = (3 * pollfds_cap) / 2;
 
                 void *narr = realloc(pollfds, ncap * sizeof(struct pollfd));
                 if (narr == NULL) {
-                    FAIL_LOUDLY();
+                    dime_client_destroy(clnt);
+                    free(clnt);
+                    signal(SIGPIPE, sigpipe_f);
+                    signal(SIGTERM, sigterm_f);
+                    signal(SIGINT, sigint_f);
+                    free(pollfds);
+
+                    return -1;
                 }
 
                 pollfds = narr;
                 pollfds_cap = ncap;
             }
 
-            printf("Opened socket %d\n", conn->fd);
+            pollfds[pollfds_len].fd = clnt->fd;
+            pollfds[pollfds_len].events = POLLIN;
+            pollfds[pollfds_len].revents = 0;
+            pollfds_len++;
         }
 
         for (size_t i = 1; i < pollfds_len; i++) {
-            dime_client_t *conn = dime_table_search(&srv->fd2conn, &pollfds[i].fd);
+            dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &pollfds[i].fd);
+            assert(clnt != NULL);
 
             if (pollfds[i].revents & POLLHUP) {
-                printf("Closed socket %d\n", conn->fd);
+                dime_table_remove(&srv->fd2clnt, &clnt->fd);
 
-                if (dime_table_remove(&srv->fd2conn, &conn->fd) == NULL) {
-                    FAIL_LOUDLY();
+                if (clnt->name != NULL) {
+                    dime_table_remove(&srv->name2clnt, clnt->name);
                 }
 
-                if (conn->name != NULL) {
-                    dime_table_remove(&srv->name2conn, conn->name);
-                }
-
-                dime_deque_apply(&conn->queue, rcmessage_apply_destroy, NULL);
-
-                close(conn->fd);
-                free(conn->name);
-                dime_socket_destroy(&conn->sock);
-                dime_deque_destroy(&conn->queue);
-                free(conn);
+                dime_client_destroy(clnt);
+                free(clnt);
 
                 pollfds[i] = pollfds[pollfds_len - 1];
                 pollfds_len--;
@@ -384,12 +319,15 @@ int dime_server_loop(dime_server_t *srv) {
             }
 
             if (pollfds[i].revents & POLLIN) {
-                printf("Got POLLIN on %d\n", conn->fd);
-
-                ssize_t n = dime_socket_recvpartial(&conn->sock);
+                ssize_t n = dime_socket_recvpartial(&clnt->sock);
 
                 if (n < 0) {
-                    FAIL_LOUDLY();
+                    signal(SIGPIPE, sigpipe_f);
+                    signal(SIGTERM, sigterm_f);
+                    signal(SIGINT, sigint_f);
+                    free(pollfds);
+
+                    return -1;
                 }
 
                 while (1) {
@@ -397,214 +335,68 @@ int dime_server_loop(dime_server_t *srv) {
                     void *bindata;
                     size_t bindata_len;
 
-                    n = dime_socket_pop(&conn->sock, &jsondata, &bindata, &bindata_len);
+                    n = dime_socket_pop(&clnt->sock, &jsondata, &bindata, &bindata_len);
 
                     if (n > 0) {
                         const char *cmd;
 
                         if (json_unpack(jsondata, "{ss}", "command", &cmd) < 0) {
-                            FAIL_LOUDLY();
+                            json_decref(jsondata);
+                            free(bindata);
+                            signal(SIGPIPE, sigpipe_f);
+                            signal(SIGTERM, sigterm_f);
+                            signal(SIGINT, sigint_f);
+                            free(pollfds);
+
+                            return -1;
                         }
 
-                        printf("Got message on %d: %s\n", conn->fd, cmd);
+                        int err;
 
+                        /*
+                         * As more commands are added, this section of code
+                         * might be more efficient as a table of function
+                         * pointers
+                         */
                         if (strcmp(cmd, "register") == 0) {
-                            if (conn->name != NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            const char *name, *serialization;
-                            int serialization_i;
-
-                            if (json_unpack(jsondata, "{ssss}", "name", &name, "serialization", &serialization) < 0) {
-                                FAIL_LOUDLY();
-                            }
-
-                            conn->name = strdup(name);
-                            if (conn->name == NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            if (dime_table_insert(&srv->name2conn, conn->name, conn) < 0) {
-                                FAIL_LOUDLY();
-                            }
-
-                            if (strcmp(serialization, "matlab") == 0) {
-                                serialization_i = DIME_MATLAB;
-                            } else if (strcmp(serialization, "pickle") == 0) {
-                                serialization_i = DIME_PICKLE;
-                            } else if (strcmp(serialization, "dimeb") == 0) {
-                                serialization_i = DIME_DIMEB;
-                            } else {
-                                FAIL_LOUDLY();
-                            }
-
-                            if (srv->serialization == DIME_NO_SERIALIZATION) {
-                                srv->serialization = serialization_i;
-                            } else if (srv->serialization != serialization_i) {
-                                if (srv->serialization != DIME_DIMEB) {
-                                    json_t *meta = json_pack("{sbss}", "meta", 1, "serialization", "dimeb");
-                                    if (meta == NULL) {
-                                        FAIL_LOUDLY();
-                                    }
-
-                                    dime_table_apply(&srv->name2conn, client_apply_meta_dimeb, meta);
-
-                                    json_decref(meta);
-                                }
-
-                                srv->serialization = DIME_DIMEB;
-                            }
-
-                            switch (srv->serialization) {
-                            case DIME_MATLAB:
-                                serialization = "matlab";
-                                break;
-
-                            case DIME_PICKLE:
-                                serialization = "pickle";
-                                break;
-
-                            case DIME_DIMEB:
-                                serialization = "dimeb";
-                                break;
-                            }
-
-                            json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
-                            if (response == NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            dime_socket_push(&conn->sock, response, NULL, 0);
-
-                            json_decref(response);
-                            json_decref(jsondata);
-                            free(bindata);
+                            err = dime_client_join(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "send") == 0) {
-                            const char *name;
-
-                            if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
-                                FAIL_LOUDLY();
-                            }
-
-                            dime_client_t *other = dime_table_search(&srv->name2conn, name);
-                            if (other == NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
-                            if (msg == NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            msg->refs = 1;
-                            msg->jsondata = jsondata;
-                            msg->bindata = bindata;
-                            msg->bindata_len = bindata_len;
-
-                            if (dime_deque_pushr(&other->queue, msg) < 0) {
-                                FAIL_LOUDLY();
-                            }
+                            err = dime_client_send(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "broadcast") == 0) {
-                            dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
-                            if (msg == NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            msg->refs = 0;
-                            msg->jsondata = jsondata;
-                            msg->bindata = bindata;
-                            msg->bindata_len = bindata_len;
-
-                            struct {
-                                dime_client_t *client;
-                                dime_rcmessage_t *msg;
-                                int err;
-                            } pp;
-
-                            pp.client = conn;
-                            pp.msg = msg;
-                            pp.err = 0;
-
-                            dime_table_apply(&srv->name2conn, client_apply_broadcast, &pp);
-
-                            if (pp.err) {
-                                FAIL_LOUDLY();
-                            }
-
-                            if (msg->refs == 0) {
-                                json_decref(msg->jsondata);
-                                free(msg->bindata);
-                                free(msg);
-                            }
+                            err = dime_client_broadcast(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "sync") == 0) {
-                            json_int_t n;
-
-                            if (json_unpack(jsondata, "{sI}", "n", &n) < 0) {
-                                FAIL_LOUDLY();
-                            }
-
-                            json_decref(jsondata);
-                            free(bindata);
-
-                            size_t max = (n >= 0 ? n : (size_t)-1);
-
-                            for (size_t i = 0; i < max; i++) {
-                                dime_rcmessage_t *msg = dime_deque_popl(&conn->queue);
-
-                                if (msg == NULL) {
-                                    break;
-                                }
-
-                                if (dime_socket_push(&conn->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
-                                    FAIL_LOUDLY();
-                                }
-
-                                msg->refs--;
-
-                                if (msg->refs == 0) {
-                                    json_decref(msg->jsondata);
-                                    free(msg->bindata);
-                                    free(msg);
-                                }
-                            }
-
-                            json_t *response = json_object();
-                            if (response == NULL) {
-                                FAIL_LOUDLY();
-                            }
-
-                            if (dime_socket_push(&conn->sock, response, NULL, 0) < 0) {
-                                FAIL_LOUDLY();
-                            }
-
-                            json_decref(response);
+                            err = dime_client_sync(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "devices") == 0) {
+                            err = dime_client_devices(clnt, srv, jsondata, bindata, bindata_len);
+                        } else {
                             json_decref(jsondata);
                             free(bindata);
+                            signal(SIGPIPE, sigpipe_f);
+                            signal(SIGTERM, sigterm_f);
+                            signal(SIGINT, sigint_f);
+                            free(pollfds);
 
-                            jsondata = json_array();
-                            if (jsondata == NULL) {
-                                FAIL_LOUDLY();
-                            }
+                            return -1;
+                        }
 
-                            dime_table_apply(&srv->name2conn, client_apply_appendname, jsondata);
+                        json_decref(jsondata);
+                        free(bindata);
 
-                            json_t *response = json_pack("{so}", "devices", jsondata);
-                            if (response == NULL) {
-                                FAIL_LOUDLY();
-                            }
+                        if (err < 0) {
+                            signal(SIGPIPE, sigpipe_f);
+                            signal(SIGTERM, sigterm_f);
+                            signal(SIGINT, sigint_f);
+                            free(pollfds);
 
-                            if (dime_socket_push(&conn->sock, response, NULL, 0) < 0) {
-                                FAIL_LOUDLY();
-                            }
-
-                            json_decref(response);
-                        } else {
-                            FAIL_LOUDLY();
+                            return -1;
                         }
                     } else if (n < 0) {
-                        FAIL_LOUDLY();
+                        signal(SIGPIPE, sigpipe_f);
+                        signal(SIGTERM, sigterm_f);
+                        signal(SIGINT, sigint_f);
+                        free(pollfds);
+
+                        return -1;
                     } else {
                         break;
                     }
@@ -612,18 +404,19 @@ int dime_server_loop(dime_server_t *srv) {
             }
 
             if (pollfds[i].revents & POLLOUT) {
-                printf("Got POLLOUT on %d\n", conn->fd);
+                if (dime_socket_sendpartial(&clnt->sock) < 0) {
+                    signal(SIGPIPE, sigpipe_f);
+                    signal(SIGTERM, sigterm_f);
+                    signal(SIGINT, sigint_f);
+                    free(pollfds);
 
-                if (dime_socket_sendpartial(&conn->sock) < 0) {
-                    FAIL_LOUDLY();
+                    return -1;
                 }
             }
 
-            if (dime_socket_sendlen(&conn->sock) > 0) {
-                printf("POLLOUT is ON on socket %d\n", conn->fd);
+            if (dime_socket_sendlen(&clnt->sock) > 0) {
                 pollfds[i].events |= POLLOUT;
             } else {
-                printf("POLLOUT is OFF on socket %d\n", conn->fd);
                 pollfds[i].events &= ~POLLOUT;
             }
 

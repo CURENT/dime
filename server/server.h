@@ -29,19 +29,16 @@ enum dime_serialization {
 typedef struct {
     int ipv6 : 1;
     int ssl : 1;
+    int zlib : 1;
     int verbose : 1;
     char : 0;
 
-    int protocol;
+    int protocol, serialization;
     const char *pathname;
     uint16_t port;
 
-    char *err;
-
     int fd;
-    dime_table_t fd2conn, name2conn;
-
-    int serialization;
+    dime_table_t fd2clnt, name2clnt;
 } dime_server_t;
 
 int dime_server_init(dime_server_t *srv);
