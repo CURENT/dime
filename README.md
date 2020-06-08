@@ -62,7 +62,7 @@ I was originally tasked with optimizing the old DiME code, and upon analyzing it
 
 It's been said that single-threaded programs have _x_ bugs, whereas multi-threaded programs running _y_ threads have _x^y_ bugs. Even when disregarding the class of problems introduced by concurrency, it is usually a nicety and most programs don't need it. An I/O-bound program like the DiME server will be simpler, less error-prone, use less memory, and have comparable performance if it uses `poll` rather than spawning a thread for each incoming connection.
 
-That having been said, multi-threading may not be avoided in the future. A technique used by several HTTP servers to tackle the C10k problem (e.g. Nginx, lighttpd) is to have a pool of worker threads that each `poll` a set of client connections dispached to them by the main thread. (An excellent article on the I/O performance of threads vs `poll`/`select` can be found [here](https://thetechsolo.wordpress.com/2016/02/29/scalable-io-events-vs-multithreading-based/).) This approach may be used by this code in the future, if such scalability is desired.
+That having been said, multi-threading may not be avoided in the future. A technique used by several HTTP servers to tackle the C10k problem (e.g. Nginx, lighttpd) is to have a fixed-size pool of worker threads that each `poll` a set of client connections dispatched to them by the main thread. (An excellent article on the I/O performance of threads vs `poll`/`select` can be found [here](https://thetechsolo.wordpress.com/2016/02/29/scalable-io-events-vs-multithreading-based/).) This approach may be used by this code in the future, if such scalability is desired.
 
 ### Why are you writing this in C instead of < insert my favorite language here >?
 
