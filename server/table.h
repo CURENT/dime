@@ -113,13 +113,36 @@ void *dime_table_remove(dime_table_t *tbl, const void *key);
 size_t dime_table_len(const dime_table_t *tbl);
 
 typedef struct {
-    const void *key;
-    void *val;
+    const void *key; /** Key */
+    void *val;       /** Value */
 
-    dime_table_t *tbl;
-    size_t i;
+    dime_table_t *tbl; /** Table */
+    size_t i;          /** Index in table */
 } dime_table_iter_t;
 
+/**
+ * @brief Initialize a new table iterator
+ *
+ * Initialize a new iterator for the table @em tbl. The member variables @c key and @c val point to the current key-value pair the iterator is on. Two important caveats for the iterators created via this function:
+ *
+ * - The iterator need not be explicitly destroyed; it does not use any heap memory on its own
+ *
+ *
+ * - @link dime_table_iter_next @endlink must be called at least once before @c key and @c val point to a valid key-value pair. This is similar to how Python's iterators behave with @c iter and @c next.
+ *
+ *
+ * Below is a code example showing how to use the iterators:
+@code
+dime_table_iter_t it;
+dime_table_iter_init(&it, pointer_to_my_table);
+
+while (dime_table_iter_next(&it)) {
+    do_something_with(it.key, it.val);
+}
+@endcode
+ *
+ *
+ */
 void dime_table_iter_init(dime_table_iter_t *it, dime_table_t *tbl);
 
 int dime_table_iter_next(dime_table_iter_t *it);

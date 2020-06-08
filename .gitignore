@@ -2,3 +2,4 @@
 *.o
 __pycache__
 /server/dime
+/docs
