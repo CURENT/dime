@@ -54,7 +54,7 @@ translate according to the following table:
 
 ### Why a rewrite?
 
-The old DiME code works fine for small-to-medium workloads, but introducing greater scalability into the old code would require several radical changes in the way it handles I/O. This is an issue, as the server's performance is starting to become a bottleneck for the large simulation projects CURENT intends to run on the platform. So the code needs to be improved with respect to performance, but room for improvement without a rewrite is rather limited.
+The old DiME code works fine for small-to-medium workloads, but introducing greater scalability into the old code would require several radical changes in the way it handles I/O. This is an issue, as the server's performance is starting to become a bottleneck for the large simulation projects CURENT intends to run on the platform. So the code needs to be improved with respect to performance, but room for improvement without an almost-total reimplementation is rather limited.
 
 I was originally tasked with optimizing the old DiME code, and upon analyzing it I tried to see if I could reimplement its core functionality in a smaller package. I had done so [in ~200 lines of Python](https://github.com/TheHashTableSlasher/dime2/blob/554e99e12db343757445c87d46f9caac20b71d35/server/prototype.py). From that point, I determined that a rewrite would involve less effort than trying to further optimize the old code.
 
