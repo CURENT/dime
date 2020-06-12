@@ -4,15 +4,6 @@
 #include "deque.h"
 #include "error.h"
 
-struct dime_deque {
-    size_t len;
-
-    void **arr;
-    size_t cap;
-
-    size_t begin, end;
-};
-
 int dime_deque_init(dime_deque_t *deck) {
     deck->len = 0;
 
