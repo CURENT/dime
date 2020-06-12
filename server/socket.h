@@ -20,6 +20,25 @@
  * @brief Asynchronous DiME socket
  * @author Nicholas West
  * @date 2020
+ *
+ * A wrapper for a stream-oriented socket to send and receive DiME
+ * messages on. A DiME message consists of the following data:
+ * - A 4-byte magic value ("DiME" in ASCII)
+ * - A 4 byte big-endian value for the size in bytes of the JSON portion
+ *   of the data
+ * - A 4 byte big-endian value for the size in bytes of the binary
+ *   portion of the data
+ * - The JSON portion of the data
+ * - The binary portion of the data
+ *
+ * Both input and output from the underlying file descriptor is buffered
+ * via @link dime_ringbuffer_t @endlink ring buffers. The @c read and
+ * @c write syscalls and parsing/building data from the buffers is
+ * decoupled; this enables the socket to queue messages on the socket
+ * without blocking for them to be written, and allows it to perform a
+ * read if input is detected via @c select or @c poll without waiting
+ * for a full message to be received.
+
  */
 
 #include <stddef.h>
@@ -35,11 +54,28 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Asynchronous DiME socket
+ *
+ * Should be treated as opaque; use relevant methods to send and receive
+ * messages on the socket.
+ *
+ * @see dime_socket_init
+ * @see dime_socket_destroy
+ * @see dime_socket_push
+ * @see dime_socket_push_str
+ * @see dime_socket_pop
+ * @see dime_socket_sendpartial
+ * @see dime_socket_recvpartial
+ * @see dime_socket_fd
+ * @see dime_socket_sendlen
+ * @see dime_socket_recvlen
+ */
 typedef struct {
-    int fd; /** File descriptor */
+    int fd; /* File descriptor */
 
-    dime_ringbuffer_t rbuf; /** Inbuffer */
-    dime_ringbuffer_t wbuf; /** Outbuffer */
+    dime_ringbuffer_t rbuf; /* Inbuffer */
+    dime_ringbuffer_t wbuf; /* Outbuffer */
 } dime_socket_t;
 
 /**
@@ -48,28 +84,46 @@ typedef struct {
  * @param sock Pointer to a @c dime_socket_t struct
  * @param fd File descriptor to send/receive on
  *
- * @return A nonnegative value on success, or a negative value on failure
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_destroy
  */
 int dime_socket_init(dime_socket_t *sock, int fd);
 
 /**
  * @brief Free resources used by a socket
  *
+ * By default, this function closes the file descriptor that was used to
+ * initialize the socket. Pass a file descriptor created with @c dup if
+ * this behavior is undesirable.
+ *
  * @param sock Pointer to a @c dime_socket_t struct
+ *
+ * @see dime_socket_init
  */
 void dime_socket_destroy(dime_socket_t *sock);
 
 /**
  * @brief Adds a DiME message to the outbuffer
  *
- * Composes a DiME message from the JSON data in @em jsondata and the binary data in @em bindata, and adds the message to the outbuffer. The message is not sent directly; subsequent calls to @link dime_socket_sendpartial @endlink will send the message at some point in the future.
+ * Composes a DiME message from the JSON data in @em jsondata and the
+ * binary data in @em bindata, and adds the message to the outbuffer.
+ * The message is not sent directly; subsequent calls to
+ * @link dime_socket_sendpartial @endlink will send the message at some
+ * point in the future.
  *
  * @param sock Pointer to a @c dime_socket_t struct
  * @param jsondata JSON portion of the message to send
  * @param bindata Binary portion of the message to send
  * @param bindata_len Length of binary data
  *
- * @return A nonnegative value on success, or a negative value on failure
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_push_str
+ * @see dime_socket_pop
+ * @see dime_socket_sendpartial
  */
 ssize_t dime_socket_push(dime_socket_t *sock,
                          const json_t *jsondata,
@@ -79,14 +133,21 @@ ssize_t dime_socket_push(dime_socket_t *sock,
 /**
  * @brief Adds a DiME message to the outbuffer (string version)
  *
- * Functions identically to @link dime_socket_push @endlink, but a pre-encoded JSON string is provided instead of a @em json_t handle. Useful for saving computational power if the same message is sent over multiple sockets.
+ * Functions identically to @link dime_socket_push @endlink, but a
+ * pre-encoded JSON string is provided instead of a @em json_t handle.
+ * Useful for saving computational power if the same message is sent
+ * over multiple sockets.
  *
  * @param sock Pointer to a @c dime_socket_t struct
- * @param jsonstr JSON portion of the message to send, as a NUL-terminated string
+ * @param jsonstr JSON portion of the message to send, as a
+ * NUL-terminated string
  * @param bindata Binary portion of the message to send
  * @param bindata_len Length of binary data
  *
- * @return A nonnegative value on success, or a negative value on failure
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_push
  */
 ssize_t dime_socket_push_str(dime_socket_t *sock,
                              const char *jsonstr,
@@ -96,14 +157,23 @@ ssize_t dime_socket_push_str(dime_socket_t *sock,
 /**
  * @brief Attempts to get a DiME message from the inbuffer
  *
- * Attempts to construct a DiME message from the data in the inbuffer. If there is enough data to construct a message, @em jsondata, @em bindata, and @em bindata_len are updated with the corresponding data read from the message. If a message is received, @em jsondata and @em bindata should be freed with @c json_decref and @c free, respectively, once they are no longer needed.
+ * Attempts to construct a DiME message from the data in the inbuffer.
+ * If there is enough data to construct a message, @em jsondata, @em
+ * bindata, and @em bindata_len are updated with the corresponding data
+ * read from the message. If a message is received, @em jsondata and @em
+ * bindata should be freed with @c json_decref and @c free,
+ * respectively, once they are no longer needed.
  *
  * @param sock Pointer to a @c dime_socket_t struct
  * @param jsondata Pointer to the JSON portion of the message received
  * @param bindata Pointer to the binary portion of the message received
  * @param bindata_len Pointer to the length of the binary data
  *
- * @return A positive value on success, zero if there is no complete message in the inbuffer, or a negative value on failure
+ * @return A positive value on success, zero if there is no complete
+ * message in the inbuffer, or a negative value on failure
+ *
+ * @see dime_socket_push
+ * @see dime_socket_recvpartial
  */
 ssize_t dime_socket_pop(dime_socket_t *sock,
                         json_t **jsondata,
@@ -113,22 +183,34 @@ ssize_t dime_socket_pop(dime_socket_t *sock,
 /**
  * @brief Sends data in the outbuffer
  *
- * Sends any data written to the outbuffer by @link dime_socket_sendfuture @endlink. Does not attempt to send all of the data, so multiple calls may be necessary if that is desired.
+ * Sends any data previously written to the outbuffer by
+ * @link dime_socket_push @endlink. Does not attempt to send all of the
+ * data, so multiple calls may be necessary if that is desired.
  *
  * @param sock Pointer to a @c dime_socket_t struct
  *
- * @return Number of bytes sent on success, or a negative value on failure
+ * @return Number of bytes sent on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_push
+ * @see dime_socket_recvpartial
  */
 ssize_t dime_socket_sendpartial(dime_socket_t *sock);
 
 /**
  * @brief Recieves data and writes it to the inbuffer
  *
- * Attempts to receive a given amount of data. If data is received, it is written to the inbuffer and can be interpreted by a later call to @link dime_socket_pop @endlink.
+ * Attempts to receive a given amount of data. If data is received, it
+ * is written to the inbuffer and can be interpreted by a later call to
+ * @link dime_socket_pop @endlink.
  *
  * @param sock Pointer to a @c dime_socket_t struct
  *
- * @return Number of bytes received on success, or a negative value on failure
+ * @return Number of bytes received on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_pop
+ * @see dime_socket_sendpartial
  */
 ssize_t dime_socket_recvpartial(dime_socket_t *sock);
 
