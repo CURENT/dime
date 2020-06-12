@@ -19,6 +19,13 @@
 #include "deque.h"
 #include "socket.h"
 
+enum dime_serialization {
+    DIME_NO_SERIALIZATION,
+    DIME_MATLAB,
+    DIME_PICKLE,
+    DIME_DIMEB
+};
+
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
 }

@@ -81,7 +81,7 @@ typedef struct {
 /**
  * @brief Initialize a new socket
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  * @param fd File descriptor to send/receive on
  *
  * @return A nonnegative value on success, or a negative value on
@@ -98,7 +98,7 @@ int dime_socket_init(dime_socket_t *sock, int fd);
  * initialize the socket. Pass a file descriptor created with @c dup if
  * this behavior is undesirable.
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  *
  * @see dime_socket_init
  */
@@ -113,7 +113,7 @@ void dime_socket_destroy(dime_socket_t *sock);
  * @link dime_socket_sendpartial @endlink will send the message at some
  * point in the future.
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  * @param jsondata JSON portion of the message to send
  * @param bindata Binary portion of the message to send
  * @param bindata_len Length of binary data
@@ -138,7 +138,7 @@ ssize_t dime_socket_push(dime_socket_t *sock,
  * Useful for saving computational power if the same message is sent
  * over multiple sockets.
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  * @param jsonstr JSON portion of the message to send, as a
  * NUL-terminated string
  * @param bindata Binary portion of the message to send
@@ -164,7 +164,7 @@ ssize_t dime_socket_push_str(dime_socket_t *sock,
  * bindata should be freed with @c json_decref and @c free,
  * respectively, once they are no longer needed.
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  * @param jsondata Pointer to the JSON portion of the message received
  * @param bindata Pointer to the binary portion of the message received
  * @param bindata_len Pointer to the length of the binary data
@@ -187,7 +187,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock,
  * @link dime_socket_push @endlink. Does not attempt to send all of the
  * data, so multiple calls may be necessary if that is desired.
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  *
  * @return Number of bytes sent on success, or a negative value on
  * failure
@@ -204,7 +204,7 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock);
  * is written to the inbuffer and can be interpreted by a later call to
  * @link dime_socket_pop @endlink.
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  *
  * @return Number of bytes received on success, or a negative value on
  * failure
@@ -217,7 +217,7 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock);
 /**
  * @brief Get the file descriptor of the socket
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  *
  * @return File descriptor
  */
@@ -226,7 +226,7 @@ int dime_socket_fd(const dime_socket_t *sock);
 /**
  * @brief Get the number of bytes in the outbuffer of the socket
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  *
  * @return Number of bytes in the outbuffer
  */
@@ -235,7 +235,7 @@ size_t dime_socket_sendlen(const dime_socket_t *sock);
 /**
  * @brief Get the number of bytes in the inbuffer of the socket
  *
- * @param sock Pointer to a @c dime_socket_t struct
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
  *
  * @return Number of bytes in the inbuffer
  */

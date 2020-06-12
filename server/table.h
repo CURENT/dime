@@ -30,8 +30,8 @@
  * Unlike most other quadratic probing methods, this assures that every
  * index is eventually visited when probing for a certain element. Even
  * so, the implementation maintains a maximum load factor of ½ and a
- * maximum ratio of bucket collisions to total elements of @f$ \varphi
- * \over 8 @f$ to ensure optimal performance.
+ * maximum ratio of bucket collisions to total elements of
+ * @f$ \varphi \over 8 @f$ to ensure optimal performance.
  */
 
 #include <stddef.h>
