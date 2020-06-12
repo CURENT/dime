@@ -4,7 +4,7 @@ COPY . /tmp
 WORKDIR /tmp/server
 
 RUN apk update
-RUN apk add alpine-sdk jansson-dev
+RUN apk add gcc make libc-dev jansson-dev
 RUN make clean
 RUN make
 RUN make install
