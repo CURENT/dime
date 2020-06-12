@@ -215,6 +215,28 @@ void *dime_table_search(dime_table_t *tbl, const void *key) {
     return NULL;
 }
 
+const void *dime_table_search_const(const dime_table_t *tbl, const void *key) {
+    size_t i, k;
+
+    i = tbl->hash_f(key) & (tbl->cap - 1);
+    k = 1;
+
+    while (tbl->arr[i].use != ELEM_FREE) {
+        if (tbl->arr[i].use == ELEM_OCCUPIED) {
+            int cmp = tbl->cmp_f(key, tbl->arr[i].key);
+
+            if (cmp == 0) {
+                return tbl->arr[i].val;
+            }
+        }
+
+        i = (i + k) & (tbl->cap - 1);
+        k++;
+    }
+
+    return NULL;
+}
+
 void *dime_table_remove(dime_table_t *tbl, const void *key) {
     size_t i, k;
 

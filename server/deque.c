@@ -132,7 +132,7 @@ void *dime_deque_popr(dime_deque_t *deck) {
     return p;
 }
 
-size_t dime_deque_len(dime_deque_t *deck) {
+size_t dime_deque_len(const dime_deque_t *deck) {
     return deck->len;
 }
 
