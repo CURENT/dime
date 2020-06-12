@@ -37,6 +37,13 @@
 extern "C" {
 #endif
 
+enum dime_serialization {
+    DIME_NO_SERIALIZATION,
+    DIME_MATLAB,
+    DIME_PICKLE,
+    DIME_DIMEB
+};
+
 enum dime_protocol {
     DIME_UNIX,
     DIME_TCP
