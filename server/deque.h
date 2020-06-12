@@ -150,6 +150,7 @@ size_t dime_deque_len(const dime_deque_t *deck);
  * Iterator for a double-ended queue. Contains at least the following
  * member variables:
  * - @code void *val; @endcode
+ *   The value of the element at the current iterator position.
  *
  * Two important caveats for iterators:
  * - After initializing the iterator with @link dime_deque_iter_init
@@ -176,10 +177,10 @@ while (dime_deque_iter_next(&it)) {
  * @see dime_deque_t
  */
 typedef struct {
-    void *val;
+    void *val; /** Current element */
 
-    dime_deque_t *deck;
-    size_t i;
+    dime_deque_t *deck; /* Deque */
+    size_t i;           /* Index in deque array */
 } dime_deque_iter_t;
 
 /**

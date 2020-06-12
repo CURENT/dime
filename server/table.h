@@ -182,7 +182,9 @@ size_t dime_table_len(const dime_table_t *tbl);
  * Iterator for a hash table. Contains at least the following member
  * variables:
  * - @code const void *key; @endcode
+ *   The key of the element at the current iterator position.
  * - @code void *val; @endcode
+ *   The value of the element at the current iterator position.
  *
  * Two important caveats for iterators:
  * - After initializing the iterator with @link dime_table_iter_init
@@ -210,11 +212,11 @@ while (dime_table_iter_next(&it)) {
  */
 
 typedef struct {
-    const void *key; /** Key */
-    void *val;       /** Value */
+    const void *key; /** Key of current element */
+    void *val;       /** Value of current element */
 
-    dime_table_t *tbl; /** Table */
-    size_t i;          /** Index in table */
+    dime_table_t *tbl; /* Table */
+    size_t i;          /* Index in table array */
 } dime_table_iter_t;
 
 /**
