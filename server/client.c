@@ -71,19 +71,12 @@ void dime_client_destroy(dime_client_t *clnt) {
     dime_socket_destroy(&clnt->sock);
 }
 
-int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
-
-    const char *name, *serialization;
+int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+    const char *serialization;
     int serialization_i;
 
-    if (json_unpack(jsondata, "{ssss}", "name", &name, "serialization", &serialization) < 0) {
+    if (json_unpack(jsondata, "{ss}", "serialization", &serialization) < 0) {
         return -1;
-    }
-
-    for (size_t i = 0; i < clnt->groups_len; i++) {
-        if (strcmp(name, clnt->groups[i]->name) == 0) {
-            return -1;
-        }
     }
 
     if (strcmp(serialization, "matlab") == 0) {
@@ -143,6 +136,35 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     case DIME_DIMEB:
         serialization = "dimeb";
         break;
+    }
+
+    json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
+    if (response == NULL) {
+        return -1;
+    }
+
+    if (dime_socket_push(&clnt->sock, response, NULL, 0) < 0) {
+        json_decref(response);
+
+        return -1;
+    }
+
+    json_decref(response);
+
+    return 0;
+}
+
+int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+    const char *name;
+
+    if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
+        return -1;
+    }
+
+    for (size_t i = 0; i < clnt->groups_len; i++) {
+        if (strcmp(name, clnt->groups[i]->name) == 0) {
+            return -1;
+        }
     }
 
     dime_group_t *group = dime_table_search(&srv->name2clnt, name);
@@ -209,24 +231,6 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
     group->clnts[group->clnts_len] = clnt;
     group->clnts_len++;
-
-    json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
-    if (response == NULL) {
-        clnt->groups_len--;
-        group->clnts_len--;
-
-        return -1;
-    }
-
-    if (dime_socket_push(&clnt->sock, response, NULL, 0) < 0) {
-        json_decref(response);
-        clnt->groups_len--;
-        group->clnts_len--;
-
-        return -1;
-    }
-
-    json_decref(response);
 
     return 0;
 }

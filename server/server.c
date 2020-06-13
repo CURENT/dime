@@ -364,7 +364,9 @@ int dime_server_loop(dime_server_t *srv) {
                          * might be more efficient as a table of function
                          * pointers
                          */
-                        if (strcmp(cmd, "join") == 0 || strcmp(cmd, "register") == 0) {
+                        if (strcmp(cmd, "register") == 0) {
+                            err = dime_client_register(clnt, srv, jsondata, bindata, bindata_len);
+                        }else if (strcmp(cmd, "join") == 0) {
                             err = dime_client_join(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "leave") == 0) {
                             err = dime_client_leave(clnt, srv, jsondata, bindata, bindata_len);

@@ -124,6 +124,26 @@ int dime_client_init(dime_client_t *clnt, int fd);
 void dime_client_destroy(dime_client_t *clnt);
 
 /**
+ * @brief Handle a "register" command
+ *
+ * The "register" command mostly does housekeeping w.r.t. the
+ * serialization method.
+ *
+ * @param clnt Pointer to a @link dime_client_t @endlink struct
+ * @param srv Pointer to the @link dime_server_t @endlink struct from
+ * which the client connection was accepted
+ * @param jsondata JSON portion of the message
+ * @param bindata Binary portion of the message
+ * @param bindata_len Length of binary portion of the message
+ *
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @todo Remove this
+ */
+int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+
+/**
  * @brief Handle a "join" command
  *
  * The "join" command instructs the server to add the client @em clnt to

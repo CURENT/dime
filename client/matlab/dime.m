@@ -8,7 +8,7 @@ classdef dime < handle
     end
 
     methods
-        function obj = dime(name, proto, varargin)
+        function obj = dime(proto, varargin)
             switch (proto)
             case 'ipc'
                 conn = sunconnect(varargin{:});
@@ -25,12 +25,9 @@ classdef dime < handle
                 obj.close_ll = @() []; % TODO: does clear() close a TCP socket?
             end
 
-            obj.name = name;
-
             msg = struct();
 
             msg.command = 'register';
-            msg.name = name;
             msg.serialization = 'matlab';
 
             send(obj, msg, uint8.empty);
@@ -41,11 +38,32 @@ classdef dime < handle
             end
 
             obj.serialization = msg.serialization;
-            disp(obj.serialization);
         end
 
         function delete(obj)
             obj.close_ll();
+        end
+
+        function [] = join(obj, varargin)
+            for i = 1:length(varargin)
+                msg = struct();
+
+                msg.command = 'join';
+                msg.name = varargin{i};
+
+                send(obj, msg, uint8.empty);
+            end
+        end
+
+        function [] = leave(obj, varargin)
+            for i = 1:length(varargin)
+                msg = struct();
+
+                msg.command = 'leave';
+                msg.name = varargin{i};
+
+                send(obj, msg, uint8.empty);
+            end
         end
 
         function [] = send_var(obj, name, varargin)
