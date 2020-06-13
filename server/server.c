@@ -18,6 +18,7 @@
 #include "table.h"
 #include "deque.h"
 #include "socket.h"
+#include <stdio.h>
 
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
@@ -132,7 +133,6 @@ int dime_server_init(dime_server_t *srv) {
 }
 
 void dime_server_destroy(dime_server_t *srv) {
-
     if (srv->protocol == DIME_UNIX) {
         unlink(srv->pathname);
     }
@@ -147,6 +147,16 @@ void dime_server_destroy(dime_server_t *srv) {
     while (dime_table_iter_next(&it)) {
         dime_client_destroy(it.val);
         free(it.val);
+    }
+
+    dime_table_iter_init(&it, &srv->name2clnt);
+
+    while (dime_table_iter_next(&it)) {
+        dime_group_t *group = it.val;
+
+        free(group->name);
+        free(group->clnts);
+        free(group);
     }
 
     dime_table_destroy(&srv->fd2clnt);
@@ -304,10 +314,6 @@ int dime_server_loop(dime_server_t *srv) {
             if (pollfds[i].revents & POLLHUP) {
                 dime_table_remove(&srv->fd2clnt, &clnt->fd);
 
-                if (clnt->name != NULL) {
-                    dime_table_remove(&srv->name2clnt, clnt->name);
-                }
-
                 dime_client_destroy(clnt);
                 free(clnt);
 
@@ -358,8 +364,10 @@ int dime_server_loop(dime_server_t *srv) {
                          * might be more efficient as a table of function
                          * pointers
                          */
-                        if (strcmp(cmd, "register") == 0) {
+                        if (strcmp(cmd, "join") == 0 || strcmp(cmd, "register") == 0) {
                             err = dime_client_join(clnt, srv, jsondata, bindata, bindata_len);
+                        } else if (strcmp(cmd, "leave") == 0) {
+                            err = dime_client_leave(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "send") == 0) {
                             err = dime_client_send(clnt, srv, jsondata, bindata, bindata_len);
                         } else if (strcmp(cmd, "broadcast") == 0) {

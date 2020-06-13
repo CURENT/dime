@@ -41,23 +41,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Reference-counted message
- *
- * Record that contains a single DiME message and a count of how many
- * references it has in memory. Note that there are no functions
- * introduced to manage this struct; the reference count is managed
- * directly by the functions in this file, and when the reference count
- * reaches zero, it is deallocated manually by said functions.
- */
-typedef struct {
-    unsigned int refs; /** Reference count */
-
-    json_t *jsondata;        /** JSON portion of the message */
-    size_t bindata_len;      /** Length of binary portion of the message */
-    unsigned char bindata[]; /** Binary portion of the message */
-} dime_rcmessage_t;
-
-/**
  * @brief Client's state
  *
  * Contains all data relevant to a single client's server-side state.
@@ -76,13 +59,43 @@ typedef struct {
  * @see dime_client_sync
  * @see dime_client_devices
  */
+typedef struct __dime_client dime_client_t;
+
+/**
+ * @brief Reference-counted message
+ *
+ * Record that contains a single DiME message and a count of how many
+ * references it has in memory. Note that there are no functions
+ * introduced to manage this struct; the reference count is managed
+ * directly by the functions in this file, and when the reference count
+ * reaches zero, it is deallocated manually by said functions.
+ */
 typedef struct {
-    int fd;     /** File descriptor */
-    char *name; /** Name */
+    unsigned int refs; /** Reference count */
+
+    json_t *jsondata;        /** JSON portion of the message */
+    size_t bindata_len;      /** Length of binary portion of the message */
+    unsigned char bindata[]; /** Binary portion of the message */
+} dime_rcmessage_t;
+
+typedef struct {
+    char *name;
+
+    dime_client_t **clnts;
+    size_t clnts_len;
+    size_t clnts_cap;
+} dime_group_t;
+
+struct __dime_client {
+    int fd;        /** File descriptor */
+
+    dime_group_t **groups; /** Array of associated groups */
+    size_t groups_len;     /** Length of groups */
+    size_t groups_cap;     /** Capacity of groups */
 
     dime_socket_t sock; /** DiME socket */
     dime_deque_t queue; /** Queue of reference-counted messages */
-} dime_client_t;
+};
 
 /**
  * @brief Initialize a new client
