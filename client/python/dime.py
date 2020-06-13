@@ -18,13 +18,7 @@ class DimeClient(collections.abc.MutableMapping):
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             self.conn.connect(args)
 
-        self.name = name
-
-        self.send({
-            "command": "register",
-            "name": name,
-            "serialization": "pickle"
-        })
+        self.send({"command": "register", "serialization": "pickle"})
 
         jsondata, _ = self.recv()
 
@@ -39,6 +33,14 @@ class DimeClient(collections.abc.MutableMapping):
         elif jsondata["serialization"] == "dimeb":
             self.loads = dimeb.loads
             self.dumps = dimeb.dumps
+
+    def join(self, *names):
+        for name in names:
+            self.send({"command": "join", "name": name})
+
+    def leave(self, *names):
+        for name in names:
+            self.send({"command": "leave", "name": name})
 
     def send_var(self, name, *varnames):
         for varname in varnames:
