@@ -14,14 +14,14 @@
 % out of or in connection with the use or performance of this software.
 
 classdef dime < handle
-    % dime DiME client
+    % DiME client
     %
-    %   Allows a Matlab process do send/receive variables from its workspace to
-    %   other clients connected to a shared DiME server. Note that this class
-    %   includes several method aliases to be as API-compatible with the
-    %   original DiME client as possible; However, since DiME2 introduces
-    %   concepts foreign to the original DiME (e.g. groups), full API
-    %   compatibility may not be attainable.
+    % Allows a Matlab process to send/receive variables from its workspace to
+    % other clients connected to a shared DiME server. Note that this class
+    % includes several method aliases to be as API-compatible with the original
+    % DiME client as possible; However, since DiME2 introduces concepts foreign
+    % to the original DiME (e.g. groups), full API compatibility may not be
+    % attainable.
 
     properties (Access=private)
         serialization % Serialization method currently in use
@@ -32,23 +32,30 @@ classdef dime < handle
 
     methods
         function obj = dime(proto, varargin)
-            % dime Construct a dime instance
+            % Construct a dime instance
             %
-            %   Create a dime client via the specified protocol. The exact
-            %   arguments depend on the protocol:
-            %   * If the protocol is 'ipc', then the function expects one
-            %     additional argument: the pathname of the Unix domain socket
-            %     to connect to.
-            %   * If the protocol is 'tcp', then the function expects two
-            %     additional arguments: the hostname and port of the TCP socket
-            %     to connect to, in that order.
+            % Create a dime client via the specified protocol. The exact
+            % arguments depend on the protocol:
             %
-            % Inputs:
-            %   proto : Transport protocol to use, either 'ipc' or 'tcp'
-            %   varargin : Additional arguments, as described above
+            % * If the protocol is 'ipc', then the function expects one
+            %   additional argument: the pathname of the Unix domain socket
+            %   to connect to.
+            % * If the protocol is 'tcp', then the function expects two
+            %   additional arguments: the hostname and port of the TCP socket
+            %   to connect to, in that order.
             %
-            % Outputs:
-            %   obj : The newly constructed dime instance
+            % Parameters
+            % ----------
+            % proto : {'ipc', 'tcp'}
+            %     Transport protocol to use.
+            %
+            % varargin
+            %     Additional arguments, as described above.
+            %
+            % Returns
+            % -------
+            % dime
+            %     The newly constructed dime instance.
 
             switch (proto)
             case 'ipc'
@@ -82,26 +89,32 @@ classdef dime < handle
         end
 
         function delete(obj)
-            % delete Destruct a dime instance
+            % Destruct a dime instance
             %
-            %   Performs cleanup of a DiME client connection. This generally
-            %   means closing the socket on which the connection was opened.
+            % Performs cleanup of a DiME client connection. This generally
+            % means closing the socket on which the connection was opened.
             %
-            % Inputs:
-            %   obj : The dime instance
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
 
             obj.close_ll();
         end
 
         function [] = join(obj, varargin)
-            % join Send a "join" command to the server
+            % Send a "join" command to the server
             %
-            %   Instructs the DiME server to add the client to one or more
-            %   named groups.
+            % Instructs the DiME server to add the client to one or more groups
+            % by name.
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   varargin : The group name(s)
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % varargin : cell array of strings
+            %    The group name(s).
 
             for i = 1:length(varargin)
                 msg = struct();
@@ -114,14 +127,18 @@ classdef dime < handle
         end
 
         function [] = leave(obj, varargin)
-            % leave Send a "leave" command to the server
+            % Send a "leave" command to the server
             %
-            %   Instructs the DiME server to remove the client from one or more
-            %   named groups.
+            % Instructs the DiME server to remove the client from one or more
+            % groups by name.
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   varargin : The group name(s)
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % varargin : cell array of strings
+            %    The group name(s).
 
             for i = 1:length(varargin)
                 msg = struct();
@@ -134,21 +151,27 @@ classdef dime < handle
         end
 
         function [] = send_var(obj, name, varargin)
-            % send_var Alias for send
+            % Alias for send
 
             send(obj, name, varargin{:});
         end
 
         function [] = send(obj, name, varargin)
-            % send Send a "send" command to the server
+            % Send a "send" command to the server
             %
-            %   Sends one or more variables from the base workspace to all
-            %   clients in a specified group.
+            % Sends one or more variables from the base workspace to all
+            % clients in a specified group.
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   name : the group name
-            %   varargin : The variable name(s) in the workspace
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % name : string
+            %    the group name.
+            %
+            % varargin : cell array of strings
+            %    The variable name(s) in the workspace.
 
             for i = 1:length(varargin)
                 msg = struct();
@@ -173,14 +196,18 @@ classdef dime < handle
         end
 
         function [] = broadcast(obj, varargin)
-            % broadcast Send a "broadcast" command to the server
+            % Send a "broadcast" command to the server
             %
-            %   Sends one or more variables from the base workspace to all
-            %   other clients.
+            % Sends one or more variables from the base workspace to all other
+            % clients.
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   varargin : The variable name(s) in the workspace
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % varargin : cell array of strings
+            %    The variable name(s) in the workspace.
 
             for i = 1:length(varargin)
                 msg = struct();
@@ -204,16 +231,19 @@ classdef dime < handle
         end
 
         function [] = sync(obj, varargin)
-            % send Send a "sync" command to the server
+            % Send a "sync" command to the server
             %
-            %   Tell the server to start sending this client the variables sent
-            %   to this client by other clients.
+            % Tell the server to start sending this client the variables sent
+            % to this client by other clients.
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   varargin : Either one argument specifying the maximum number of
-            %              variables to receive, or blank to receive all
-            %              variables sent.
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % varargin : cell array of scalar
+            %    Either one argument specifying the maximum number of variables
+            %    to receive, or blank to receive all variables sent.
 
             n = -1;
 
@@ -251,7 +281,7 @@ classdef dime < handle
         end
 
         function [names] = get_devices(obj)
-            % get_devices alias for devices
+            % Alias for devices
 
             names = devices(obj);
         end
@@ -259,14 +289,18 @@ classdef dime < handle
         function [names] = devices(obj)
             % send Send a "devices" command to the server
             %
-            %   Tell the server to start sending this client the variables sent
-            %   to this client by other clients.
+            % Tell the server to send this client a list of all the named,
+            % nonempty groups connected to the server.
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   varargin : Either one argument specifying the maximum number of
-            %              variables to receive, or blank to receive all
-            %              variables sent.
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % Returns
+            % -------
+            % cell array of string
+            %     A list of all groups connected to the DiME server.
 
             msg = struct();
 
@@ -280,12 +314,18 @@ classdef dime < handle
         end
 
         function [] = sendmsg(obj, json, bindata)
-            % sendmsg Send a DiME message over the socket
+            % Send a raw DiME message over the socket
             %
-            % Inputs:
-            %   obj : The dime instance
-            %   json : JSON portion of the message to send
-            %   bindata : Binary portion of the message to send
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % jsondata : cell array or struct
+            %     JSON portion of the message to send
+            %
+            % bindata : uint8
+            %     Binary portion of the message to send
 
             [~, ~, endianness] = computer;
 
@@ -306,14 +346,20 @@ classdef dime < handle
         end
 
         function [json, bindata] = recvmsg(obj)
-            % sendmsg Receive a DiME message over the socket
+            % Receive a raw DiME message over the socket
             %
-            % Inputs:
-            %   obj : The dime instance
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
             %
-            % Outputs:
-            %   json : JSON portion of the message received
-            %   bindata : Binary portion of the message received
+            % Returns
+            % -------
+            % jsondata : cell array or struct
+            %     JSON portion of the message received
+            %
+            % bindata : uint8
+            %     Binary portion of the message received
 
             [~, ~, endianness] = computer;
 
