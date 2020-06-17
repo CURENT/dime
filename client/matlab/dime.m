@@ -181,7 +181,7 @@ classdef dime < handle
                 msg.varname = varargin{i};
                 msg.serialization = obj.serialization;
 
-                x = evalin('base', varargin{i});
+                x = evalin('caller', varargin{i});
 
                 switch obj.serialization
                 case 'matlab'
@@ -216,7 +216,7 @@ classdef dime < handle
                 msg.varname = varargin{i};
                 msg.serialization = obj.serialization;
 
-                x = evalin('base', varargin{i});
+                x = evalin('caller', varargin{i});
 
                 switch obj.serialization
                 case 'matlab'
@@ -276,7 +276,7 @@ classdef dime < handle
                     continue
                 end
 
-                assignin('base', msg.varname, x);
+                assignin('caller', msg.varname, x);
             end
         end
 
