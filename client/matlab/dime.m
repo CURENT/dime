@@ -173,30 +173,34 @@ classdef dime < handle
             % varargin : cell array of strings
             %    The variable name(s) in the workspace.
 
-            for i = 1:length(varargin)
-                msg = struct();
+            for i = 1:16:length(varargin)
+                for j = i:min(i + 16, length(varargin))
+                    msg = struct();
 
-                msg.command = 'send';
-                msg.name = name;
-                msg.varname = varargin{i};
-                msg.serialization = obj.serialization;
+                    msg.command = 'send';
+                    msg.name = name;
+                    msg.varname = varargin{j};
+                    msg.serialization = obj.serialization;
 
-                x = evalin('caller', varargin{i});
+                    x = evalin('caller', varargin{j});
 
-                switch obj.serialization
-                case 'matlab'
-                    bindata = getByteStreamFromArray(x);
+                    switch obj.serialization
+                    case 'matlab'
+                        bindata = getByteStreamFromArray(x);
 
-                case 'dimeb'
-                    bindata = dimebdumps(x);
+                    case 'dimeb'
+                        bindata = dimebdumps(x);
+                    end
+
+                    sendmsg(obj, msg, bindata);
                 end
 
-                sendmsg(obj, msg, bindata);
+                for j = 1:min(16, length(varargin) - i + 1)
+                    [msg, bindata] = recvmsg(obj);
 
-                [msg, bindata] = recvmsg(obj);
-
-                if msg.status < 0
-                    error(msg.error);
+                    if msg.status < 0
+                        error(msg.error);
+                    end
                 end
             end
         end
