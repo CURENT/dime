@@ -1,4 +1,5 @@
-d = dime('test0', 'ipc', '/tmp/dime.sock');
+d = dime('ipc', '/tmp/dime.sock');
+d.join('test0');
 
 ct = 0;
 

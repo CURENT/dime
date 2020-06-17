@@ -1,16 +1,21 @@
-d = dime('test2', 'ipc', '/tmp/dime.sock');
+d = dime('ipc', '/tmp/dime.sock');
 
 i = 0;
 lasti = 0;
 
+varnames = {};
+
 while true
-    while i == lasti
-        i = randi(30);
+    for j = 1:8
+        while i == lasti
+            i = randi(30);
+        end
+        lasti = i;
+
+        varnames{j} = sprintf('a%d', i);
+
+        assignin('caller', varnames{j}, rand(randi(500), randi(500)));
     end
-    lasti = i;
 
-    varname = sprintf('b%d', i);
-
-    assignin('base', varname, rand(randi(500), randi(500)));
-    send_var(d, 'test0', varname);
+    send_var(d, 'test0', varnames{:});
 end
