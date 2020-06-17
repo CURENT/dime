@@ -60,14 +60,17 @@ enum dime_protocol {
  * Contains all data relevant to a single server's state. The configuration variables should be set before calling @link dime_server_init @endlink.
  */
 typedef struct {
+    char err[161]; /** Error string */
+
     int ipv6 : 1;    /** IPv6 flag */
     int ssl : 1;     /** TLS flag */
     int zlib : 1;    /** zlib flag */
     int verbose : 1; /** Verbose mode flag */
     char : 0;
 
-    int protocol;         /** Protocol to use */
     int serialization;    /** Serialization method */
+    int protocol;         /** Protocol to use */
+
     const char *pathname; /** Path name (if using Unix domain socket) */
     uint16_t port;        /** Port (if using TCP socket) */
 

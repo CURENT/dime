@@ -192,6 +192,12 @@ classdef dime < handle
                 end
 
                 sendmsg(obj, msg, bindata);
+
+                [msg, bindata] = recvmsg(obj);
+
+                if msg.status < 0
+                    error(msg.error);
+                end
             end
         end
 

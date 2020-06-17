@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -9,6 +10,64 @@
 #include "server.h"
 #include "socket.h"
 #include "table.h"
+
+#if !(defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__))
+/* Shamelessly stolen from OpenBSD */
+
+static size_t strlcpy(char *restrict dst, const char *restrict src, size_t dsize) {
+	const char *osrc = src;
+	size_t nleft = dsize;
+
+	/* Copy as many bytes as will fit. */
+	if (nleft != 0) {
+		while (--nleft != 0) {
+			if ((*dst++ = *src++) == '\0') {
+				break;
+            }
+		}
+	}
+
+	/* Not enough room in dst, add NUL and traverse rest of src. */
+	if (nleft == 0) {
+		if (dsize != 0) {
+			*dst = '\0';		/* NUL-terminate dst */
+        }
+
+		while (*src++);
+	}
+
+	return src - osrc - 1;	/* count does not include NUL */
+}
+
+static size_t strlcat(char *dst, const char *src, size_t dsize) {
+	const char *odst = dst;
+	const char *osrc = src;
+	size_t n = dsize;
+	size_t dlen;
+
+	/* Find the end of dst and adjust bytes left but don't go past end. */
+	while (n-- != 0 && *dst != '\0') {
+		dst++;
+    }
+	dlen = dst - odst;
+	n = dsize - dlen;
+
+	if (n-- == 0) {
+		return dlen + strlen(src);
+    }
+	while (*src != '\0') {
+		if (n != 0) {
+			*dst++ = *src;
+			n--;
+		}
+		src++;
+	}
+	*dst = '\0';
+
+	return dlen + (src - osrc);	/* count does not include NUL */
+}
+
+#endif
 
 int dime_client_init(dime_client_t *clnt, int fd) {
     clnt->fd = fd;
@@ -265,28 +324,60 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
 
 int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     const char *name;
+    json_error_t err;
 
-    if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
+    if (json_unpack_ex(jsondata, &err, 0, "{ss}", "name", &name) < 0) {
+        strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
+        strlcat(srv->err, err.text, sizeof(srv->err));
+
+        json_t *response = json_pack("{sisss+}", "status", -1, "error", "JSON parsing error: ", err.text);
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
         return -1;
     }
 
     dime_group_t *group = dime_table_search(&srv->name2clnt, name);
-    if (group == NULL) {
-        return -1;
-    }
+    if (group == NULL || group->clnts_len == 0) {
+        strlcpy(srv->err, "No such group exists: ", sizeof(srv->err));
+        strlcat(srv->err, name, sizeof(srv->err));
 
-    if (group->clnts_len == 0) {
+        json_t *response = json_pack("{sisss+}", "status", -1, "error", "No such group exists: ", name);
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
         return -1;
     }
 
     dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
     if (msg == NULL) {
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
         return -1;
     }
 
     msg->jsondata = json_dumps(jsondata, JSON_COMPACT);
     if (msg->jsondata == NULL) {
         free(msg);
+
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
         return -1;
     }
 
@@ -304,6 +395,14 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 free(msg);
             }
 
+            strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+            json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+            if (response != NULL) {
+                dime_socket_push(&clnt->sock, response, NULL, 0);
+                json_decref(response);
+            }
+
             return -1;
         }
 
@@ -311,6 +410,36 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     }
 
     assert(msg->refs > 0);
+
+    json_t *response = json_pack_ex(&err, 0, "{si}", "status", 0);
+    if (response == NULL) {
+        strlcpy(srv->err, "JSON building error: ", sizeof(srv->err));
+        strlcat(srv->err, err.text, sizeof(srv->err));
+
+        response = json_pack("{sisss+}", "status", -1, "error", "JSON building error: ", err.text);
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
+        return -1;
+    }
+
+    if (dime_socket_push(&clnt->sock, response, NULL, 0) < 0) {
+        json_decref(response);
+
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
+        return -1;
+    }
+
+    json_decref(response);
 
     return 0;
 }
