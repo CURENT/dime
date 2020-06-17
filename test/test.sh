@@ -1,12 +1,17 @@
 #!/bin/bash
 
-matlab -batch "run('test1.m')" &
+../server/dime &
+PIDSRV=$!
+
+matlab -batch "run('test0.m')" &
+PID0=$!
+sleep 0.5
+
+matlab -batch "run('test1.m')"  &
 PID1=$!
 
 matlab -batch "run('test2.m')" &
 PID2=$!
 
-matlab -batch "run('test0.m')"
-
-kill $PID1 $PID2
-kill $PID1
+wait $PID0
+kill $PIDSRV $PID1 $PID2

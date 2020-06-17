@@ -5,10 +5,10 @@ ct = 0;
 
 tic;
 
-while toc < 15
+while toc < 20
     d.sync();
 
-    for i = 1:30
+    for i = 1:99
         try
             x = eval(sprintf('a%d', i));
         catch
@@ -21,7 +21,7 @@ while toc < 15
         end
     end
 
-    for i = 1:30
+    for i = 1:99
         try
             x = eval(sprintf('b%d', i));
         catch

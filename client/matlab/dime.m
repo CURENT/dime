@@ -73,19 +73,19 @@ classdef dime < handle
                 obj.close_ll = @() []; % TODO: does clear() close a TCP socket?
             end
 
-            msg = struct();
+            jsondata = struct();
 
-            msg.command = 'register';
-            msg.serialization = 'matlab';
+            jsondata.command = 'register';
+            jsondata.serialization = 'matlab';
 
-            sendmsg(obj, msg, uint8.empty);
-            [msg, ~] = recvmsg(obj);
+            sendmsg(obj, jsondata, uint8.empty);
+            [jsondata, ~] = recvmsg(obj);
 
-            if msg.status ~= 0
-                error(msg.errmsg);
+            if jsondata.status ~= 0
+                error(jsondata.error);
             end
 
-            obj.serialization = msg.serialization;
+            obj.serialization = jsondata.serialization;
         end
 
         function delete(obj)
@@ -116,13 +116,16 @@ classdef dime < handle
             % varargin : cell array of strings
             %    The group name(s).
 
-            for i = 1:length(varargin)
-                msg = struct();
+            jsondata = struct();
+            jsondata.command = 'join';
+            jsondata.name = varargin;
 
-                msg.command = 'join';
-                msg.name = varargin{i};
+            sendmsg(obj, jsondata, uint8.empty);
 
-                sendmsg(obj, msg, uint8.empty);
+            [jsondata, ~] = recvmsg(obj);
+
+            if jsondata.status < 0
+                error(jsondata.error);
             end
         end
 
@@ -140,13 +143,16 @@ classdef dime < handle
             % varargin : cell array of strings
             %    The group name(s).
 
-            for i = 1:length(varargin)
-                msg = struct();
+            jsondata = struct();
+            jsondata.command = 'leave';
+            jsondata.name = varargin;
 
-                msg.command = 'leave';
-                msg.name = varargin{i};
+            sendmsg(obj, jsondata, uint8.empty);
 
-                sendmsg(obj, msg, uint8.empty);
+            [jsondata, ~] = recvmsg(obj);
+
+            if jsondata.status < 0
+                error(jsondata.error);
             end
         end
 
@@ -175,12 +181,11 @@ classdef dime < handle
 
             for i = 1:16:length(varargin)
                 for j = i:min(i + 16, length(varargin))
-                    msg = struct();
-
-                    msg.command = 'send';
-                    msg.name = name;
-                    msg.varname = varargin{j};
-                    msg.serialization = obj.serialization;
+                    jsondata = struct();
+                    jsondata.command = 'send';
+                    jsondata.name = name;
+                    jsondata.varname = varargin{j};
+                    jsondata.serialization = obj.serialization;
 
                     x = evalin('caller', varargin{j});
 
@@ -192,14 +197,14 @@ classdef dime < handle
                         bindata = dimebdumps(x);
                     end
 
-                    sendmsg(obj, msg, bindata);
+                    sendmsg(obj, jsondata, bindata);
                 end
 
                 for j = 1:min(16, length(varargin) - i + 1)
-                    [msg, bindata] = recvmsg(obj);
+                    [jsondata, bindata] = recvmsg(obj);
 
-                    if msg.status < 0
-                        error(msg.error);
+                    if jsondata.status < 0
+                        error(jsondata.error);
                     end
                 end
             end
@@ -220,11 +225,11 @@ classdef dime < handle
             %    The variable name(s) in the workspace.
 
             for i = 1:length(varargin)
-                msg = struct();
+                jsondata = struct();
 
-                msg.command = 'broadcast';
-                msg.varname = varargin{i};
-                msg.serialization = obj.serialization;
+                jsondata.command = 'broadcast';
+                jsondata.varname = varargin{i};
+                jsondata.serialization = obj.serialization;
 
                 x = evalin('caller', varargin{i});
 
@@ -236,7 +241,7 @@ classdef dime < handle
                     bindata = dimebdumps(x);
                 end
 
-                sendmsg(obj, msg, bindata);
+                sendmsg(obj, jsondata, bindata);
             end
         end
 
@@ -261,21 +266,21 @@ classdef dime < handle
                 n = varargin{1};
             end
 
-            msg = struct();
+            jsondata = struct();
 
-            msg.command = 'sync';
-            msg.n = n;
+            jsondata.command = 'sync';
+            jsondata.n = n;
 
-            sendmsg(obj, msg, uint8.empty);
+            sendmsg(obj, jsondata, uint8.empty);
 
             while true
-                [msg, bindata] = recvmsg(obj);
+                [jsondata, bindata] = recvmsg(obj);
 
-                if ~isfield(msg, 'varname')
+                if ~isfield(jsondata, 'varname')
                     break;
                 end
 
-                switch msg.serialization
+                switch jsondata.serialization
                 case 'matlab'
                     x = getArrayFromByteStream(bindata);
 
@@ -286,7 +291,7 @@ classdef dime < handle
                     continue
                 end
 
-                assignin('caller', msg.varname, x);
+                assignin('caller', jsondata.varname, x);
             end
         end
 
@@ -312,15 +317,15 @@ classdef dime < handle
             % cell array of string
             %     A list of all groups connected to the DiME server.
 
-            msg = struct();
+            jsondata = struct();
 
-            msg.command = 'devices';
+            jsondata.command = 'devices';
 
-            sendmsg(obj, msg, uint8.empty);
+            sendmsg(obj, jsondata, uint8.empty);
 
-            [msg, ~] = recvmsg(obj);
+            [jsondata, ~] = recvmsg(obj);
 
-            names = msg.devices;
+            names = jsondata.devices;
         end
 
         function [] = sendmsg(obj, json, bindata)
