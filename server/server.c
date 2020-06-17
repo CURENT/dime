@@ -55,13 +55,13 @@ static void ctrlc_handler(int signum) {
 
 int dime_server_init(dime_server_t *srv) {
     if (dime_table_init(&srv->fd2clnt, cmp_fd, hash_fd) < 0) {
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     if (dime_table_init(&srv->name2clnt, cmp_name, hash_name) < 0) {
         dime_table_destroy(&srv->fd2clnt);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     union {
@@ -100,7 +100,7 @@ int dime_server_init(dime_server_t *srv) {
         dime_table_destroy(&srv->fd2clnt);
         dime_table_destroy(&srv->name2clnt);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     srv->fd = socket(socktype, SOCK_STREAM, proto);
@@ -108,7 +108,7 @@ int dime_server_init(dime_server_t *srv) {
         dime_table_destroy(&srv->fd2clnt);
         dime_table_destroy(&srv->name2clnt);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     if (bind(srv->fd, (struct sockaddr *)&addr, addrlen) < 0) {
@@ -116,7 +116,7 @@ int dime_server_init(dime_server_t *srv) {
         dime_table_destroy(&srv->fd2clnt);
         dime_table_destroy(&srv->name2clnt);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     if (listen(srv->fd, 5) < 0) {
@@ -124,7 +124,7 @@ int dime_server_init(dime_server_t *srv) {
         dime_table_destroy(&srv->fd2clnt);
         dime_table_destroy(&srv->name2clnt);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     srv->serialization = DIME_NO_SERIALIZATION;
@@ -170,7 +170,7 @@ int dime_server_loop(dime_server_t *srv) {
     pollfds_cap = 16;
     pollfds = malloc(pollfds_cap * sizeof(struct pollfd));
     if (pollfds == NULL) {
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     void (*sigint_f)(int);
@@ -202,7 +202,7 @@ int dime_server_loop(dime_server_t *srv) {
     if (sigint_f == SIG_ERR) {
         free(pollfds);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     sigterm_f = signal(SIGTERM, ctrlc_handler);
@@ -210,7 +210,7 @@ int dime_server_loop(dime_server_t *srv) {
         signal(SIGINT, sigint_f);
         free(pollfds);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     sigpipe_f = signal(SIGPIPE, SIG_IGN);
@@ -219,7 +219,7 @@ int dime_server_loop(dime_server_t *srv) {
         signal(SIGINT, sigint_f);
         free(pollfds);
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     pollfds[0].fd = srv->fd;
@@ -235,7 +235,7 @@ int dime_server_loop(dime_server_t *srv) {
             signal(SIGINT, sigint_f);
             free(pollfds);
 
-            return -1;
+            printf("%d\n", __LINE__); return -1;
         }
 
         if (pollfds[0].revents & POLLIN) {
@@ -246,7 +246,7 @@ int dime_server_loop(dime_server_t *srv) {
                 signal(SIGINT, sigint_f);
                 free(pollfds);
 
-                return -1;
+                printf("%d\n", __LINE__); return -1;
             }
 
             int fd = accept(srv->fd, NULL, NULL);
@@ -257,7 +257,7 @@ int dime_server_loop(dime_server_t *srv) {
                 signal(SIGINT, sigint_f);
                 free(pollfds);
 
-                return -1;
+                printf("%d\n", __LINE__); return -1;
             }
 
             if (dime_client_init(clnt, fd) < 0) {
@@ -268,7 +268,7 @@ int dime_server_loop(dime_server_t *srv) {
                 signal(SIGINT, sigint_f);
                 free(pollfds);
 
-                return -1;
+                printf("%d\n", __LINE__); return -1;
             }
 
             if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
@@ -279,7 +279,7 @@ int dime_server_loop(dime_server_t *srv) {
                 signal(SIGINT, sigint_f);
                 free(pollfds);
 
-                return -1;
+                printf("%d\n", __LINE__); return -1;
             }
 
             if (pollfds_len >= pollfds_cap) {
@@ -294,7 +294,7 @@ int dime_server_loop(dime_server_t *srv) {
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
-                    return -1;
+                    printf("%d\n", __LINE__); return -1;
                 }
 
                 pollfds = narr;
@@ -333,7 +333,7 @@ int dime_server_loop(dime_server_t *srv) {
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
-                    return -1;
+                    printf("%d\n", __LINE__); return -1;
                 }
 
                 while (1) {
@@ -354,7 +354,7 @@ int dime_server_loop(dime_server_t *srv) {
                             signal(SIGINT, sigint_f);
                             free(pollfds);
 
-                            return -1;
+                            printf("%d\n", __LINE__); return -1;
                         }
 
                         int err;
@@ -365,19 +365,19 @@ int dime_server_loop(dime_server_t *srv) {
                          * pointers
                          */
                         if (strcmp(cmd, "register") == 0) {
-                            err = dime_client_register(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_register(clnt, srv, jsondata, &bindata, bindata_len);
                         }else if (strcmp(cmd, "join") == 0) {
-                            err = dime_client_join(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_join(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "leave") == 0) {
-                            err = dime_client_leave(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_leave(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "send") == 0) {
-                            err = dime_client_send(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_send(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "broadcast") == 0) {
-                            err = dime_client_broadcast(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_broadcast(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "sync") == 0) {
-                            err = dime_client_sync(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_sync(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "devices") == 0) {
-                            err = dime_client_devices(clnt, srv, jsondata, bindata, bindata_len);
+                            err = dime_client_devices(clnt, srv, jsondata, &bindata, bindata_len);
                         } else {
                             json_decref(jsondata);
                             free(bindata);
@@ -386,7 +386,7 @@ int dime_server_loop(dime_server_t *srv) {
                             signal(SIGINT, sigint_f);
                             free(pollfds);
 
-                            return -1;
+                            printf("%d\n", __LINE__); return -1;
                         }
 
                         json_decref(jsondata);
@@ -398,7 +398,7 @@ int dime_server_loop(dime_server_t *srv) {
                             signal(SIGINT, sigint_f);
                             free(pollfds);
 
-                            return -1;
+                            printf("%d\n", __LINE__); return -1;
                         }
                     } else if (n < 0) {
                         signal(SIGPIPE, sigpipe_f);
@@ -406,7 +406,7 @@ int dime_server_loop(dime_server_t *srv) {
                         signal(SIGINT, sigint_f);
                         free(pollfds);
 
-                        return -1;
+                        printf("%d\n", __LINE__); return -1;
                     } else {
                         break;
                     }
@@ -420,7 +420,7 @@ int dime_server_loop(dime_server_t *srv) {
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
-                    return -1;
+                    printf("%d\n", __LINE__); return -1;
                 }
             }
 

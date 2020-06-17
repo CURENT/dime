@@ -73,9 +73,9 @@ typedef struct __dime_client dime_client_t;
 typedef struct {
     unsigned int refs; /** Reference count */
 
-    json_t *jsondata;        /** JSON portion of the message */
-    size_t bindata_len;      /** Length of binary portion of the message */
-    unsigned char bindata[]; /** Binary portion of the message */
+    char *jsondata;     /** JSON portion of the message as a string */
+    void *bindata;      /** Binary portion of the message */
+    size_t bindata_len; /** Length of binary portion of the message */
 } dime_rcmessage_t;
 
 typedef struct {
@@ -133,7 +133,7 @@ void dime_client_destroy(dime_client_t *clnt);
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
@@ -141,7 +141,7 @@ void dime_client_destroy(dime_client_t *clnt);
  *
  * @todo Remove this
  */
-int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "join" command
@@ -153,7 +153,7 @@ int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsonda
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
@@ -161,7 +161,7 @@ int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsonda
  *
  * @see dime_client_leave
  */
-int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "leave" command
@@ -173,7 +173,7 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
@@ -182,7 +182,7 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
  * @see dime_client_join
  * @todo Implement this
  */
-int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "send" command
@@ -194,7 +194,7 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
@@ -203,7 +203,7 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
  * @see dime_client_broadcast
  * @see dime_client_sync
  */
-int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "broadcast" command
@@ -215,7 +215,7 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
@@ -224,7 +224,7 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
  * @see dime_client_send
  * @see dime_client_sync
  */
-int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "sync" command
@@ -239,7 +239,7 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
@@ -248,7 +248,7 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
  * @see dime_client_send
  * @see dime_client_broadcast
  */
-int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "devices" command
@@ -260,13 +260,13 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
  * @param srv Pointer to the @link dime_server_t @endlink struct from
  * which the client connection was accepted
  * @param jsondata JSON portion of the message
- * @param bindata Binary portion of the message
+ * @param pbindata Binary portion of the message
  * @param bindata_len Length of binary portion of the message
  *
  * @return A nonnegative value on success, or a negative value on
  * failure
  */
-int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len);
+int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 #ifdef __cplusplus
 }

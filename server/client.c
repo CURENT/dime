@@ -61,7 +61,8 @@ void dime_client_destroy(dime_client_t *clnt) {
         msg->refs--;
 
         if (msg->refs == 0) {
-            json_decref(msg->jsondata);
+            free(msg->jsondata);
+            free(msg->bindata);
             free(msg);
         }
     }
@@ -71,7 +72,7 @@ void dime_client_destroy(dime_client_t *clnt) {
     dime_socket_destroy(&clnt->sock);
 }
 
-int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     const char *serialization;
     int serialization_i;
 
@@ -154,7 +155,7 @@ int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsonda
     return 0;
 }
 
-int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     const char *name;
 
     if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
@@ -235,7 +236,7 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     return 0;
 }
 
-int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     const char *name;
 
     if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
@@ -262,7 +263,7 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
     return -1;
 }
 
-int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     const char *name;
 
     if (json_unpack(jsondata, "{ss}", "name", &name) < 0) {
@@ -278,22 +279,28 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
         return -1;
     }
 
-    dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t) + bindata_len);
+    dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
     if (msg == NULL) {
         return -1;
     }
 
+    msg->jsondata = json_dumps(jsondata, JSON_COMPACT);
+    if (msg->jsondata == NULL) {
+        free(msg);
+        return -1;
+    }
+
     msg->refs = 0;
-    msg->jsondata = jsondata;
+    msg->bindata = *pbindata;
     msg->bindata_len = bindata_len;
 
-    memcpy(msg->bindata, bindata, bindata_len);
-    json_incref(jsondata);
+    *pbindata = NULL;
 
     for (size_t i = 0; i < group->clnts_len; i++) {
         if (dime_deque_pushr(&group->clnts[i]->queue, msg) < 0) {
             if (msg->refs == 0) {
-                json_decref(jsondata);
+                free(msg->jsondata);
+                free(msg->bindata);
                 free(msg);
             }
 
@@ -308,18 +315,23 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     return 0;
 }
 
-int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
-    dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t) + bindata_len);
+int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
+    dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
     if (msg == NULL) {
         return -1;
     }
 
+    msg->jsondata = json_dumps(jsondata, JSON_COMPACT);
+    if (msg->jsondata == NULL) {
+        free(msg);
+        return -1;
+    }
+
     msg->refs = 0;
-    msg->jsondata = jsondata;
+    msg->bindata = *pbindata;
     msg->bindata_len = bindata_len;
 
-    memcpy(msg->bindata, bindata, bindata_len);
-    json_incref(jsondata);
+    *pbindata = NULL;
 
     dime_table_iter_t it;
 
@@ -331,7 +343,8 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         if (clnt->fd != other->fd) {
             if (dime_deque_pushr(&other->queue, msg) < 0) {
                 if (msg->refs == 0) {
-                    json_decref(jsondata);
+                    free(msg->jsondata);
+                    free(msg->bindata);
                     free(msg);
                 }
 
@@ -343,14 +356,15 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
     }
 
     if (msg->refs == 0) {
-        json_decref(jsondata);
+        free(msg->jsondata);
+        free(msg->bindata);
         free(msg);
     }
 
     return 0;
 }
 
-int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     json_int_t n;
 
     if (json_unpack(jsondata, "{sI}", "n", &n) < 0) {
@@ -365,7 +379,7 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 break;
             }
 
-            if (dime_socket_push(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
+            if (dime_socket_push_str(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
                 dime_deque_pushl(&clnt->queue, msg);
 
                 return -1;
@@ -374,7 +388,8 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
             msg->refs--;
 
             if (msg->refs == 0) {
-                json_decref(msg->jsondata);
+                free(msg->jsondata);
+                free(msg->bindata);
                 free(msg);
             }
         }
@@ -386,7 +401,7 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 break;
             }
 
-            if (dime_socket_push(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
+            if (dime_socket_push_str(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
                 dime_deque_pushl(&clnt->queue, msg);
 
                 return -1;
@@ -395,7 +410,8 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
             msg->refs--;
 
             if (msg->refs == 0) {
-                json_decref(msg->jsondata);
+                free(msg->jsondata);
+                free(msg->bindata);
                 free(msg);
             }
         }
@@ -408,7 +424,7 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     return 0;
 }
 
-int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void *bindata, size_t bindata_len) {
+int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     json_t *arr = json_array();
     if (arr == NULL) {
     }

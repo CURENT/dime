@@ -176,7 +176,7 @@ classdef dime < handle
             for i = 1:length(varargin)
                 msg = struct();
 
-                msg.command = 'sendmsg';
+                msg.command = 'send';
                 msg.name = name;
                 msg.varname = varargin{i};
                 msg.serialization = obj.serialization;
