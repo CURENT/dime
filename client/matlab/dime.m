@@ -287,24 +287,31 @@ classdef dime < handle
 
             k = fieldnames(v);
 
-            for i = 1:length(k)
-                jsondata = struct();
+            for i = 1:16:length(k)
+                for j = i:min(i + 16, length(k))
+                    jsondata = struct();
+                    jsondata.command = 'broadcast';
+                    jsondata.varname = k{j};
+                    jsondata.serialization = obj.serialization;
 
-                jsondata.command = 'broadcast';
-                jsondata.varname = keys{i};
-                jsondata.serialization = obj.serialization;
+                    switch obj.serialization
+                    case 'matlab'
+                        bindata = getByteStreamFromArray(v.(k{j}));
 
-                x = v.(k{i});
+                    case 'dimeb'
+                        bindata = dimebdumps(v.(k{j}));
+                    end
 
-                switch obj.serialization
-                case 'matlab'
-                    bindata = getByteStreamFromArray(x);
-
-                case 'dimeb'
-                    bindata = dimebdumps(x);
+                    sendmsg(obj, jsondata, bindata);
                 end
 
-                sendmsg(obj, jsondata, bindata);
+                for j = 1:min(16, length(k) - i + 1)
+                    [jsondata, bindata] = recvmsg(obj);
+
+                    if jsondata.status < 0
+                        error(jsondata.error);
+                    end
+                end
             end
         end
 
