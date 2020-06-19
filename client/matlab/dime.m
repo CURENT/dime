@@ -179,28 +179,60 @@ classdef dime < handle
             % varargin : cell array of strings
             %    The variable name(s) in the workspace.
 
-            for i = 1:16:length(varargin)
-                for j = i:min(i + 16, length(varargin))
+            v = struct();
+
+            for i = 1:length(varargin)
+                v.(varargin{i}) =  evalin('caller', varargin{i});
+            end
+
+            send_r(obj, name, v);
+        end
+
+        function [] = send_r(obj, name, varargin)
+            % Send a "send" command to the server (workspace-safe)
+            %
+            % Sends one or more variables passed either as a struct or as
+            % key-value pairs to all clients in a specified group.
+            %
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % name : string
+            %    the group name.
+            %
+            % varargin : cell array of strings
+            %    The variable name(s) in the workspace.
+
+            if length(varargin) > 1
+                v = struct(varargin{:});
+            else
+                v = varargin{1};
+            end
+
+            k = fieldnames(v);
+
+            for i = 1:16:length(k)
+                for j = i:min(i + 16, length(k))
                     jsondata = struct();
                     jsondata.command = 'send';
                     jsondata.name = name;
-                    jsondata.varname = varargin{j};
+                    jsondata.varname = k{j};
                     jsondata.serialization = obj.serialization;
-
-                    x = evalin('caller', varargin{j});
 
                     switch obj.serialization
                     case 'matlab'
-                        bindata = getByteStreamFromArray(x);
+                        bindata = getByteStreamFromArray(v.(k{j}));
 
                     case 'dimeb'
-                        bindata = dimebdumps(x);
+                        bindata = dimebdumps(v.(k{j}));
                     end
 
                     sendmsg(obj, jsondata, bindata);
                 end
 
-                for j = 1:min(16, length(varargin) - i + 1)
+                for j = 1:min(16, length(k) - i + 1)
                     [jsondata, bindata] = recvmsg(obj);
 
                     if jsondata.status < 0
@@ -224,14 +256,45 @@ classdef dime < handle
             % varargin : cell array of strings
             %    The variable name(s) in the workspace.
 
+            v = struct();
+
             for i = 1:length(varargin)
+                v.(varargin{i}) =  evalin('caller', varargin{i});
+            end
+
+            broadcast_r(obj, v);
+        end
+
+        function [] = broadcast_r(obj, varargin)
+            % Send a "broadcast" command to the server(workspace-safe)
+            %
+            % Sends one or more variablespassed either as a struct or as
+            % key-value pairs to all other clients.
+            %
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % varargin : cell array of strings
+            %    The variable name(s) in the workspace.
+
+            if length(varargin) > 1
+                v = struct(varargin{:});
+            else
+                v = varargin{1};
+            end
+
+            k = fieldnames(v);
+
+            for i = 1:length(k)
                 jsondata = struct();
 
                 jsondata.command = 'broadcast';
-                jsondata.varname = varargin{i};
+                jsondata.varname = keys{i};
                 jsondata.serialization = obj.serialization;
 
-                x = evalin('caller', varargin{i});
+                x = v.(k{i});
 
                 switch obj.serialization
                 case 'matlab'
@@ -260,6 +323,35 @@ classdef dime < handle
             %    Either one argument specifying the maximum number of variables
             %    to receive, or blank to receive all variables sent.
 
+            v = sync_r(obj, varargin{:});
+            k = fieldnames(v);
+
+            for i = 1:length(k)
+                assignin('caller', k{i}, v.(k{i}));
+            end
+        end
+
+        function [v] = sync_r(obj, varargin)
+            % Send a "sync" command to the server (workspace safe)
+            %
+            % Tell the server to start sending this client the variables sent
+            % to this client by other clients. Does not access the workspace.
+            %
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+            %
+            % varargin : cell array of scalar
+            %    Either one argument specifying the maximum number of variables
+            %    to receive, or blank to receive all variables sent.
+            %
+            % Returns
+            % -------
+            % struct
+            %     A struct of the retrieved variable names and their
+            %     corresponding values.
+
             n = -1;
 
             if length(varargin) >= 1
@@ -267,11 +359,12 @@ classdef dime < handle
             end
 
             jsondata = struct();
-
             jsondata.command = 'sync';
             jsondata.n = n;
 
             sendmsg(obj, jsondata, uint8.empty);
+
+            v = struct();
 
             while true
                 [jsondata, bindata] = recvmsg(obj);
@@ -291,7 +384,7 @@ classdef dime < handle
                     continue
                 end
 
-                assignin('caller', jsondata.varname, x);
+                v.(jsondata.varname) = x;
             end
         end
 
@@ -358,6 +451,8 @@ classdef dime < handle
             header = [uint8('DiME') typecast(json_len, 'uint8') typecast(bindata_len, 'uint8')];
 
             obj.send_ll([header json bindata]);
+
+            %disp(['-> ' char(json)]);
         end
 
         function [json, bindata] = recvmsg(obj)
@@ -407,6 +502,8 @@ classdef dime < handle
                     error('Received unknown meta instruction');
                 end
             end
+
+            %disp(['<- ' char(msg(1:json_len))]);
         end
     end
 end
