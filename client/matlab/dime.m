@@ -176,7 +176,7 @@ classdef dime < handle
             % name : string
             %    the group name.
             %
-            % varargin : cell array of strings
+            % varargin : cell array of string
             %    The variable name(s) in the workspace.
 
             v = struct();
@@ -202,8 +202,15 @@ classdef dime < handle
             % name : string
             %    the group name.
             %
-            % varargin : cell array of strings
-            %    The variable name(s) in the workspace.
+            % varargin : cell array
+            %    One of the following:
+            %
+            %    * A single argument, a struct whose field names are variable
+            %      names and values are the variables themselves
+            %    * Two or more arguments alternating between strings specifying
+            %      the variable names and arbitrary values representing the
+            %      variables (similar to the struct constructor with one or
+            %      more initial fields)
 
             if length(varargin) > 1
                 v = struct(varargin{:});
@@ -253,7 +260,7 @@ classdef dime < handle
             % obj : dime
             %     The dime instance.
             %
-            % varargin : cell array of strings
+            % varargin : cell array of string
             %    The variable name(s) in the workspace.
 
             v = struct();
@@ -266,9 +273,9 @@ classdef dime < handle
         end
 
         function [] = broadcast_r(obj, varargin)
-            % Send a "broadcast" command to the server(workspace-safe)
+            % Send a "broadcast" command to the server (workspace-safe)
             %
-            % Sends one or more variablespassed either as a struct or as
+            % Sends one or more variables passed either as a struct or as
             % key-value pairs to all other clients.
             %
             % Parameters
@@ -276,8 +283,15 @@ classdef dime < handle
             % obj : dime
             %     The dime instance.
             %
-            % varargin : cell array of strings
-            %    The variable name(s) in the workspace.
+            % varargin : cell array
+            %    One of the following:
+            %
+            %    * A single argument, a struct whose field names are variable
+            %      names and values are the variables themselves
+            %    * Two or more arguments alternating between strings specifying
+            %      the variable names and arbitrary values representing the
+            %      variables (similar to the struct constructor with one or
+            %      more initial fields)
 
             if length(varargin) > 1
                 v = struct(varargin{:});
@@ -315,7 +329,7 @@ classdef dime < handle
             end
         end
 
-        function [] = sync(obj, varargin)
+        function [] = sync(obj, n)
             % Send a "sync" command to the server
             %
             % Tell the server to start sending this client the variables sent
@@ -326,11 +340,15 @@ classdef dime < handle
             % obj : dime
             %     The dime instance.
             %
-            % varargin : cell array of scalar
-            %    Either one argument specifying the maximum number of variables
-            %    to receive, or blank to receive all variables sent.
+            % n : scalar
+            %    Number of variables to retrieve from the server. Retrieves all
+            %    variables if left unspecified
 
-            v = sync_r(obj, varargin{:});
+            if nargin < 2
+                n = -1;
+            end
+
+            v = sync_r(obj, n);
             k = fieldnames(v);
 
             for i = 1:length(k)
@@ -338,7 +356,7 @@ classdef dime < handle
             end
         end
 
-        function [v] = sync_r(obj, varargin)
+        function [v] = sync_r(obj, n)
             % Send a "sync" command to the server (workspace safe)
             %
             % Tell the server to start sending this client the variables sent
@@ -349,9 +367,9 @@ classdef dime < handle
             % obj : dime
             %     The dime instance.
             %
-            % varargin : cell array of scalar
-            %    Either one argument specifying the maximum number of variables
-            %    to receive, or blank to receive all variables sent.
+            % n : scalar
+            %    Number of variables to retrieve from the server. Retrieves all
+            %    variables if left unspecified
             %
             % Returns
             % -------
@@ -359,10 +377,8 @@ classdef dime < handle
             %     A struct of the retrieved variable names and their
             %     corresponding values.
 
-            n = -1;
-
-            if length(varargin) >= 1
-                n = varargin{1};
+            if nargin < 2
+                n = -1;
             end
 
             jsondata = struct();
@@ -418,7 +434,6 @@ classdef dime < handle
             %     A list of all groups connected to the DiME server.
 
             jsondata = struct();
-
             jsondata.command = 'devices';
 
             sendmsg(obj, jsondata, uint8.empty);
