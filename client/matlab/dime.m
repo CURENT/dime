@@ -440,7 +440,11 @@ classdef dime < handle
 
             [jsondata, ~] = recvmsg(obj);
 
-            names = jsondata.devices;
+            if jsondata.status < 0
+                error(jsondata.error);
+            else
+                names = jsondata.devices;
+            end
         end
 
         function [] = sendmsg(obj, json, bindata)

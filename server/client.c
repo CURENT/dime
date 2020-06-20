@@ -669,53 +669,39 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
         return -1;
     }
 
-    if (n < 0) {
-        while (1) {
-            dime_rcmessage_t *msg = dime_deque_popl(&clnt->queue);
+    size_t m = (size_t)(n < 0 ? -1 : n);
 
-            if (msg == NULL) {
-                break;
-            }
+    for (size_t i = 0; i < m; i++) {
+        dime_rcmessage_t *msg = dime_deque_popl(&clnt->queue);
 
-            if (dime_socket_push_str(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
-                dime_deque_pushl(&clnt->queue, msg);
-
-                return -1;
-            }
-
-            msg->refs--;
-
-            if (msg->refs == 0) {
-                free(msg->jsondata);
-                free(msg->bindata);
-                free(msg);
-            }
+        if (msg == NULL) {
+            break;
         }
-    } else {
-        for (size_t i = 0; i < n; i++) {
-            dime_rcmessage_t *msg = dime_deque_popl(&clnt->queue);
 
-            if (msg == NULL) {
-                break;
-            }
+        if (dime_socket_push_str(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
+            dime_deque_pushl(&clnt->queue, msg);
 
-            if (dime_socket_push_str(&clnt->sock, msg->jsondata, msg->bindata, msg->bindata_len) < 0) {
-                dime_deque_pushl(&clnt->queue, msg);
+            return -1;
+        }
 
-                return -1;
-            }
+        msg->refs--;
 
-            msg->refs--;
-
-            if (msg->refs == 0) {
-                free(msg->jsondata);
-                free(msg->bindata);
-                free(msg);
-            }
+        if (msg->refs == 0) {
+            free(msg->jsondata);
+            free(msg->bindata);
+            free(msg);
         }
     }
 
-    if (dime_socket_push_str(&clnt->sock, "{}", NULL, 0) < 0) {
+    if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
         return -1;
     }
 
@@ -725,6 +711,15 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     json_t *arr = json_array();
     if (arr == NULL) {
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
+        return -1;
     }
 
     dime_table_iter_t it;
@@ -739,6 +734,14 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
             if (str == NULL) {
                 json_decref(arr);
 
+                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+                json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+                if (response != NULL) {
+                    dime_socket_push(&clnt->sock, response, NULL, 0);
+                    json_decref(response);
+                }
+
                 return -1;
             }
 
@@ -746,20 +749,44 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
                 json_decref(str);
                 json_decref(arr);
 
+                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+                json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+                if (response != NULL) {
+                    dime_socket_push(&clnt->sock, response, NULL, 0);
+                    json_decref(response);
+                }
+
                 return -1;
             }
         }
     }
 
-    json_t *response = json_pack("{so}", "devices", jsondata);
+    json_t *response = json_pack("{siso}", "status", 0, "devices", jsondata);
     if (response == NULL) {
         json_decref(arr);
+
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
 
         return -1;
     }
 
     if (dime_socket_push(&clnt->sock, response, NULL, 0) < 0) {
         json_decref(response);
+
+        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+
+        response = json_pack("{siss}", "status", -1, "error", strerror(errno));
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
 
         return -1;
     }
