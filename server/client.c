@@ -762,7 +762,7 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
         }
     }
 
-    json_t *response = json_pack("{siso}", "status", 0, "devices", jsondata);
+    json_t *response = json_pack("{siso}", "status", 0, "devices", arr);
     if (response == NULL) {
         json_decref(arr);
 
