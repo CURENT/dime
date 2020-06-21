@@ -33,7 +33,7 @@ class DimeClient(collections.abc.MutableMapping):
         proto : {'ipc', 'tcp'}
             Transport protocol to use.
 
-        args
+        args : tuple
             Additional arguments, as described above.
         """
 
@@ -77,8 +77,12 @@ class DimeClient(collections.abc.MutableMapping):
            The group name(s).
         """
 
-        for name in names:
-            self.__send({"command": "join", "name": name})
+        self.__send({"command": "join", "name": list(names)})
+
+        jsondata, _ = self.__recv()
+
+        if jsondata["status"] < 0:
+            raise RuntimeError(status["error"])
 
     def leave(self, *names):
         """Send a "leave" command to the server
@@ -95,8 +99,12 @@ class DimeClient(collections.abc.MutableMapping):
            The group name(s).
         """
 
-        for name in names:
-            self.__send({"command": "leave", "name": name})
+        self.__send({"command": "leave", "name": list(names)})
+
+        jsondata, _ = self.__recv()
+
+        if jsondata["status"] < 0:
+            raise RuntimeError(status["error"])
 
     def send(self, name, *varnames):
         """Send a "send" command to the server
@@ -116,17 +124,37 @@ class DimeClient(collections.abc.MutableMapping):
            The variable name(s) in the mapping.
         """
 
-        for varname in varnames:
-            jsondata = {
-                "command": "send",
-                "name": name,
-                "varname": varname,
-                "serialization": self.serialization
-            }
+        self.send_r(name, **{varname: self.workspace[varname] for varname in varnames})
 
-            bindata = self.dumps(self.workspace[varname])
+    def send_r(self, name, **kvpairs):
+        kvpairs = iter(kvpairs.items())
 
-            self.__send(jsondata, bindata)
+        for _ in range(0, len(kvpairs), 16):
+            n = 0
+
+            for i in range(16):
+                try:
+                    varname, var = next(kvpairs)
+                except StopIteration:
+                    break
+
+                jsondata = {
+                    "command": "send",
+                    "name": name,
+                    "varname": varname,
+                    "serialization": self.serialization
+                }
+                bindata = self.dumps(var)
+
+                self.__send(jsondata, bindata)
+
+                n += 1
+
+            for _ in range(n):
+                jsondata, _ = self.__recv()
+
+                if jsondata["status"] < 0:
+                    raise RuntimeError(status["error"])
 
     def broadcast(self, *varnames):
         """Send a "broadcast" command to the server
@@ -143,16 +171,36 @@ class DimeClient(collections.abc.MutableMapping):
            The variable name(s) in the mapping.
         """
 
-        for varname in varnames:
-            jsondata = {
-                "command": "broadcast",
-                "varname": varname,
-                "serialization": self.serialization
-            }
+        self.broadcast_r(**{varname: self.workspace[varname] for varname in varnames})
 
-            bindata = self.dumps(self.workspace[varname])
+    def broadcast_r(self, **kvpairs):
+        kvpairs = iter(kvpairs.items())
 
-            self.__send(jsondata, bindata)
+        for _ in range(0, len(kvpairs), 16):
+            n = 0
+
+            for i in range(16):
+                try:
+                    varname, var = next(kvpairs)
+                except StopIteration:
+                    break
+
+                jsondata = {
+                    "command": "broadcast",
+                    "varname": varname,
+                    "serialization": self.serialization
+                }
+                bindata = self.dumps(var)
+
+                self.__send(jsondata, bindata)
+
+                n += 1
+
+            for _ in range(n):
+                jsondata, _ = self.__recv()
+
+                if jsondata["status"] < 0:
+                    raise RuntimeError(status["error"])
 
     def sync(self, n = -1):
         """Send a "sync" command to the server
@@ -206,6 +254,9 @@ class DimeClient(collections.abc.MutableMapping):
 
         self.__send({"command": "devices"})
         jsondata, _ = self.__recv()
+
+        if jsondata["status"] < 0:
+            raise RuntimeError(status["error"])
 
         return jsondata["devices"]
 
