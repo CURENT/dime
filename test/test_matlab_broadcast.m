@@ -1,4 +1,4 @@
-function [] = test_broadcast(pathname)
+function [] = test_matlab_broadcast(pathname)
     d1 = dime('ipc', pathname);
     d2 = dime('ipc', pathname);
     d3 = dime('ipc', pathname);

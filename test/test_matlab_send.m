@@ -1,4 +1,4 @@
-function [] = test_send(pathname)
+function [] = test_matlab_send(pathname)
     d1 = dime('ipc', pathname);
     d2 = dime('ipc', pathname);
     d3 = dime('ipc', pathname);
