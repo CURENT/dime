@@ -156,8 +156,11 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     }
 
     if (dime_ringbuffer_write(&sock->rbuf, buf, nrecvd) < 0) {
+        free(buf);
         return -1;
     }
+
+    free(buf);
 
     return nrecvd;
 }
