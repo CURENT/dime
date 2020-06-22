@@ -334,6 +334,17 @@ int dime_server_loop(dime_server_t *srv) {
                     free(pollfds);
 
                     printf("%d\n", __LINE__); return -1;
+                } else if (n == 0) {
+                    dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                    dime_client_destroy(clnt);
+                    free(clnt);
+
+                    pollfds[i] = pollfds[pollfds_len - 1];
+                    pollfds_len--;
+                    i--;
+
+                    continue;
                 }
 
                 while (1) {
