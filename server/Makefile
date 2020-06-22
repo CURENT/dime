@@ -9,7 +9,7 @@ LDFLAGS ?= -pie -pthread -ljansson
 # Uncomment the lines below for a release build
 #CFLAGS += -DNDEBUG -O3
 # Uncomment the lines below for a debug build
-CFLAGS += -Og -g -fstack-protector-strong -fstack-clash-protection -include debug.h
+CFLAGS += -Og -g -fstack-protector-strong -fstack-clash-protection
 
 SRCS = deque.c client.c error.c main.c ringbuffer.c server.c socket.c table.c
 OBJS = ${SRCS:.c=.o}
