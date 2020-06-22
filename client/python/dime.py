@@ -268,17 +268,17 @@ class DimeClient(collections.abc.MutableMapping):
                jsondata + \
                bindata
 
-        self.conn.__sendall(data)
+        self.conn.sendall(data)
 
     def __recv(self):
-        header = self.conn.__recv(12, socket.MSG_WAITALL)
+        header = self.conn.recv(12, socket.MSG_WAITALL)
 
         if header[:4] != b"DiME":
             raise RuntimeError("Invalid DiME message")
 
         jsondata_len, bindata_len = struct.unpack("!II", header[4:])
 
-        data = self.conn.__recv(jsondata_len + bindata_len, socket.MSG_WAITALL)
+        data = self.conn.recv(jsondata_len + bindata_len, socket.MSG_WAITALL)
         jsondata = json.loads(data[:jsondata_len].decode("utf-8"))
         bindata = data[jsondata_len:]
 
