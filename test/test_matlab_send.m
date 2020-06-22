@@ -3,7 +3,6 @@ function [] = test_matlab_send(pathname)
     d2 = dime('ipc', pathname);
     d3 = dime('ipc', pathname);
 
-
     d1.join('d1');
     d2.join('d2');
     d3.join('d3');
