@@ -23,7 +23,7 @@ HEREDOC`
 ../server/dime -P tcp -p "$DIME_PORT" &
 DIME_PID=$!
 
-matlab -batch "test_matlab_tcp('localhost', $DIME_PORT)"
+env MATLABPATH="../client/matlab" matlab -batch "test_matlab_tcp('localhost', $DIME_PORT)"
 
 kill $DIME_PID
 
