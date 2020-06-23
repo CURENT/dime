@@ -23,7 +23,7 @@ HEREDOC`
 ../server/dime -P tcp -p "$DIME_PORT" &
 DIME_PID=$!
 
-env PYTHONPATH="../client/python" python3 test_python_broadcast.py "localhost" "$DIME_PORT"
+env PYTHONPATH="../client/python" python3 test_python_tcp.py "localhost" "$DIME_PORT"
 
 kill $DIME_PID
 

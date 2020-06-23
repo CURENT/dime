@@ -16,7 +16,7 @@ class DimeClient(collections.abc.MutableMapping):
     variables in the workspace.
     """
 
-    def __init__(self, name, proto, *args):
+    def __init__(self, proto, *args):
         """Construct a dime instance
 
         Create a dime client via the specified protocol. The exact arguments
@@ -45,6 +45,8 @@ class DimeClient(collections.abc.MutableMapping):
         elif proto == "tcp":
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             self.conn.connect(args)
+        else:
+            raise TypeError()
 
         self.__send({"command": "register", "serialization": "pickle"})
 
@@ -127,9 +129,10 @@ class DimeClient(collections.abc.MutableMapping):
         self.send_r(name, **{varname: self.workspace[varname] for varname in varnames})
 
     def send_r(self, name, **kvpairs):
+        kvsiz = len(kvpairs)
         kvpairs = iter(kvpairs.items())
 
-        for _ in range(0, len(kvpairs), 16):
+        for _ in range(0, kvsiz, 16):
             n = 0
 
             for i in range(16):
@@ -174,9 +177,10 @@ class DimeClient(collections.abc.MutableMapping):
         self.broadcast_r(**{varname: self.workspace[varname] for varname in varnames})
 
     def broadcast_r(self, **kvpairs):
+        kvsiz = len(kvpairs)
         kvpairs = iter(kvpairs.items())
 
-        for _ in range(0, len(kvpairs), 16):
+        for _ in range(0, kvsiz, 16):
             n = 0
 
             for i in range(16):
