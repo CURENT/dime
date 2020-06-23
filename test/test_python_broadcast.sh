@@ -6,7 +6,7 @@ DIME_SOCKET="`mktemp -u`"
 ../server/dime -f "$DIME_SOCKET" &
 DIME_PID=$!
 
-python3 test_python_broadcast.py "$DIME_SOCKET"
+env PYTHONPATH="../client/python" python3 test_python_broadcast.py "$DIME_SOCKET"
 
 kill $DIME_PID
 
