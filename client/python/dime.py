@@ -129,15 +129,15 @@ class DimeClient(collections.abc.MutableMapping):
         self.send_r(name, **{varname: self.workspace[varname] for varname in varnames})
 
     def send_r(self, name, **kvpairs):
-        kvsiz = len(kvpairs)
-        kvpairs = iter(kvpairs.items())
+        kviter = iter(kvpairs.items())
+        serialization = self.serialization
 
-        for _ in range(0, kvsiz, 16):
+        for _ in range(0, len(kvpairs), 16):
             n = 0
 
             for i in range(16):
                 try:
-                    varname, var = next(kvpairs)
+                    varname, var = next(kviter)
                 except StopIteration:
                     break
 
@@ -159,6 +159,10 @@ class DimeClient(collections.abc.MutableMapping):
                 if jsondata["status"] < 0:
                     raise RuntimeError(status["error"])
 
+            if serialization != self.serialization:
+                self.send_r(name, **kvpairs)
+                return
+
     def broadcast(self, *varnames):
         """Send a "broadcast" command to the server
 
@@ -177,15 +181,15 @@ class DimeClient(collections.abc.MutableMapping):
         self.broadcast_r(**{varname: self.workspace[varname] for varname in varnames})
 
     def broadcast_r(self, **kvpairs):
-        kvsiz = len(kvpairs)
-        kvpairs = iter(kvpairs.items())
+        kviter = iter(kvpairs.items())
+        serialization = self.serialization
 
-        for _ in range(0, kvsiz, 16):
+        for _ in range(0, len(kvpairs), 16):
             n = 0
 
             for i in range(16):
                 try:
-                    varname, var = next(kvpairs)
+                    varname, var = next(kviter)
                 except StopIteration:
                     break
 
@@ -206,6 +210,10 @@ class DimeClient(collections.abc.MutableMapping):
                 if jsondata["status"] < 0:
                     raise RuntimeError(status["error"])
 
+            if serialization != self.serialization:
+                self.send_r(name, **kvpairs)
+                return
+
     def sync(self, n = -1):
         """Send a "sync" command to the server
 
@@ -221,13 +229,21 @@ class DimeClient(collections.abc.MutableMapping):
            The maximum number of variables to receive, or a negative value to
            receive all variables sent.
         """
+        self.workspace.update(self.sync_r(n))
 
+    def sync_r(self, n = -1):
         self.__send({"command": "sync", "n": n})
+
+        ret = {}
+        m = n
 
         while True:
             jsondata, bindata = self.__recv()
 
-            if "varname" not in jsondata:
+            if "status" in jsondata:
+                if jsondata["status"] < 0:
+                    raise RuntimeError(status["error"])
+
                 break
 
             if jsondata["serialization"] == "pickle":
@@ -235,9 +251,15 @@ class DimeClient(collections.abc.MutableMapping):
             elif jsondata["serialization"] == "dimeb":
                 var = dimeb.loads(bindata)
             else:
+                m -= 1
                 continue
 
             self.workspace[jsondata["varname"]] = var
+
+        if n > 0 and m < n:
+            ret.update(self.sync_r(n - m))
+
+        return ret
 
     def devices(self):
         """send Send a "devices" command to the server
@@ -294,6 +316,8 @@ class DimeClient(collections.abc.MutableMapping):
 
     def __meta(self, jsondata):
         if jsondata["command"] == "reregister":
+            self.serialization = jsondata["serialization"]
+
             if jsondata["serialization"] == "pickle":
                 self.loads = pickle.loads
                 self.dumps = pickle.dumps

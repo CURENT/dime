@@ -219,8 +219,11 @@ classdef dime < handle
             end
 
             k = fieldnames(v);
+            serialization = obj.serialization;
 
             for i = 1:16:length(k)
+                n = 0;
+
                 for j = i:min(i + 16, length(k))
                     jsondata = struct();
                     jsondata.command = 'send';
@@ -237,14 +240,21 @@ classdef dime < handle
                     end
 
                     sendmsg(obj, jsondata, bindata);
+
+                    n = n + 1;
                 end
 
-                for j = 1:min(16, length(k) - i + 1)
+                for j = 1:n
                     [jsondata, bindata] = recvmsg(obj);
 
                     if jsondata.status < 0
                         error(jsondata.error);
                     end
+                end
+
+                if serialization != obj.serialization
+                    broadcast_r(obj, name, v);
+                    return;
                 end
             end
         end
@@ -300,8 +310,11 @@ classdef dime < handle
             end
 
             k = fieldnames(v);
+            serialization = obj.serialization;
 
             for i = 1:16:length(k)
+                n = 0;
+
                 for j = i:min(i + 16, length(k))
                     jsondata = struct();
                     jsondata.command = 'broadcast';
@@ -317,14 +330,21 @@ classdef dime < handle
                     end
 
                     sendmsg(obj, jsondata, bindata);
+
+                    n = n + 1;
                 end
 
-                for j = 1:min(16, length(k) - i + 1)
+                for j = 1:n
                     [jsondata, bindata] = recvmsg(obj);
 
                     if jsondata.status < 0
                         error(jsondata.error);
                     end
+                end
+
+                if serialization != obj.serialization
+                    broadcast_r(obj, v);
+                    return;
                 end
             end
         end
@@ -388,6 +408,7 @@ classdef dime < handle
             sendmsg(obj, jsondata, uint8.empty);
 
             v = struct();
+            m = n;
 
             while true
                 [jsondata, bindata] = recvmsg(obj);
@@ -404,10 +425,20 @@ classdef dime < handle
                     x = dimebloads(bindata);
 
                 otherwise
+                    m = m - 1;
                     continue
                 end
 
                 v.(jsondata.varname) = x;
+            end
+
+            if n > 0 && m < n
+                v_new = sync_r(obj, n - m);
+                k = fieldnames(v_new);
+
+                for i = 1:length(fields)
+                    v.(k{i}) = v_new.(k{i});
+                end
             end
         end
 
