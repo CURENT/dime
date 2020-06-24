@@ -436,6 +436,9 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
                         group->clnts_len--;
                         group->clnts[j] = group->clnts[group->clnts_len];
 
+                        clnt->groups_len--;
+                        clnt->groups[i] = clnt->groups[clnt->groups_len];
+
                         goto next;
                     }
                 }
