@@ -520,16 +520,21 @@ classdef dime < handle
             json = jsondecode(char(msg(1:json_len)));
             bindata = msg((json_len + 1):end);
 
-            if isfield(json, 'meta') && json.meta
-                if isfield(json, 'serialization')
-                    obj.serialization = json.serialization;
-                    [json, bindata] = recvmsg(obj);
-                else
-                    error('Received unknown meta instruction');
-                end
+            if isfield(json, 'status') && json.status > 0 && isfield(json, 'meta') && json.meta
+                metamsg(obj, json);
+                [json, bindata] = recvmsg(obj);
             end
 
             %disp(['<- ' char(msg(1:json_len))]);
+        end
+
+        function [] = metamsg(obj, json)
+            if isfield(json, 'serialization')
+                obj.serialization = json.serialization;
+            else % No other commands supported yet
+                error('Received unknown meta-status from server');
+            end
+
         end
     end
 end

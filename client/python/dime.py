@@ -286,7 +286,22 @@ class DimeClient(collections.abc.MutableMapping):
         jsondata = json.loads(data[:jsondata_len].decode("utf-8"))
         bindata = data[jsondata_len:]
 
+        if "status" in jsondata and jsondata["status"] > 0 and "meta" in jsondata and jsondata["meta"]:
+            self.__meta(jsondata)
+            return self.__recv()
+
         return jsondata, bindata
+
+    def __meta(self, jsondata):
+        if jsondata["command"] == "reregister":
+            if jsondata["serialization"] == "pickle":
+                self.loads = pickle.loads
+                self.dumps = pickle.dumps
+            elif jsondata["serialization"] == "dimeb":
+                self.loads = dimeb.loads
+                self.dumps = dimeb.dumps
+        else: # No other commands supported yet
+            raise RuntimeError("Received unknown meta-status from server")
 
     def __enter__(self):
         self.conn.__enter__()

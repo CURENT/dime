@@ -153,7 +153,7 @@ int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsonda
         srv->serialization = serialization_i;
     } else if (srv->serialization != serialization_i) {
         if (srv->serialization != DIME_DIMEB) {
-            json_t *meta = json_pack("{sbss}", "meta", 1, "serialization", "dimeb");
+            json_t *meta = json_pack("{sisbssss}", "status", 1, "meta", 1, "command", "reregister", "serialization", "dimeb");
             if (meta == NULL) {
                 return -1;
             }
