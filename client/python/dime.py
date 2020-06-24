@@ -287,6 +287,8 @@ class DimeClient(collections.abc.MutableMapping):
         return jsondata["devices"]
 
     def __send(self, jsondata, bindata = b""):
+        #print("->", jsondata)
+
         jsondata = json.dumps(jsondata).encode("utf-8")
 
         data = b"DiME" + \
@@ -311,6 +313,8 @@ class DimeClient(collections.abc.MutableMapping):
         if "status" in jsondata and jsondata["status"] > 0 and "meta" in jsondata and jsondata["meta"]:
             self.__meta(jsondata)
             return self.__recv()
+
+        #print("<-", jsondata)
 
         return jsondata, bindata
 
