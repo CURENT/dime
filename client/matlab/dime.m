@@ -475,6 +475,10 @@ classdef dime < handle
                 error(jsondata.error);
             else
                 names = jsondata.devices;
+                
+                if isequal(names, []) 
+                    names = {};
+                end
             end
         end
 
