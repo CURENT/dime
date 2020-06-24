@@ -168,10 +168,12 @@ int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsonda
             json_decref(meta);
 
             dime_table_iter_t it;
-            dime_table_iter_init(&it, &srv->name2clnt);
+            dime_table_iter_init(&it, &srv->fd2clnt);
 
             while (dime_table_iter_next(&it)) {
-                if (dime_socket_push_str(&clnt->sock, meta_str, NULL, 0) < 0) {
+                dime_client_t *other = it.val;
+
+                if (other != clnt && dime_socket_push_str(&other->sock, meta_str, NULL, 0) < 0) {
                     free(meta_str);
 
                     return -1;
