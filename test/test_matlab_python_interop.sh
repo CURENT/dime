@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-printf "Running test_matlab_python_interop... \n"
+printf "Running test_matlab_python_interop... "
 
 DIME_SOCKET="`mktemp -u`"
 ../server/dime -f "$DIME_SOCKET" &
