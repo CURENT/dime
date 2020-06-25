@@ -762,6 +762,8 @@ int dime_client_wait(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     } else {
         clnt->waiting = 1;
     }
+
+    return 0;
 }
 
 int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
