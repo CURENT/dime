@@ -562,8 +562,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
             return -1;
         }
 
-        if (other->waiting) {
-            if (dime_socket_push_str(&other->sock, "{\"status\":0}", NULL, 0) < 0) {
+        if (group->clnts[i]->waiting) {
+            if (dime_socket_push_str(&group->clnts[i]->sock, "{\"status\":0}", NULL, 0) < 0) {
                 strlcpy(srv->err, strerror(errno), sizeof(srv->err));
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
@@ -575,7 +575,7 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 return -1;
             }
 
-            other->waiting = 0;
+            group->clnts[i]->waiting = 0;
         }
 
         msg->refs++;

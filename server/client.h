@@ -87,8 +87,8 @@ typedef struct {
 } dime_group_t;
 
 struct __dime_client {
-    int fd;     /** File descriptor */
-    int waiting /** Whether or not this client is waiting for a new message */
+    int fd;      /** File descriptor */
+    int waiting; /** Whether or not this client is waiting for a new message */
 
     dime_group_t **groups; /** Array of associated groups */
     size_t groups_len;     /** Length of groups */
