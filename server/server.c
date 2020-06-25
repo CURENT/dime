@@ -445,6 +445,8 @@ int dime_server_loop(dime_server_t *srv) {
                             err = dime_client_broadcast(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "sync") == 0) {
                             err = dime_client_sync(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "wait") == 0) {
+                            err = dime_client_wait(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "devices") == 0) {
                             err = dime_client_devices(clnt, srv, jsondata, &bindata, bindata_len);
                         } else {

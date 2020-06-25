@@ -87,7 +87,8 @@ typedef struct {
 } dime_group_t;
 
 struct __dime_client {
-    int fd;        /** File descriptor */
+    int fd;     /** File descriptor */
+    int waiting /** Whether or not this client is waiting for a new message */
 
     dime_group_t **groups; /** Array of associated groups */
     size_t groups_len;     /** Length of groups */
@@ -249,6 +250,8 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
  * @see dime_client_broadcast
  */
 int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
+
+int dime_client_wait(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "devices" command
