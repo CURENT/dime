@@ -442,6 +442,19 @@ classdef dime < handle
             end
         end
 
+        function [] = wait(obj)
+            jsondata = struct();
+            jsondata.command = 'wait';
+
+            sendmsg(obj, jsondata, uint8.empty);
+
+            [jsondata, ~] = recvmsg(obj);
+
+            if jsondata.status < 0
+                error(jsondata.error);
+            end
+        end
+
         function [names] = get_devices(obj)
             % Alias for devices
 
@@ -475,8 +488,8 @@ classdef dime < handle
                 error(jsondata.error);
             else
                 names = jsondata.devices;
-                
-                if isequal(names, []) 
+
+                if isequal(names, [])
                     names = {};
                 end
             end
