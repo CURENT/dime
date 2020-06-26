@@ -261,6 +261,14 @@ class DimeClient(collections.abc.MutableMapping):
 
         return ret
 
+    def wait(self):
+        self.__send({"command": "wait"})
+
+        jsondata, _ = self.__recv()
+
+        if jsondata["status"] < 0:
+            raise RuntimeError(status["error"])
+
     def devices(self):
         """send Send a "devices" command to the server
 
