@@ -1,7 +1,0 @@
-setup.py
-dime/__init__.py
-dime/dimeb.py
-dime.egg-info/PKG-INFO
-dime.egg-info/SOURCES.txt
-dime.egg-info/dependency_links.txt
-dime.egg-info/top_level.txt
