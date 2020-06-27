@@ -5,7 +5,7 @@ import pickle
 import socket
 import struct
 
-import dimeb
+from dime import dimeb
 
 class DimeClient(collections.abc.MutableMapping):
     """DiME client
