@@ -5,5 +5,5 @@
 __pycache__
 /server/dime
 /docs
-/dime2/client/python/build
-/dime2/client/python/dist
+/client/python/build
+/client/python/dist
