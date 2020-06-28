@@ -435,7 +435,9 @@ int dime_server_loop(dime_server_t *srv) {
             pollfds[pollfds_len].revents = 0;
             pollfds_len++;
 
-            puts(clnt->addr);
+            if (srv->verbosity >= 1) {
+                pinfo("Connection opened from %s", clnt->name);
+            }
         }
 
         for (size_t i = 1; i < pollfds_len; i++) {
@@ -443,6 +445,10 @@ int dime_server_loop(dime_server_t *srv) {
             assert(clnt != NULL);
 
             if (pollfds[i].revents & POLLHUP) {
+                if (srv->verbosity >= 1) {
+                    pinfo("Connection closed from %s", clnt->name);
+                }
+
                 dime_table_remove(&srv->fd2clnt, &clnt->fd);
 
                 dime_client_destroy(clnt);
@@ -466,6 +472,10 @@ int dime_server_loop(dime_server_t *srv) {
 
                     printf("%d\n", __LINE__); return -1;
                 } else if (n == 0) {
+                    if (srv->verbosity >= 1) {
+                        pinfo("Connection closed from %s", clnt->name);
+                    }
+
                     dime_table_remove(&srv->fd2clnt, &clnt->fd);
 
                     dime_client_destroy(clnt);
@@ -476,6 +486,10 @@ int dime_server_loop(dime_server_t *srv) {
                     i--;
 
                     continue;
+                }
+
+                if (srv->verbosity >= 3) {
+                    pinfo("Received %zd bytes of data from %s", n, clnt->name);
                 }
 
                 while (1) {
@@ -500,6 +514,10 @@ int dime_server_loop(dime_server_t *srv) {
                         }
 
                         int err;
+
+                        if (srv->verbosity >= 2) {
+                            pinfo("Received \"%s\" command from %s", cmd, clnt->name);
+                        }
 
                         /*
                          * As more commands are added, this section of code
@@ -555,13 +573,18 @@ int dime_server_loop(dime_server_t *srv) {
             }
 
             if (pollfds[i].revents & POLLOUT) {
-                if (dime_socket_sendpartial(&clnt->sock) < 0) {
+                ssize_t n = dime_socket_sendpartial(&clnt->sock);
+                if (n < 0) {
                     signal(SIGPIPE, sigpipe_f);
                     signal(SIGTERM, sigterm_f);
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
                     printf("%d\n", __LINE__); return -1;
+                }
+
+                if (srv->verbosity >= 3) {
+                    pinfo("Sent %zd bytes of data to %s", n, clnt->name);
                 }
             }
 
