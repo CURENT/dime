@@ -1,8 +1,13 @@
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include <jansson.h>
 #include "client.h"
@@ -69,20 +74,61 @@ static size_t strlcat(char *dst, const char *src, size_t dsize) {
 
 #endif
 
-int dime_client_init(dime_client_t *clnt, int fd) {
+int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
     clnt->fd = fd;
     clnt->waiting = 0;
+
+    switch (addr->sa_family) {
+    case AF_INET:
+        {
+            clnt->addr = malloc(22);
+            if (clnt->addr == NULL) {
+                return -1;
+            }
+
+            struct sockaddr_in *inet = (struct sockaddr_in *)addr;
+            snprintf(clnt->addr, 22, "%s:%hu", inet_ntoa(inet->sin_addr), (unsigned short)(inet->sin_port));
+        }
+
+        break;
+
+    case AF_UNIX:
+        /* TODO: Fix this */
+        /*{
+            struct sockaddr_un *uds = (struct sockaddr_un *)addr;
+
+            clnt->addr = strdup(uds->sun_path);
+            if (clnt->addr == NULL) {
+                return -1;
+            }
+        }
+
+        break;*/
+
+    default:
+        clnt->addr = malloc(10);
+        if (clnt->addr == NULL) {
+            return -1;
+        }
+
+        snprintf(clnt->addr, 10, "fd %d", fd);
+
+        break;
+    }
 
     clnt->groups_len = 0;
     clnt->groups_cap = 4;
 
     clnt->groups = malloc(sizeof(dime_group_t *) * clnt->groups_cap);
     if (clnt->groups == NULL) {
+        free(clnt->addr);
+
         return -1;
     }
 
     if (dime_socket_init(&clnt->sock, fd) < 0) {
         free(clnt->groups);
+        free(clnt->addr);
 
         return -1;
     }
@@ -90,6 +136,7 @@ int dime_client_init(dime_client_t *clnt, int fd) {
     if (dime_deque_init(&clnt->queue) < 0) {
         dime_socket_destroy(&clnt->sock);
         free(clnt->groups);
+        free(clnt->addr);
 
         return -1;
     }

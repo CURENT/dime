@@ -1,6 +1,5 @@
 *.mexa64
 *.o
-*.egg
 *.egg-info
 __pycache__
 /server/dime

@@ -62,14 +62,14 @@ enum dime_protocol {
 typedef struct {
     char err[161]; /** Error string */
 
-    int ipv6 : 1;    /** IPv6 flag */
-    int ssl : 1;     /** TLS flag */
-    int zlib : 1;    /** zlib flag */
-    int verbose : 1; /** Verbose mode flag */
-    char : 0;
+    //int ipv6 : 1;    /** IPv6 flag */
+    //int ssl : 1;     /** TLS flag */
+    //int zlib : 1;    /** zlib flag */
+    //char : 0;
 
-    int serialization;    /** Serialization method */
-    int protocol;         /** Protocol to use */
+    int verbosity;     /** Verbosity level */
+    int serialization; /** Serialization method */
+    int protocol;      /** Protocol to use */
 
     const char *pathname; /** Path name (if using Unix domain socket) */
     uint16_t port;        /** Port (if using TCP socket) */

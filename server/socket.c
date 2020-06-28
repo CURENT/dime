@@ -18,7 +18,6 @@ static const size_t RECVBUFLEN = 200000000;
 int dime_socket_init(dime_socket_t *sock, int fd) {
     sock->fd = fd;
 
-
     if (dime_ringbuffer_init(&sock->rbuf) < 0) {
         return -1;
     }

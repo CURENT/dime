@@ -10,6 +10,8 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <assert.h>
+#include <stdarg.h>
+#include <time.h>
 
 #include <jansson.h>
 
@@ -77,6 +79,72 @@ static size_t strlcat(char *dst, const char *src, size_t dsize) {
 }
 
 #endif
+
+static void pinfo(const char *fmt, ...) {
+    time_t t;
+    struct tm time;
+
+    time(&t);
+    gmtime_r(&t, &time);
+
+    char timestr[80];
+    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &time);
+
+    printf("[\033[34mINFO\033[0m %s] ", timestr);
+
+    va_list args;
+    va_start(args, fmt);
+
+    vprintf(fmt, args);
+
+    va_end(args);
+
+    putchar('\n');
+}
+
+static void pwarn(const char *fmt, ...) {
+    time_t t;
+    struct tm time;
+
+    time(&t);
+    gmtime_r(&t, &time);
+
+    char timestr[80];
+    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &time);
+
+    fprintf(stderr, "[\033[33mWARN\033[0m %s] ", timestr);
+
+    va_list args;
+    va_start(args, fmt);
+
+    vfprintf(stderr, fmt, args);
+
+    va_end(args);
+
+    putc('\n', stderr);
+}
+
+static void perr(const char *fmt, ...) {
+    time_t t;
+    struct tm time;
+
+    time(&t);
+    gmtime_r(&t, &time);
+
+    char timestr[80];
+    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &time);
+
+    fprintf(stderr, "[\033[31mERR\033[0m %s] ", timestr);
+
+    va_list args;
+    va_start(args, fmt);
+
+    vfprintf(stderr, fmt, args);
+
+    va_end(args);
+
+    putc('\n', stderr);
+}
 
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
@@ -307,7 +375,10 @@ int dime_server_loop(dime_server_t *srv) {
                 printf("%d\n", __LINE__); return -1;
             }
 
-            int fd = accept(srv->fd, NULL, NULL);
+            struct sockaddr_storage addr;
+            socklen_t siz = sizeof(struct sockaddr_storage);
+
+            int fd = accept(srv->fd, (struct sockaddr *)&addr, &siz);
             if (fd < 0) {
                 free(clnt);
                 signal(SIGPIPE, sigpipe_f);
@@ -318,7 +389,7 @@ int dime_server_loop(dime_server_t *srv) {
                 printf("%d\n", __LINE__); return -1;
             }
 
-            if (dime_client_init(clnt, fd) < 0) {
+            if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
                 close(fd);
                 free(clnt);
                 signal(SIGPIPE, sigpipe_f);
@@ -363,6 +434,8 @@ int dime_server_loop(dime_server_t *srv) {
             pollfds[pollfds_len].events = POLLIN;
             pollfds[pollfds_len].revents = 0;
             pollfds_len++;
+
+            puts(clnt->addr);
         }
 
         for (size_t i = 1; i < pollfds_len; i++) {
@@ -466,7 +539,7 @@ int dime_server_loop(dime_server_t *srv) {
                         free(bindata);
 
                         if (err < 0) {
-                            fprintf(stderr, "Error: %s\n", srv->err);
+                            perr(srv->err);
                         }
                     } else if (n < 0) {
                         signal(SIGPIPE, sigpipe_f);

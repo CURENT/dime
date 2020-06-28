@@ -9,6 +9,7 @@
 int main(int argc, char **argv) {
     dime_server_t srv;
 
+    srv.verbosity = 0;
     srv.pathname = "/tmp/dime.sock";
     srv.port = 5000;
 
@@ -20,7 +21,7 @@ int main(int argc, char **argv) {
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "hdP:p:f:")) >= 0) {
+    while ((opt = getopt(argc, argv, "hdP:p:f:v")) >= 0) {
         switch (opt) {
         case 'h':
             printf("Usage: %s [-h] [-P unix/tcp] [-p port] [-f socketfile]\n",
@@ -63,6 +64,10 @@ int main(int argc, char **argv) {
 
         case 'f':
             srv.pathname = optarg;
+            break;
+
+        case 'c':
+            srv.verbosity++;
             break;
 
         default:

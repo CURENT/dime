@@ -27,6 +27,7 @@
  */
 
 #include <stdint.h>
+#include <sys/socket.h>
 
 #include <jansson.h>
 #include "deque.h"
@@ -90,6 +91,8 @@ struct __dime_client {
     int fd;      /** File descriptor */
     int waiting; /** Whether or not this client is waiting for a new message */
 
+    char *addr; /** Address of connection, as a human-readable string */
+
     dime_group_t **groups; /** Array of associated groups */
     size_t groups_len;     /** Length of groups */
     size_t groups_cap;     /** Capacity of groups */
@@ -109,7 +112,7 @@ struct __dime_client {
  *
  * @see dime_client_destroy
  */
-int dime_client_init(dime_client_t *clnt, int fd);
+int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr);
 
 /**
  * @brief Free resources used by a client
