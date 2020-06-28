@@ -82,13 +82,13 @@ static size_t strlcat(char *dst, const char *src, size_t dsize) {
 
 static void pinfo(const char *fmt, ...) {
     time_t t;
-    struct tm time;
+    struct tm timeval;
 
     time(&t);
-    gmtime_r(&t, &time);
+    gmtime_r(&t, &timeval);
 
     char timestr[80];
-    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &time);
+    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &timeval);
 
     printf("[\033[34mINFO\033[0m %s] ", timestr);
 
@@ -104,13 +104,13 @@ static void pinfo(const char *fmt, ...) {
 
 static void pwarn(const char *fmt, ...) {
     time_t t;
-    struct tm time;
+    struct tm timeval;
 
     time(&t);
-    gmtime_r(&t, &time);
+    gmtime_r(&t, &timeval);
 
     char timestr[80];
-    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &time);
+    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &timeval);
 
     fprintf(stderr, "[\033[33mWARN\033[0m %s] ", timestr);
 
@@ -126,13 +126,13 @@ static void pwarn(const char *fmt, ...) {
 
 static void perr(const char *fmt, ...) {
     time_t t;
-    struct tm time;
+    struct tm timeval;
 
     time(&t);
-    gmtime_r(&t, &time);
+    gmtime_r(&t, &timeval);
 
     char timestr[80];
-    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &time);
+    strftime(timestr, sizeof(timestr), "%a, %d %b %Y %T %z", &timeval);
 
     fprintf(stderr, "[\033[31mERR\033[0m %s] ", timestr);
 
