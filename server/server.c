@@ -436,7 +436,7 @@ int dime_server_loop(dime_server_t *srv) {
             pollfds_len++;
 
             if (srv->verbosity >= 1) {
-                pinfo("Connection opened from %s", clnt->name);
+                pinfo("Connection opened from %s", clnt->addr);
             }
         }
 
@@ -446,7 +446,7 @@ int dime_server_loop(dime_server_t *srv) {
 
             if (pollfds[i].revents & POLLHUP) {
                 if (srv->verbosity >= 1) {
-                    pinfo("Connection closed from %s", clnt->name);
+                    pinfo("Connection closed from %s", clnt->addr);
                 }
 
                 dime_table_remove(&srv->fd2clnt, &clnt->fd);
@@ -473,7 +473,7 @@ int dime_server_loop(dime_server_t *srv) {
                     printf("%d\n", __LINE__); return -1;
                 } else if (n == 0) {
                     if (srv->verbosity >= 1) {
-                        pinfo("Connection closed from %s", clnt->name);
+                        pinfo("Connection closed from %s", clnt->addr);
                     }
 
                     dime_table_remove(&srv->fd2clnt, &clnt->fd);
@@ -489,7 +489,7 @@ int dime_server_loop(dime_server_t *srv) {
                 }
 
                 if (srv->verbosity >= 3) {
-                    pinfo("Received %zd bytes of data from %s", n, clnt->name);
+                    pinfo("Received %zd bytes of data from %s", n, clnt->addr);
                 }
 
                 while (1) {
@@ -516,7 +516,7 @@ int dime_server_loop(dime_server_t *srv) {
                         int err;
 
                         if (srv->verbosity >= 2) {
-                            pinfo("Received \"%s\" command from %s", cmd, clnt->name);
+                            pinfo("Received \"%s\" command from %s", cmd, clnt->addr);
                         }
 
                         /*
@@ -584,13 +584,16 @@ int dime_server_loop(dime_server_t *srv) {
                 }
 
                 if (srv->verbosity >= 3) {
-                    pinfo("Sent %zd bytes of data to %s", n, clnt->name);
+                    pinfo("Sent %zd bytes of data to %s", n, clnt->addr);
                 }
             }
         }
 
         /* Iterate in reverse order for better cache locality */
         for (size_t i = pollfds_len - 1; i > 0; i--) {
+            dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &pollfds[i].fd);
+            assert(clnt != NULL);
+
             if (dime_socket_sendlen(&clnt->sock) > 0) {
                 pollfds[i].events |= POLLOUT;
             } else {
