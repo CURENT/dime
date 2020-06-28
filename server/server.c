@@ -587,7 +587,10 @@ int dime_server_loop(dime_server_t *srv) {
                     pinfo("Sent %zd bytes of data to %s", n, clnt->name);
                 }
             }
+        }
 
+        /* Iterate in reverse order for better cache locality */
+        for (size_t i = pollfds_len - 1; i > 0; i--) {
             if (dime_socket_sendlen(&clnt->sock) > 0) {
                 pollfds[i].events |= POLLOUT;
             } else {
