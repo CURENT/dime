@@ -22,14 +22,20 @@
  * @date 2020
  */
 
-#ifndef __DIME_error_H
-#define __DIME_error_H
+#ifndef __DIME_log_H
+#define __DIME_log_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const char *dime_errorstring(const char *fmt, ...);
+extern FILE *dime_logfile;
+
+void dime_info(const char *fmt, ...);
+
+void dime_warn(const char *fmt, ...);
+
+void dime_err(const char *fmt, ...);
 
 #ifdef __cplusplus
 }

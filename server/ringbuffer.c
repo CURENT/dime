@@ -1,14 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
 #include "ringbuffer.h"
 
 int dime_ringbuffer_init(dime_ringbuffer_t *ring) {
     ring->cap = 1024;
     ring->arr = malloc(ring->cap);
     if (ring->arr == NULL) {
-        dime_errorstring("Out of memory");
         return -1;
     }
 
@@ -36,7 +34,6 @@ ssize_t dime_ringbuffer_write(dime_ringbuffer_t *ring, const void *buf, size_t s
 
         unsigned char *narr = realloc(ring->arr, ncap);
         if (narr == NULL) {
-            dime_errorstring("Out of memory");
             return -1;
         }
 

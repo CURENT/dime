@@ -11,7 +11,7 @@ LDFLAGS ?= -pie -pthread -ljansson
 # Uncomment the lines below for a debug build
 CFLAGS += -Og -g -fstack-protector-strong -fstack-clash-protection
 
-SRCS = deque.c client.c error.c main.c ringbuffer.c server.c socket.c table.c
+SRCS = deque.c client.c main.c log.c ringbuffer.c server.c socket.c table.c
 OBJS = ${SRCS:.c=.o}
 
 %.o: %.c
