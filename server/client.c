@@ -49,12 +49,12 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
         break;*/
 
     default:
-        clnt->addr = malloc(10);
+        clnt->addr = malloc(14);
         if (clnt->addr == NULL) {
             return -1;
         }
 
-        snprintf(clnt->addr, 10, "fd %d", fd);
+        snprintf(clnt->addr, 14, "fd %d", fd);
 
         break;
     }
@@ -117,6 +117,7 @@ void dime_client_destroy(dime_client_t *clnt) {
         }
     }
 
+    free(clnt->addr);
     free(clnt->groups);
     dime_deque_destroy(&clnt->queue);
     dime_socket_destroy(&clnt->sock);
