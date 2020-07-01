@@ -22,6 +22,22 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
     clnt->waiting = 0;
 
     switch (addr->sa_family) {
+    case AF_INET6:
+        {
+            clnt->addr = malloc(40);
+            if (clnt->addr == NULL) {
+                return -1;
+            }
+
+            struct sockaddr_in6 *inet6 = (struct sockaddr_in6 *)addr;
+            char s[34];
+            inet_ntop(AF_INET6, &inet6->sin6_addr, s, sizeof(s));
+
+            snprintf(clnt->addr, 40, "%s:%hu", s, (unsigned short)(inet6->sin6_port));
+        }
+
+        break;
+
     case AF_INET:
         {
             clnt->addr = malloc(22);
@@ -30,7 +46,10 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
             }
 
             struct sockaddr_in *inet = (struct sockaddr_in *)addr;
-            snprintf(clnt->addr, 22, "%s:%hu", inet_ntoa(inet->sin_addr), (unsigned short)(inet->sin_port));
+            char s[16];
+
+            inet_ntop(AF_INET, &inet->sin_addr, s, sizeof(s));
+            snprintf(clnt->addr, 22, "%s:%hu", s, (unsigned short)(inet->sin_port));
         }
 
         break;

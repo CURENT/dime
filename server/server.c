@@ -66,9 +66,10 @@ int dime_server_init(dime_server_t *srv) {
 
     union {
         struct sockaddr_in inet;
+        struct sockaddr_in6 inet6;
         struct sockaddr_un uds;
     } addr;
-    size_t addrlen;
+    socklen_t addrlen;
     int socktype, proto;
 
     memset(&addr, 0, sizeof(addr));
@@ -86,13 +87,13 @@ int dime_server_init(dime_server_t *srv) {
         break;
 
     case DIME_TCP:
-        addr.inet.sin_family = AF_INET;
-        addr.inet.sin_addr.s_addr = INADDR_ANY;
-        addr.inet.sin_port = htons(srv->port);
+        addr.inet6.sin6_family = AF_INET6;
+        addr.inet6.sin6_addr = in6addr_any;
+        addr.inet6.sin6_port = htons(srv->port);
 
-        socktype = AF_INET;
+        socktype = AF_INET6;
         proto = IPPROTO_TCP;
-        addrlen = sizeof(struct sockaddr_in);
+        addrlen = sizeof(struct sockaddr_in6);
 
         break;
 
@@ -109,6 +110,36 @@ int dime_server_init(dime_server_t *srv) {
         dime_table_destroy(&srv->name2clnt);
 
         printf("%d\n", __LINE__); return -1;
+    }
+
+    /* Fallback to IPv4 if dual-stack IPv4/IPv6 is not suppoerted */
+    if (srv->protocol == DIME_TCP) {
+        int no = 0;
+
+        if (setsockopt(srv->fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(int)) < 0) {
+            if (srv->verbosity >= 1) {
+                dime_warn("Failed to initialize IPv4/IPv6 dual-stack, falling back to IPv4");
+            }
+
+            close(srv->fd);
+
+            memset(&addr, 0, sizeof(addr));
+
+            addr.inet.sin_family = AF_INET;
+            addr.inet.sin_addr.s_addr = INADDR_ANY;
+            addr.inet.sin_port = htons(srv->port);
+
+            socktype = AF_INET;
+            addrlen = sizeof(struct sockaddr_in);
+
+            srv->fd = socket(socktype, SOCK_STREAM, proto);
+            if (srv->fd < 0) {
+                dime_table_destroy(&srv->fd2clnt);
+                dime_table_destroy(&srv->name2clnt);
+
+                printf("%d\n", __LINE__); return -1;
+            }
+        }
     }
 
     if (bind(srv->fd, (struct sockaddr *)&addr, addrlen) < 0) {
@@ -423,7 +454,7 @@ int dime_server_loop(dime_server_t *srv) {
                         json_decref(jsondata);
                         free(bindata);
 
-                        if (err < 0) {
+                        if (err < 0 && srv->verbosity >= 1) {
                             dime_warn("Failed to handle command \"%s\" from %s: %s", cmd, clnt->addr, srv->err);
                         }
                     } else if (n < 0) {
