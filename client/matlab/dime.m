@@ -57,6 +57,11 @@ classdef dime < handle
             % dime
             %     The newly constructed dime instance.
 
+            if (nargin == 0)
+                proto = 'ipc';
+                varargin = {'/tmp/dime.sock'};
+            end
+
             switch (proto)
             case 'ipc'
                 conn = sunconnect(varargin{:});

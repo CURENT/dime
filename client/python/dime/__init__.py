@@ -16,7 +16,7 @@ class DimeClient(collections.abc.MutableMapping):
     variables in the workspace.
     """
 
-    def __init__(self, proto, *args):
+    def __init__(self, proto = "ipc", *args):
         """Construct a dime instance
 
         Create a dime client via the specified protocol. The exact arguments
@@ -40,6 +40,9 @@ class DimeClient(collections.abc.MutableMapping):
         self.workspace = {}
 
         if proto == "ipc":
+            if len(args) == 0:
+                args = ("/tmp/dime.sock",)
+
             self.conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.conn.connect(args[0])
         elif proto == "tcp":
