@@ -1,3 +1,6 @@
+#ifdef __linux__
+#   define _GNU_SOURCE
+#endif
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
@@ -31,8 +34,8 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
 
             struct sockaddr_in6 *inet6 = (struct sockaddr_in6 *)addr;
             char s[34];
-            inet_ntop(AF_INET6, &inet6->sin6_addr, s, sizeof(s));
 
+            inet_ntop(AF_INET6, &inet6->sin6_addr, s, sizeof(s));
             snprintf(clnt->addr, 40, "%s:%hu", s, (unsigned short)(inet6->sin6_port));
         }
 
@@ -55,17 +58,23 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
         break;
 
     case AF_UNIX:
-        /* TODO: Fix this */
-        /*{
-            struct sockaddr_un *uds = (struct sockaddr_un *)addr;
+#ifdef __linux__
+        {
+            struct ucred cred;
+            socklen_t credlen = sizeof(struct ucred);
 
-            clnt->addr = strdup(uds->sun_path);
-            if (clnt->addr == NULL) {
-                return -1;
+            if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &credlen) >= 0) {
+                clnt->addr = malloc(30);
+                if (clnt->addr == NULL) {
+                    return -1;
+                }
+
+                snprintf(clnt->addr, 30, "PID %d, fd %d", (int)cred.pid, fd);
+
+                break;
             }
         }
-
-        break;*/
+#endif
 
     default:
         clnt->addr = malloc(14);
