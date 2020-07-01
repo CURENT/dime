@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
             srv.pathname = optarg;
             break;
 
-        case 'c':
+        case 'v':
             srv.verbosity++;
             break;
 
