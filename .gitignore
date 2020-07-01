@@ -1,5 +1,7 @@
-*.mexa64
 *.o
+*.mexw64
+*.mexmaci64
+*.mexa64
 *.egg-info
 __pycache__
 /server/dime
