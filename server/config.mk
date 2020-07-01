@@ -13,7 +13,7 @@ MANDIR ?= ${PREFIX}/share/man
 # C compilation flags
 CFLAGS ?= -std=c99 -D_XOPEN_SOURCE=500 -Wall -pedantic -Wno-error -fPIE -pthread
 
-#C linker flags
+# C linker flags
 LDFLAGS ?= -pie -pthread -ljansson
 
 # Uncomment the lines below for a release build
