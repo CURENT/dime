@@ -12,67 +12,10 @@
 #include <jansson.h>
 #include "client.h"
 #include "deque.h"
+#include "log.h"
 #include "server.h"
 #include "socket.h"
 #include "table.h"
-
-#if !(defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__))
-/* Shamelessly stolen from OpenBSD */
-
-static size_t strlcpy(char *restrict dst, const char *restrict src, size_t dsize) {
-    const char *osrc = src;
-    size_t nleft = dsize;
-
-    /* Copy as many bytes as will fit. */
-    if (nleft != 0) {
-        while (--nleft != 0) {
-            if ((*dst++ = *src++) == '\0') {
-                break;
-            }
-        }
-    }
-
-    /* Not enough room in dst, add NUL and traverse rest of src. */
-    if (nleft == 0) {
-        if (dsize != 0) {
-            *dst = '\0'; /* NUL-terminate dst */
-        }
-
-        while (*src++);
-    }
-
-    return src - osrc - 1; /* count does not include NUL */
-}
-
-static size_t strlcat(char *dst, const char *src, size_t dsize) {
-    const char *odst = dst;
-    const char *osrc = src;
-    size_t n = dsize;
-    size_t dlen;
-
-    /* Find the end of dst and adjust bytes left but don't go past end. */
-    while (n-- != 0 && *dst != '\0') {
-        dst++;
-    }
-    dlen = dst - odst;
-    n = dsize - dlen;
-
-    if (n-- == 0) {
-        return dlen + strlen(src);
-    }
-    while (*src != '\0') {
-        if (n != 0) {
-            *dst++ = *src;
-            n--;
-        }
-        src++;
-    }
-    *dst = '\0';
-
-    return dlen + (src - osrc); /* count does not include NUL */
-}
-
-#endif
 
 int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
     clnt->fd = fd;
@@ -298,8 +241,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
             return -1;
         }
 
-        for (size_t i = 0; i < clnt->groups_len; i++) {
-            if (strcmp(name, clnt->groups[i]->name) == 0) {
+        for (size_t j = 0; j < clnt->groups_len; j++) {
+            if (strcmp(name, clnt->groups[j]->name) == 0) {
                 strlcpy(srv->err, "Client is already in group: ", sizeof(srv->err));
                 strlcat(srv->err, name, sizeof(srv->err));
 
@@ -424,6 +367,10 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
         group->clnts[group->clnts_len] = clnt;
         group->clnts_len++;
+
+        if (srv->verbosity >= 2) {
+            dime_info("%s joined group \"%s\"", clnt->addr, group->name);
+        }
     }
 
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
@@ -486,6 +433,10 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
 
                         clnt->groups_len--;
                         clnt->groups[i] = clnt->groups[clnt->groups_len];
+
+                        if (srv->verbosity >= 2) {
+                            dime_info("%s left group \"%s\"", clnt->addr, group->name);
+                        }
 
                         goto next;
                     }
@@ -630,6 +581,16 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
     assert(msg->refs > 0);
 
+    if (srv->verbosity >= 2) {
+        const char *varname;
+
+        if (json_unpack(jsondata, "{ss}", "varname", &varname) < 0) {
+            varname = "(unknown)";
+        }
+
+        dime_info("%s sent a variable \"%s\" to group \"%s\"", clnt->addr, varname, group->name);
+    }
+
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
         strlcpy(srv->err, strerror(errno), sizeof(srv->err));
 
@@ -732,6 +693,16 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         free(msg);
     }
 
+    if (srv->verbosity >= 2) {
+        const char *varname;
+
+        if (json_unpack(jsondata, "{ss}", "varname", &varname) < 0) {
+            varname = "(unknown)";
+        }
+
+        dime_info("%s broadcasted a variable \"%s\"", clnt->addr, varname);
+    }
+
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
         strlcpy(srv->err, strerror(errno), sizeof(srv->err));
 
@@ -775,6 +746,14 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
             free(msg->jsondata);
             free(msg->bindata);
             free(msg);
+        }
+    }
+
+    if (srv->verbosity >= 2) {
+        if (n < 0) {
+            dime_info("%s synchronized all variables", clnt->addr);
+        } else {
+            dime_info("%s synchronized up to %lld variables", clnt->addr, (long long)n);
         }
     }
 
