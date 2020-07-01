@@ -11,7 +11,7 @@ static void dime_print(const char *typestr, const char *fmt, va_list args) {
     struct tm timeval;
 
     time(&t);
-    gmtime_r(&t, &timeval);
+    localtime_r(&t, &timeval);
 
     char timestr[32], outstr[161];
 
