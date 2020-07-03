@@ -448,6 +448,17 @@ classdef dime < handle
         end
 
         function [] = wait(obj)
+            % Send a "wait" command to the server
+            %
+            % Tell the server to send a message once at least one message has
+            % been received for the client. This method blocks the current
+            % thread of execution until the message is received.
+            %
+            % Parameters
+            % ----------
+            % obj : dime
+            %     The dime instance.
+
             jsondata = struct();
             jsondata.command = 'wait';
 

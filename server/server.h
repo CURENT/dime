@@ -21,7 +21,12 @@
  * @author Nicholas West
  * @date 2020
  *
- * Contains data structures and subroutines intended to manage the server's state. The code creates a socket that listens for connections based on configuration variables set in the server struct, and creates a @link dime_client_t @endlink struct for each incoming connection. It then uses an event loop with @c poll to handle incoming reads and outgoing writes.
+ * Contains data structures and subroutines intended to manage the
+ * server's state. The code creates a socket that listens for
+ * connections based on configuration variables set in the server
+ * struct, and creates a @link dime_client_t @endlink struct for each
+ * incoming connection. It then uses an event loop with @c poll to handle
+ * incoming reads and outgoing writes.
  *
  * @todo This could be global data, assuming we only run one server per process
  */

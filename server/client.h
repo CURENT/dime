@@ -58,6 +58,7 @@ extern "C" {
  * @see dime_client_send
  * @see dime_client_broadcast
  * @see dime_client_sync
+ * @see dime_client_wait
  * @see dime_client_devices
  */
 typedef struct __dime_client dime_client_t;
@@ -79,12 +80,17 @@ typedef struct {
     size_t bindata_len; /** Length of binary portion of the message */
 } dime_rcmessage_t;
 
+/**
+ * @brief Group of clients
+ *
+ * Record that contains a list of clients that all share a named group.
+ */
 typedef struct {
-    char *name;
+    char *name; /** Group name */
 
-    dime_client_t **clnts;
-    size_t clnts_len;
-    size_t clnts_cap;
+    dime_client_t **clnts; /** Array of clients */
+    size_t clnts_len;      /** Length of client array */
+    size_t clnts_cap;      /** Capacity of client array */
 } dime_group_t;
 
 struct __dime_client {
@@ -206,6 +212,7 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
  *
  * @see dime_client_broadcast
  * @see dime_client_sync
+ * @see dime_client_wait
  */
 int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
@@ -227,6 +234,7 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
  *
  * @see dime_client_send
  * @see dime_client_sync
+ * @see dime_client_wait
  */
 int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
@@ -254,6 +262,27 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
  */
 int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
+/**
+ * @brief Handle a "wait" command
+ *
+ * The "sync" command instructs the server to send the client @em clnt a 
+ * DiME message as soon as another client has queued a message via a 
+ * "send" or "broadcast" command. This effectively blocks the client's 
+ * thread of execution until at least one message can be retrieved.
+ *
+ * @param clnt Pointer to a @link dime_client_t @endlink struct
+ * @param srv Pointer to the @link dime_server_t @endlink struct from
+ * which the client connection was accepted
+ * @param jsondata JSON portion of the message
+ * @param pbindata Binary portion of the message
+ * @param bindata_len Length of binary portion of the message
+ *
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @see dime_client_send
+ * @see dime_client_broadcast
+ */
 int dime_client_wait(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**

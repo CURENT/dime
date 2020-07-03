@@ -265,6 +265,18 @@ class DimeClient(collections.abc.MutableMapping):
         return ret
 
     def wait(self):
+        """Send a "wait" command to the server
+
+        Tell the server to send a message once at least one message has been
+        received for the client. This method blocks the current thread of
+        execution until the message is received.
+
+        Parameters
+        ----------
+        obj : DimeClient
+            The dime instance.
+        """
+
         self.__send({"command": "wait"})
 
         jsondata, _ = self.__recv()
