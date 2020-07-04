@@ -33,6 +33,8 @@
 
 #include <stdint.h>
 
+#include <openssl/ssl.h>
+
 #include "table.h"
 
 #ifndef __DIME_server_H
@@ -67,21 +69,25 @@ enum dime_protocol {
 typedef struct {
     char err[161]; /** Error string */
 
-    //int ipv6 : 1;    /** IPv6 flag */
-    //int ssl : 1;     /** TLS flag */
-    //int zlib : 1;    /** zlib flag */
-    //char : 0;
+    unsigned int daemon : 1; /** Daemon flag */
+    unsigned int tls : 1;    /** TLS flag */
+    unsigned int zlib : 1;   /** zlib flag */
+    char : 0;
 
-    int verbosity;     /** Verbosity level */
-    int serialization; /** Serialization method */
-    int protocol;      /** Protocol to use */
+    const char *certname;    /** Certificate pathname (if using TLS) */
+    const char *privkeyname; /** Private key pathname (if using TLS) */
+    const char *socketname;  /** Socket pathname (if using Unix socket) */
+    uint16_t port;           /** Port (if using TCP socket) */
 
-    const char *pathname; /** Path name (if using Unix domain socket) */
-    uint16_t port;        /** Port (if using TCP socket) */
+    unsigned int verbosity; /** Verbosity level */
+    unsigned int threads;   /** Number of worker threads */
+    int protocol;           /** Protocol to use */
+    int serialization;      /** Serialization method */
 
     int fd;                 /** File descriptor */
     dime_table_t fd2clnt;   /** File descriptor-to-client translation table */
     dime_table_t name2clnt; /** Name-to-client translation table */
+    SSL_CTX *tlsctx;        /** OpenSSL context */
 } dime_server_t;
 
 /**

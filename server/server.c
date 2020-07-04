@@ -12,6 +12,8 @@
 #include <assert.h>
 
 #include <jansson.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include "client.h"
 #include "server.h"
@@ -77,8 +79,7 @@ int dime_server_init(dime_server_t *srv) {
     switch (srv->protocol) {
     case DIME_UNIX:
         addr.uds.sun_family = AF_UNIX;
-        strncpy(addr.uds.sun_path, srv->pathname, sizeof(addr.uds.sun_path));
-        addr.uds.sun_path[sizeof(addr.uds.sun_path) - 1] = '\0';
+        strlcpy(addr.uds.sun_path, srv->socketname, sizeof(addr.uds.sun_path));
 
         socktype = AF_UNIX;
         proto = 0;
@@ -158,6 +159,78 @@ int dime_server_init(dime_server_t *srv) {
         printf("%d\n", __LINE__); return -1;
     }
 
+    if (srv->daemon) {
+        pid_t pid = fork();
+
+        if (pid < 0) {
+            close(srv->fd);
+            dime_table_destroy(&srv->fd2clnt);
+            dime_table_destroy(&srv->name2clnt);
+
+            printf("%d\n", __LINE__); return -1;
+        } else if (pid != 0) {
+            if (srv->verbosity >= 1) {
+                dime_info("Forked from main, PID is %d", (int)pid);
+            }
+
+            exit(0);
+        }
+    }
+
+    if (srv->tls) {
+        if (srv->certname == NULL) {
+            if (srv->verbosity >= 1) {
+                dime_warn("Certificate file not given, TLS will be disabled");
+            }
+
+            goto tls_break;
+        }
+
+        if (srv->privkeyname == NULL) {
+            if (srv->verbosity >= 1) {
+                dime_warn("Private key file not given, TLS will be disabled");
+            }
+
+            goto tls_break;
+        }
+
+
+        srv->tlsctx = SSL_CTX_new(TLS_server_method());
+
+        if (srv->tlsctx == NULL) {
+            if (srv->verbosity >= 1) {
+                dime_warn("Failed to initalize TLS: %s", ERR_reason_error_string(ERR_get_error()));
+            }
+
+            goto tls_break;
+        }
+
+        SSL_CTX_set_ecdh_auto(srv->tlsctx, 1);
+
+        if (SSL_CTX_use_certificate_file(srv->tlsctx, srv->certname, SSL_FILETYPE_PEM) <= 0) {
+            if (srv->verbosity >= 1) {
+                dime_warn("Failed to initalize TLS: %s", ERR_reason_error_string(ERR_get_error()));
+            }
+
+            SSL_CTX_free(srv->tlsctx);
+            srv->tlsctx = NULL;
+
+            goto tls_break;
+        }
+
+        if (SSL_CTX_use_PrivateKey_file(srv->tlsctx, srv->privkeyname, SSL_FILETYPE_PEM) <= 0) {
+            if (srv->verbosity >= 1) {
+                dime_warn("Failed to initalize TLS: %s", ERR_reason_error_string(ERR_get_error()));
+            }
+
+            SSL_CTX_free(srv->tlsctx);
+            srv->tlsctx = NULL;
+
+            goto tls_break;
+        }
+    }
+tls_break:
+
     srv->serialization = DIME_NO_SERIALIZATION;
 
     return 0;
@@ -165,7 +238,7 @@ int dime_server_init(dime_server_t *srv) {
 
 void dime_server_destroy(dime_server_t *srv) {
     if (srv->protocol == DIME_UNIX) {
-        unlink(srv->pathname);
+        unlink(srv->socketname);
     }
 
     shutdown(srv->fd, SHUT_RDWR);
@@ -423,8 +496,8 @@ int dime_server_loop(dime_server_t *srv) {
                          * might be more efficient as a table of function
                          * pointers
                          */
-                        if (strcmp(cmd, "register") == 0) {
-                            err = dime_client_register(clnt, srv, jsondata, &bindata, bindata_len);
+                        if (strcmp(cmd, "handshake") == 0) {
+                            err = dime_client_handshake(clnt, srv, jsondata, &bindata, bindata_len);
                         }else if (strcmp(cmd, "join") == 0) {
                             err = dime_client_join(clnt, srv, jsondata, &bindata, bindata_len);
                         } else if (strcmp(cmd, "leave") == 0) {

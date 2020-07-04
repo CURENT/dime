@@ -1,8 +1,13 @@
 #include <arpa/inet.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <jansson.h>
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
 #include "ringbuffer.h"
 #include "socket.h"
 
@@ -28,12 +33,49 @@ int dime_socket_init(dime_socket_t *sock, int fd) {
         return -1;
     }
 
+    sock->tls = NULL;
+
     return 0;
 }
 
 void dime_socket_destroy(dime_socket_t *sock) {
     dime_ringbuffer_destroy(&sock->rbuf);
     dime_ringbuffer_destroy(&sock->wbuf);
+
+    if (sock->tls != NULL) {
+        SSL_shutdown(sock->tls);
+        SSL_free(sock->tls);
+    }
+
+    shutdown(sock->fd, SHUT_RDWR);
+    close(sock->fd);
+}
+
+int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tls) {
+    assert(dime_ringbuffer_len(&sock->rbuf) == 0);
+
+    sock->tls = SSL_new(tls);
+    if (sock->tls == NULL) {
+        return -1;
+    }
+
+    SSL_set_mode(sock->tls, SSL_MODE_ENABLE_PARTIAL_WRITE);
+
+    if (SSL_set_fd(sock->tls, sock->fd) <= 0) {
+        SSL_free(sock->tls);
+        sock->tls = NULL;
+
+        return -1;
+    }
+
+    if (SSL_accept(sock->tls) <= 0) {
+        SSL_free(sock->tls);
+        sock->tls = NULL;
+
+        return -1;
+    }
+
+    return 0;
 }
 
 ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len) {
@@ -128,7 +170,13 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
     }
 
     size_t nread = dime_ringbuffer_peek(&sock->wbuf, buf, SENDBUFLEN);
-    ssize_t nsent = send(sock->fd, buf, nread, 0);
+    ssize_t nsent;
+
+    if (sock->tls != NULL) {
+        nsent = SSL_write(sock->tls, buf, nread);
+    } else {
+        nsent = send(sock->fd, buf, nread, 0);
+    }
 
     if (nsent < 0) {
         free(buf);
@@ -147,15 +195,23 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
         return -1;
     }
 
-    ssize_t nrecvd = recv(sock->fd, buf, RECVBUFLEN, 0);
+    ssize_t nrecvd;
+
+    if (sock->tls != NULL) {
+        nrecvd = SSL_read(sock->tls, buf, RECVBUFLEN);
+    } else {
+        nrecvd = recv(sock->fd, buf, RECVBUFLEN, 0);
+    }
 
     if (nrecvd < 0) {
         free(buf);
+
         return -1;
     }
 
     if (dime_ringbuffer_write(&sock->rbuf, buf, nrecvd) < 0) {
         free(buf);
+
         return -1;
     }
 

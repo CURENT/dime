@@ -33,10 +33,10 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
             }
 
             struct sockaddr_in6 *inet6 = (struct sockaddr_in6 *)addr;
-            char s[34];
+            char tmp[34];
 
-            inet_ntop(AF_INET6, &inet6->sin6_addr, s, sizeof(s));
-            snprintf(clnt->addr, 40, "%s:%hu", s, (unsigned short)(inet6->sin6_port));
+            inet_ntop(AF_INET6, &inet6->sin6_addr, tmp, sizeof(tmp));
+            snprintf(clnt->addr, 40, "%s:%hu", tmp, (unsigned short)(inet6->sin6_port));
         }
 
         break;
@@ -58,6 +58,7 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
         break;
 
     case AF_UNIX:
+        /* Attempt to get PID of other process on Linux */
 #ifdef __linux__
         {
             struct ucred cred;
@@ -151,13 +152,26 @@ void dime_client_destroy(dime_client_t *clnt) {
     dime_socket_destroy(&clnt->sock);
 }
 
-int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
+int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     const char *serialization;
-    int serialization_i;
+    int tls;
 
-    if (json_unpack(jsondata, "{ss}", "serialization", &serialization) < 0) {
+    json_error_t err;
+
+    if (json_unpack_ex(jsondata, &err, 0, "{sssb}", "serialization", &serialization, "tls", &tls) < 0) {
+        strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
+        strlcat(srv->err, err.text, sizeof(srv->err));
+
+        json_t *response = json_pack("{sisss+}", "status", -1, "error", "JSON parsing error: ", err.text);
+        if (response != NULL) {
+            dime_socket_push(&clnt->sock, response, NULL, 0);
+            json_decref(response);
+        }
+
         return -1;
     }
+
+    int serialization_i;
 
     if (strcmp(serialization, "matlab") == 0) {
         serialization_i = DIME_MATLAB;
@@ -220,7 +234,10 @@ int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsonda
         break;
     }
 
-    json_t *response = json_pack("{siss}", "status", 0, "serialization", serialization);
+    //tls &= (srv->tls != NULL);
+    tls = 0;
+
+    json_t *response = json_pack("{sisssb}", "status", 0, "serialization", serialization, "tls", tls);
     if (response == NULL) {
         return -1;
     }

@@ -80,8 +80,9 @@ classdef dime < handle
 
             jsondata = struct();
 
-            jsondata.command = 'register';
+            jsondata.command = 'handshake';
             jsondata.serialization = 'matlab';
+            jsondata.tls = false;
 
             sendmsg(obj, jsondata, uint8.empty);
             [jsondata, ~] = recvmsg(obj);

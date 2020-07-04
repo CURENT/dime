@@ -72,10 +72,12 @@ extern "C" {
  * @see dime_socket_recvlen
  */
 typedef struct {
-    int fd; /* File descriptor */
+    int fd; /** File descriptor */
 
-    dime_ringbuffer_t rbuf; /* Inbuffer */
-    dime_ringbuffer_t wbuf; /* Outbuffer */
+    dime_ringbuffer_t rbuf; /** Inbuffer */
+    dime_ringbuffer_t wbuf; /** Outbuffer */
+
+    SSL *tls;      /** OpenSSL state information */
 } dime_socket_t;
 
 /**
@@ -103,6 +105,39 @@ int dime_socket_init(dime_socket_t *sock, int fd);
  * @see dime_socket_init
  */
 void dime_socket_destroy(dime_socket_t *sock);
+
+/**
+ * @brief Enable TLS encryption on the socket
+ *
+
+ * Performs a TLS handshake on the underlying socket. Subsequent reads/writes from the socket will be encrypted anddecrypted via TLS.
+
+ *
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
+ * @param tls OpenSSL context
+ *
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_init_zlib
+ */
+int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *ctx);
+
+/**
+ * @brief Enable zlib compression on the socket
+ *
+
+ * Subsequent reads/writes on the socket will be (de)compressed via zlib.
+
+ *
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
+ *
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @see dime_socket_init_tls
+ */
+int dime_socket_init_zlib(dime_socket_t *sock);
 
 /**
  * @brief Adds a DiME message to the outbuffer

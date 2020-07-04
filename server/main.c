@@ -1,17 +1,30 @@
-#include <strings.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
+#include <openssl/ssl.h>
 #include "server.h"
 
+static void cleanup() {
+    EVP_cleanup();
+}
+
 int main(int argc, char **argv) {
+    SSL_library_init();
+    SSL_load_error_strings();
+    atexit(cleanup);
+
     dime_server_t srv;
 
-    srv.verbosity = 0;
-    srv.pathname = "/tmp/dime.sock";
+    memset(&srv, 0, sizeof(dime_server_t));
+
+    srv.socketname = "/tmp/dime.sock";
     srv.port = 5000;
+    srv.verbosity = 0;
+    srv.threads = 1;
 
 #ifdef _WIN32
     srv.protocol = DIME_TCP;
@@ -21,7 +34,7 @@ int main(int argc, char **argv) {
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "hdP:p:f:v")) >= 0) {
+    while ((opt = getopt(argc, argv, "P:c:df:hj:k:p:v")) >= 0) {
         switch (opt) {
         case 'h':
             printf("Usage: %s [-h] [-P unix/tcp] [-p port] [-f socketfile]\n",
@@ -29,18 +42,7 @@ int main(int argc, char **argv) {
             return 0;
 
         case 'd':
-            {
-                pid_t pid = fork();
-
-                if (pid < 0) {
-                    perror("fork");
-                    return -1;
-                } else if (pid != 0) {
-                    printf("Forked from main, PID is %u\n", (unsigned int)pid);
-                    return 0;
-                }
-            }
-
+            srv.daemon = 1;
             break;
 
         case 'P':
@@ -63,11 +65,21 @@ int main(int argc, char **argv) {
             break;
 
         case 'f':
-            srv.pathname = optarg;
+            srv.socketname = optarg;
             break;
 
         case 'v':
             srv.verbosity++;
+            break;
+
+        case 'c':
+            srv.tls = 1;
+            srv.certname = optarg;
+            break;
+
+        case 'k':
+            srv.tls = 1;
+            srv.privkeyname = optarg;
             break;
 
         default:
@@ -80,13 +92,13 @@ int main(int argc, char **argv) {
     }
 
     if (dime_server_init(&srv) < 0) {
-        perror("dime_server_init");
+        fprintf(stderr, "Fatal error while initializing server: %s\n", srv.err);
 
         return -1;
     }
 
     if (dime_server_loop(&srv) < 0) {
-        perror("dime_server_loop");
+        fprintf(stderr, "Fatal error while running server: %s\n", srv.err);
         dime_server_destroy(&srv);
 
         return -1;

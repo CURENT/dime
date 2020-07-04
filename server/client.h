@@ -134,9 +134,9 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr);
 void dime_client_destroy(dime_client_t *clnt);
 
 /**
- * @brief Handle a "register" command
+ * @brief Handle a "handshake" command
  *
- * The "register" command mostly does housekeeping w.r.t. the
+ * The "handshake" command mostly does housekeeping w.r.t. the
  * serialization method.
  *
  * @param clnt Pointer to a @link dime_client_t @endlink struct
@@ -151,7 +151,7 @@ void dime_client_destroy(dime_client_t *clnt);
  *
  * @todo Remove this
  */
-int dime_client_register(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
+int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len);
 
 /**
  * @brief Handle a "join" command
@@ -265,9 +265,9 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 /**
  * @brief Handle a "wait" command
  *
- * The "sync" command instructs the server to send the client @em clnt a 
- * DiME message as soon as another client has queued a message via a 
- * "send" or "broadcast" command. This effectively blocks the client's 
+ * The "sync" command instructs the server to send the client @em clnt a
+ * DiME message as soon as another client has queued a message via a
+ * "send" or "broadcast" command. This effectively blocks the client's
  * thread of execution until at least one message can be retrieved.
  *
  * @param clnt Pointer to a @link dime_client_t @endlink struct
