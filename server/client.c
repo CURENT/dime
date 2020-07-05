@@ -234,8 +234,7 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         break;
     }
 
-    //tls &= (srv->tls != NULL);
-    tls = 0;
+    tls &= (srv->tls != NULL);
 
     json_t *response = json_pack("{sisssb}", "status", 0, "serialization", serialization, "tls", tls);
     if (response == NULL) {
@@ -249,6 +248,20 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
     }
 
     json_decref(response);
+
+    if (tls) {
+        if (srv->verbosity >= 1) {
+            dime_warn("Temporarily pausing event loop to handle a TLS handshake");
+        }
+
+        if (dime_socket_init_tls(&clnt->sock, srv->tls) < 0) {
+            return -1;
+        }
+
+        if (srv->verbosity >= 1) {
+            dime_warn("TLS handshake established with %s", clnt->addr);
+        }
+    }
 
     return 0;
 }
