@@ -211,7 +211,7 @@ void *dime_table_search(dime_table_t *tbl, const void *key) {
     return NULL;
 }
 
-const void *dime_table_search_const(const dime_table_t *tbl, const void *key) {
+const void *dime_table_search_r(const dime_table_t *tbl, const void *key) {
     size_t i, k;
 
     i = tbl->hash_f(key) & (tbl->cap - 1);

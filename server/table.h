@@ -128,7 +128,7 @@ int dime_table_insert(dime_table_t *tbl, const void *key, void *val);
  *
  * @return A pointer to the value on success, or @c NULL on failure
  *
- * @see dime_table_search_const
+ * @see dime_table_search_r
  * @see dime_table_insert
  * @see dime_table_remove
  */
@@ -152,7 +152,7 @@ void *dime_table_search(dime_table_t *tbl, const void *key);
  *
  * @see dime_table_search
  */
-const void *dime_table_search_const(const dime_table_t *tbl, const void *key);
+const void *dime_table_search_r(const dime_table_t *tbl, const void *key);
 
 /**
  * @brief Remove a value in the table via its key

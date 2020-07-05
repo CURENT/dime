@@ -88,6 +88,9 @@ typedef struct {
     dime_table_t fd2clnt;   /** File descriptor-to-client translation table */
     dime_table_t name2clnt; /** Name-to-client translation table */
     SSL_CTX *tlsctx;        /** OpenSSL context */
+
+    pthread_rwlock_t fd2clnt_rwl;   /** fd2clnt Read-write lock */
+    pthread_rwlock_t name2clnt_rwl; /** name2clnt Read-write lock */
 } dime_server_t;
 
 /**

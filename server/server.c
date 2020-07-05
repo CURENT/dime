@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <assert.h>
+#include <fcntl.h>
 
 #include <jansson.h>
 #include <openssl/err.h>
@@ -367,6 +368,29 @@ int dime_server_loop(dime_server_t *srv) {
                 printf("%d\n", __LINE__); return -1;
             }
 
+/*
+            int flags = fcntl(fd, F_GETFL, 0);
+            if (flags < 0) {
+                free(clnt);
+                signal(SIGPIPE, sigpipe_f);
+                signal(SIGTERM, sigterm_f);
+                signal(SIGINT, sigint_f);
+                free(pollfds);
+
+                printf("%d\n", __LINE__); return -1;
+            }
+
+            if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+                free(clnt);
+                signal(SIGPIPE, sigpipe_f);
+                signal(SIGTERM, sigterm_f);
+                signal(SIGINT, sigint_f);
+                free(pollfds);
+
+                printf("%d\n", __LINE__); return -1;
+            }
+*/
+
             if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
                 close(fd);
                 free(clnt);
@@ -442,16 +466,13 @@ int dime_server_loop(dime_server_t *srv) {
             if (pollfds[i].revents & POLLIN) {
                 ssize_t n = dime_socket_recvpartial(&clnt->sock);
 
-                if (n < 0) {
-                    signal(SIGPIPE, sigpipe_f);
-                    signal(SIGTERM, sigterm_f);
-                    signal(SIGINT, sigint_f);
-                    free(pollfds);
-
-                    printf("%d\n", __LINE__); return -1;
-                } else if (n == 0) {
+                if (n <= 0) {
                     if (srv->verbosity >= 1) {
-                        dime_info("Connection closed from %s", clnt->addr);
+                        if (n == 0) {
+                            dime_info("Connection closed from %s", clnt->addr);
+                        } else {
+                            dime_err("Read failed on %s (%s), closing", clnt->addr, strerror(errno));
+                        }
                     }
 
                     dime_table_remove(&srv->fd2clnt, &clnt->fd);
@@ -545,13 +566,23 @@ int dime_server_loop(dime_server_t *srv) {
 
             if (pollfds[i].revents & POLLOUT) {
                 ssize_t n = dime_socket_sendpartial(&clnt->sock);
-                if (n < 0) {
-                    signal(SIGPIPE, sigpipe_f);
-                    signal(SIGTERM, sigterm_f);
-                    signal(SIGINT, sigint_f);
-                    free(pollfds);
 
-                    printf("%d\n", __LINE__); return -1;
+                /* Note: The server should close the socket here, not crash */
+                if (n < 0) {
+                    if (srv->verbosity >= 1) {
+                        dime_err("Write failed on %s (%s), closing", clnt->addr, strerror(errno));
+                    }
+
+                    dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                    dime_client_destroy(clnt);
+                    free(clnt);
+
+                    pollfds[i] = pollfds[pollfds_len - 1];
+                    pollfds_len--;
+                    i--;
+
+                    continue;
                 }
 
                 if (srv->verbosity >= 3) {
