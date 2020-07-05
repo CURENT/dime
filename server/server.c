@@ -368,28 +368,14 @@ int dime_server_loop(dime_server_t *srv) {
                 printf("%d\n", __LINE__); return -1;
             }
 
-/*
-            int flags = fcntl(fd, F_GETFL, 0);
-            if (flags < 0) {
-                free(clnt);
-                signal(SIGPIPE, sigpipe_f);
-                signal(SIGTERM, sigterm_f);
-                signal(SIGINT, sigint_f);
-                free(pollfds);
+            /* Attempt to make sockets non-blocking for network connections */
+            if (srv->protocol != DIME_UNIX) {
+                int flags = fcntl(fd, F_GETFL, 0);
 
-                printf("%d\n", __LINE__); return -1;
+                if (flags >= 0) {
+                    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+                }
             }
-
-            if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-                free(clnt);
-                signal(SIGPIPE, sigpipe_f);
-                signal(SIGTERM, sigterm_f);
-                signal(SIGINT, sigint_f);
-                free(pollfds);
-
-                printf("%d\n", __LINE__); return -1;
-            }
-*/
 
             if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
                 close(fd);

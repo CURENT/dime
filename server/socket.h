@@ -119,6 +119,7 @@ void dime_socket_destroy(dime_socket_t *sock);
  * @return A nonnegative value on success, or a negative value on
  * failure
  *
+ * @todo Make this non-blocking
  * @see dime_socket_init_zlib
  */
 int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *ctx);
@@ -135,6 +136,7 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *ctx);
  * @return A nonnegative value on success, or a negative value on
  * failure
  *
+ * @todo Make this non-blocking
  * @see dime_socket_init_tls
  */
 int dime_socket_init_zlib(dime_socket_t *sock);

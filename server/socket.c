@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <assert.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -52,7 +53,27 @@ void dime_socket_destroy(dime_socket_t *sock) {
 }
 
 int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tls) {
+    /* Ensure the underlying socket is blocking for the TLS handshake */
+    int flags = fcntl(sock->fd, F_GETFL, 0);
+    if (flags < 0) {
+        return -1;
+    }
+
+    if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+        return -1;
+    }
+
     assert(dime_ringbuffer_len(&sock->rbuf) == 0);
+
+    while (dime_ringbuffer_len(&sock->wbuf) > 0) {
+        if (dime_socket_sendpartial(sock) < 0) {
+            if ((flags & ~O_NONBLOCK) != flags) {
+                fcntl(sock->fd, F_SETFL, flags);
+            }
+
+            return -1;
+        }
+    }
 
     sock->tls = SSL_new(tls);
     if (sock->tls == NULL) {
@@ -65,6 +86,10 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tls) {
         SSL_free(sock->tls);
         sock->tls = NULL;
 
+        if ((flags & ~O_NONBLOCK) != flags) {
+            fcntl(sock->fd, F_SETFL, flags);
+        }
+
         return -1;
     }
 
@@ -72,6 +97,15 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tls) {
         SSL_free(sock->tls);
         sock->tls = NULL;
 
+        if ((flags & ~O_NONBLOCK) != flags) {
+            fcntl(sock->fd, F_SETFL, flags);
+        }
+
+        return -1;
+    }
+
+    /* Reset the original socket flags */
+    if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags) < 0) {
         return -1;
     }
 
