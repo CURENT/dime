@@ -257,7 +257,7 @@ class DimeClient(collections.abc.MutableMapping):
                 m -= 1
                 continue
 
-            self.workspace[jsondata["varname"]] = var
+            ret[jsondata["varname"]] = var
 
         if n > 0 and m < n:
             ret.update(self.sync_r(n - m))
