@@ -254,7 +254,7 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
             dime_warn("Temporarily pausing event loop to handle a TLS handshake");
         }
 
-        if (dime_socket_init_tls(&clnt->sock, srv->tls) < 0) {
+        if (dime_socket_init_tls(&clnt->sock, srv->tlsctx) < 0) {
             return -1;
         }
 
