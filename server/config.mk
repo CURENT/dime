@@ -20,7 +20,7 @@ LDFLAGS ?= -pie -pthread -ljansson -lssl -lcrypto -lz -lbsd
 #CFLAGS += -DNDEBUG -O3
 
 # Uncomment the lines below for a debug build
-CFLAGS += -Og -g -fstack-protector-strong -fstack-clash-protection
+CFLAGS += -Og -g -fstack-protector-strong # -fstack-clash-protection
 
 # Uncomment the lines below to enable AddressSanitizer (Valgrind will not work)
 #CFLAGS += -fsanitize=address
