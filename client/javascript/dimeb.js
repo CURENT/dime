@@ -201,6 +201,42 @@ export function dimebloads(bytes) {
     return obj;
 }
 
-export function dimebdumps(x) {
+export function dimebdumps(obj) {
+    let bytes, dview;
 
+    if (obj === null) {
+        bytes = new Uint8Array(1);
+        bytes[0] = TYPE_NULL;
+    } else if (typeof obj === "boolean") {
+        bytes = new Uint8Array(1);
+        bytes[0] = (obj ? TYPE_TRUE : TYPE_FALSE);
+
+        break;
+    } else if (typeof obj === "number") {
+        bytes = new Uint8Array(9);
+        dview = new DataView(bytes.buffer, 1);
+
+        if (Number.isInteger(obj)) {
+            bytes[0] = TYPE_I64;
+            dview.setBigInt64(0, obj);
+        } else {
+            bytes[0] = TYPE_DOUBLE;
+            dview.setFloat64(0, obj);
+        }
+    } else if (typeof obj === "string") {
+        const stringbytes = new TextEncoder().encode(obj);
+
+        bytes = new Uint8Array(5 + stringbytes.length);
+        dview = new DataView(bytes.buffer, 1);
+
+        bytes[0] = TYPE_STRING;
+        dview.setUint32(0, stringbytes.length);
+        bytes.set(stringbytes, 5);
+    } else if (Array.isArray(obj)) {
+        // ?
+    } else {
+        // ?
+    }
+
+    return bytes.buffer;
 }
