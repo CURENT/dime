@@ -240,10 +240,10 @@ function [obj, nread] = loads(bytes)
         nread = 5;
 
         for i = 1:siz
-            [element, element_siz] = loads(bytes((nread + 1):length(bytes)));
+            [elem, elem_siz] = loads(bytes((nread + 1):length(bytes)));
 
-            obj{i} = element;
-            nread = nread + element_siz;
+            obj{i} = elem;
+            nread = nread + elem_siz;
         end
 
     case TYPE_ASSOCARRAY
