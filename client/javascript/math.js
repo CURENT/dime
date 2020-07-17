@@ -64,7 +64,7 @@ class NDArray {
 		let realIndex = 0;
 
 		for (let i = 0; i < index.length; i++) {
-			const shapeIndex = (this.order === 'F' ? len - i - 1 : i);
+			const shapeIndex = (this.order === 'F' ? index.length - i - 1 : i);
 			const s = shape[shapeIndex];
 			const j = index[shapeIndex];
 

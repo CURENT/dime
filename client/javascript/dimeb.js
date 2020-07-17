@@ -299,9 +299,85 @@ function dimebdumps(obj) {
             dview.setFloat64(0, obj);
         }
     } else if (obj instanceof Complex) {
-        // ?
+        bytes = new Uint8Array(17);
+        let dview = new DataView(bytes.buffer, 1);
+
+        bytes[0] = TYPE_COMPLEX_DOUBLE;
+        dview.setFloat64(0, obj.real);
+        dview.setFloat64(8, obj.imag);
     } else if (obj instanceof NDArray) {
-        // ?
+		if (obj.order !== 'F') {
+			throw "C-order NDArrays are currently not supported for dimebdumps";
+		}
+
+        let dtype, method, itemsize;
+
+        if (obj.array instanceof Int8Array) {
+            dtype = TYPE_MAT_I8;
+            method = "setInt8";
+            itemsize = 1;
+        } else if (obj.array instanceof Int16Array) {
+            dtype = TYPE_MAT_I16;
+            method = "setInt16";
+            itemsize = 2;
+        } else if (obj.array instanceof Int32Array) {
+            dtype = TYPE_MAT_I32;
+            method = "setInt32";
+            itemsize = 4;
+        } else if (obj.array instanceof BigInt64Array) {
+            dtype = TYPE_MAT_I64;
+            method = "setBigInt64";
+            itemsize = 8;
+        } else if (obj.array instanceof Uint8Array) {
+            dtype = TYPE_MAT_U8;
+            method = "setUint8";
+            itemsize = 1;
+        } else if (obj.array instanceof Uint16Array) {
+            dtype = TYPE_MAT_U16;
+            method = "setUint16";
+            itemsize = 2;
+        } else if (obj.array instanceof Uint32Array) {
+            dtype = TYPE_MAT_U32;
+            method = "setUint32";
+            itemsize = 4;
+        } else if (obj.array instanceof BigUint64Array) {
+            dtype = TYPE_MAT_U64;
+            method = "setBigUint64";
+            itemsize = 8;
+        } else if (obj.array instanceof Float32Array) {
+            dtype = (obj.complex ? TYPE_MAT_COMPLEX_SINGLE : TYPE_MAT_SINGLE);
+            method = "setFloat32";
+            itemsize = 4;
+        } else if (obj.array instanceof Float64Array) {
+            dtype = (obj.complex ? TYPE_MAT_COMPLEX_DOUBLE : TYPE_MAT_DOUBLE);
+            method = "setFloat64";
+            itemsize = 8;
+        }
+
+        if (obj.complex && dtype != TYPE_MAT_COMPLEX_SINGLE && TYPE_MAT_COMPLEX_DOUBLE) {
+            dtype = TYPE_MAT_COMPLEX_DOUBLE;
+            method = "setFloat64";
+            itemsize = 8;
+        }
+
+        const rank = obj.shape.length;
+        const nelems = obj.array.length;
+
+        bytes = new Uint8Array(2 + 4 * rank + nelems * itemsize);
+        let dview = new DataView(bytes.buffer, 2);
+
+        bytes[0] = dtype;
+        bytes[1] = rank;
+
+        for (let i = 0; i < rank; i++) {
+            dview.setUint32(i * 4, obj.shape[i]);
+        }
+
+        dview = new DataView(bytes.buffer, 2 + 4 * rank);
+
+        for (let i = 0; i < nelems; i++) {
+            dview[method](i * itemsize, obj.array[i]);
+        }
     } else if (typeof obj === "string") {
         const stringbytes = new TextEncoder().encode(obj);
 
@@ -327,7 +403,7 @@ function dimebdumps(obj) {
             pos += elembytes.length;
         }
     } else {
-        const elemsbytes = Array.prototype.concat.apply([], Object.entries()).map(dimebdumps);
+        const elemsbytes = Array.prototype.concat.apply([], Object.entries(obj)).map(dimebdumps);
 
         bytes = new Uint8Array(5 + elemsbytes.reduce((acc, elembytes) => acc + elembytes.length, 0));
         let dview = new DataView(bytes.buffer, 1);
@@ -343,5 +419,5 @@ function dimebdumps(obj) {
         }
     }
 
-    return bytes.buffer;
+    return bytes;
 }
