@@ -1,3 +1,5 @@
+import { Complex, NDArray } from "./math.js";
+
 // Boolean sentinels
 const TYPE_NULL  = 0x00;
 const TYPE_TRUE  = 0x01;
@@ -37,6 +39,28 @@ const TYPE_MAT_COMPLEX_DOUBLE = 0x10 | TYPE_COMPLEX_DOUBLE;
 const TYPE_STRING     = 0x20;
 const TYPE_ARRAY      = 0x21;
 const TYPE_ASSOCARRAY = 0x22;
+
+function loadsmat(bytes, dtype, complex) {
+    const [constructor, method, itemsize] = dtype;
+
+    let dview = new DataView(bytes, 1);
+    const rank = dview.getUint8(0);
+    const shape = Array.from(new Uint32Array(bytes, 2, rank));
+    const nelems = shape.reduce((a, b) => a * b) * (complex ? 2 : 1);
+
+    dview = new DataView(bytes, 4 * rank + 2);
+    let array = new constructor(nelems);
+
+    for (let i = 0; i < nelems; i++) {
+        array[i] = dview[method](i * itemsize);
+    }
+
+    let obj = new NDArray("F", shape, complex, array);
+
+    const nread = 4 * rank + 2 + nelems * itemsize;
+
+    return [obj, nread];
+}
 
 function loads(bytes) {
     let obj, nread;
@@ -127,7 +151,7 @@ function loads(bytes) {
             const realpart = dview.getFloat32(0);
             const imagpart = dview.getFloat32(1);
 
-            // ?
+            obj = new Complex(realpart, imagpart);
         }
         nread = 9;
 
@@ -138,13 +162,59 @@ function loads(bytes) {
             const realpart = dview.getFloat64(0);
             const imagpart = dview.getFloat64(1);
 
-            // ?
+            obj = new Complex(realpart, imagpart);
         }
         nread = 17;
 
         break;
 
-    // ?
+    case TYPE_MAT_I8:
+        [obj, nread] = loadsmat(bytes, [Int8Array, "getInt8", 1], false);
+        break;
+
+    case TYPE_MAT_I16:
+        [obj, nread] = loadsmat(bytes, [Int16Array, "getInt16", 2], false);
+        break;
+
+    case TYPE_MAT_I32:
+        [obj, nread] = loadsmat(bytes, [Int32Array, "getInt32", 4], false);
+        break;
+
+    case TYPE_MAT_I64:
+        [obj, nread] = loadsmat(bytes, [BigInt64Array, "getBigInt64", 8], false);
+        break;
+
+    case TYPE_MAT_U8:
+        [obj, nread] = loadsmat(bytes, [Uint8Array, "getUint8", 1], false);
+        break;
+
+    case TYPE_MAT_U16:
+        [obj, nread] = loadsmat(bytes, [Uint16Array, "getUint16", 2], false);
+        break;
+
+    case TYPE_MAT_U32:
+        [obj, nread] = loadsmat(bytes, [Uint32Array, "getUint32", 4], false);
+        break;
+
+    case TYPE_MAT_U64:
+        [obj, nread] = loadsmat(bytes, [BigUint64Array, "getBigUint64", 8], false);
+        break;
+
+    case TYPE_SINGLE:
+        [obj, nread] = loadsmat(bytes, [Float32Array, "getFloat32", 4], false);
+        break;
+
+    case TYPE_DOUBLE:
+        [obj, nread] = loadsmat(bytes, [Float64Array, "getFloat64", 8], false);
+        break;
+
+    case TYPE_COMPLEX_SINGLE:
+        [obj, nread] = loadsmat(bytes, [Float32Array, "getFloat32", 4], true);
+        break;
+
+    case TYPE_COMPLEX_DOUBLE:
+        [obj, nread] = loadsmat(bytes, [Float64Array, "getFloat64", 8], true);
+        break;
 
     case TYPE_STRING:
         {
