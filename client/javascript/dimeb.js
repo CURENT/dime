@@ -279,7 +279,7 @@ function dimebloads(bytes) {
 }
 
 function dimebdumps(obj) {
-    let bytes, dview;
+    let bytes;
 
     if (obj === null) {
         bytes = new Uint8Array(1);
@@ -289,15 +289,19 @@ function dimebdumps(obj) {
         bytes[0] = (obj ? TYPE_TRUE : TYPE_FALSE);
     } else if (typeof obj === "number") {
         bytes = new Uint8Array(9);
-        dview = new DataView(bytes.buffer, 1);
+        let dview = new DataView(bytes.buffer, 1);
 
         if (Number.isInteger(obj)) {
             bytes[0] = TYPE_I64;
-            dview.setBigInt64(0, obj);
+            dview.setBigInt64(0, BigInt(obj));
         } else {
             bytes[0] = TYPE_DOUBLE;
             dview.setFloat64(0, obj);
         }
+    } else if (obj instanceof Complex) {
+        // ?
+    } else if (obj instanceof NDArray) {
+        // ?
     } else if (typeof obj === "string") {
         const stringbytes = new TextEncoder().encode(obj);
 
@@ -308,9 +312,35 @@ function dimebdumps(obj) {
         dview.setUint32(0, stringbytes.length);
         bytes.set(stringbytes, 5);
     } else if (Array.isArray(obj)) {
-        // ?
+        const elemsbytes = obj.map(dimebdumps);
+
+        bytes = new Uint8Array(5 + elemsbytes.reduce((acc, elembytes) => acc + elembytes.length, 0));
+        let dview = new DataView(bytes.buffer, 1);
+
+        bytes[0] = TYPE_ARRAY;
+        dview.setUint32(0, elemsbytes.length);
+
+        let pos = 5;
+
+        for (const elembytes of elemsbytes) {
+            bytes.set(elembytes, pos);
+            pos += elembytes.length;
+        }
     } else {
-        // ?
+        const elemsbytes = Array.prototype.concat.apply([], Object.entries()).map(dimebdumps);
+
+        bytes = new Uint8Array(5 + elemsbytes.reduce((acc, elembytes) => acc + elembytes.length, 0));
+        let dview = new DataView(bytes.buffer, 1);
+
+        bytes[0] = TYPE_ASSOCARRAY;
+        dview.setUint32(0, elemsbytes.length / 2);
+
+        let pos = 5;
+
+        for (const elembytes of elemsbytes) {
+            bytes.set(elembytes, pos);
+            pos += elembytes.length;
+        }
     }
 
     return bytes.buffer;
