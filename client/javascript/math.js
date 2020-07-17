@@ -1,4 +1,4 @@
-export class Complex {
+class Complex {
     constructor(real, imag) {
         this.real = real;
         this.imag = imag;
@@ -31,13 +31,13 @@ export class Complex {
     }
 }
 
-export class NDArray {
+class NDArray {
 	constructor(order, shape, complex, array) {
 		this.order = order;
 		this.shape = shape;
         this.complex = complex;
 
-		if (!typedArray) {
+		if (!array) {
 			let total = 1;
 
 			for (let x of shape) {

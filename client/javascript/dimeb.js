@@ -1,5 +1,3 @@
-import { Complex, NDArray } from "./math.js";
-
 // Boolean sentinels
 const TYPE_NULL  = 0x00;
 const TYPE_TRUE  = 0x01;
@@ -45,10 +43,17 @@ function loadsmat(bytes, dtype, complex) {
 
     let dview = new DataView(bytes, 1);
     const rank = dview.getUint8(0);
-    const shape = Array.from(new Uint32Array(bytes, 2, rank));
+
+    dview = new DataView(bytes, 2);
+    const shape = [];
+
+    for (let i = 0; i < rank; i++) {
+        shape.push(dview.getUint32(i * 4));
+    }
+
     const nelems = shape.reduce((a, b) => a * b) * (complex ? 2 : 1);
 
-    dview = new DataView(bytes, 4 * rank + 2);
+    dview = new DataView(bytes, 2 + 4 * rank);
     let array = new constructor(nelems);
 
     for (let i = 0; i < nelems; i++) {
@@ -57,7 +62,7 @@ function loadsmat(bytes, dtype, complex) {
 
     let obj = new NDArray("F", shape, complex, array);
 
-    const nread = 4 * rank + 2 + nelems * itemsize;
+    const nread = 2 + 4 * rank + nelems * itemsize;
 
     return [obj, nread];
 }
@@ -141,7 +146,7 @@ function loads(bytes) {
         break;
 
     case TYPE_DOUBLE:
-        obj = dview.getFloat32(0);
+        obj = dview.getFloat64(0);
         nread = 5;
 
         break;
@@ -149,7 +154,7 @@ function loads(bytes) {
     case TYPE_COMPLEX_SINGLE:
         {
             const realpart = dview.getFloat32(0);
-            const imagpart = dview.getFloat32(1);
+            const imagpart = dview.getFloat32(4);
 
             obj = new Complex(realpart, imagpart);
         }
@@ -160,7 +165,7 @@ function loads(bytes) {
     case TYPE_COMPLEX_DOUBLE:
         {
             const realpart = dview.getFloat64(0);
-            const imagpart = dview.getFloat64(1);
+            const imagpart = dview.getFloat64(8);
 
             obj = new Complex(realpart, imagpart);
         }
@@ -200,19 +205,19 @@ function loads(bytes) {
         [obj, nread] = loadsmat(bytes, [BigUint64Array, "getBigUint64", 8], false);
         break;
 
-    case TYPE_SINGLE:
+    case TYPE_MAT_SINGLE:
         [obj, nread] = loadsmat(bytes, [Float32Array, "getFloat32", 4], false);
         break;
 
-    case TYPE_DOUBLE:
+    case TYPE_MAT_DOUBLE:
         [obj, nread] = loadsmat(bytes, [Float64Array, "getFloat64", 8], false);
         break;
 
-    case TYPE_COMPLEX_SINGLE:
+    case TYPE_MAT_COMPLEX_SINGLE:
         [obj, nread] = loadsmat(bytes, [Float32Array, "getFloat32", 4], true);
         break;
 
-    case TYPE_COMPLEX_DOUBLE:
+    case TYPE_MAT_COMPLEX_DOUBLE:
         [obj, nread] = loadsmat(bytes, [Float64Array, "getFloat64", 8], true);
         break;
 
@@ -236,10 +241,12 @@ function loads(bytes) {
             for (let i = 0; i < len; i++) {
                 const [elem, elem_siz] = loads(bytes.slice(nread));
 
-                obj.append(elem);
+                obj.push(elem);
                 nread += elem_siz;
             }
         }
+
+        break;
 
     case TYPE_ASSOCARRAY:
         {
@@ -265,13 +272,13 @@ function loads(bytes) {
     return [obj, nread];
 }
 
-export function dimebloads(bytes) {
+function dimebloads(bytes) {
     const [obj, nread] = loads(bytes);
 
     return obj;
 }
 
-export function dimebdumps(obj) {
+function dimebdumps(obj) {
     let bytes, dview;
 
     if (obj === null) {
@@ -280,8 +287,6 @@ export function dimebdumps(obj) {
     } else if (typeof obj === "boolean") {
         bytes = new Uint8Array(1);
         bytes[0] = (obj ? TYPE_TRUE : TYPE_FALSE);
-
-        break;
     } else if (typeof obj === "number") {
         bytes = new Uint8Array(9);
         dview = new DataView(bytes.buffer, 1);
