@@ -43,7 +43,7 @@ void dime_err(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-    dime_print("\033[33mERR \033[0m", fmt, args);
+    dime_print("\033[31mERR \033[0m", fmt, args);
 
     va_end(args);
 }

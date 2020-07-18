@@ -162,7 +162,7 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
         strlcat(srv->err, err.text, sizeof(srv->err));
 
-        json_t *response = json_pack("{sisss+}", "status", -1, "error", "JSON parsing error: ", err.text);
+        json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
             dime_socket_push(&clnt->sock, response, NULL, 0);
             json_decref(response);
@@ -234,7 +234,7 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         break;
     }
 
-    tls &= (srv->tls != NULL);
+    tls = (tls && srv->tlsctx != NULL);
 
     json_t *response = json_pack("{sisssb}", "status", 0, "serialization", serialization, "tls", tls);
     if (response == NULL) {
@@ -274,7 +274,7 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
         strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
         strlcat(srv->err, err.text, sizeof(srv->err));
 
-        json_t *response = json_pack("{sisss+}", "status", -1, "error", "JSON parsing error: ", err.text);
+        json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
             dime_socket_push(&clnt->sock, response, NULL, 0);
             json_decref(response);
@@ -305,7 +305,7 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 strlcpy(srv->err, "Client is already in group: ", sizeof(srv->err));
                 strlcat(srv->err, name, sizeof(srv->err));
 
-                json_t *response = json_pack("{sisss+}", "status", -1, "error", "Client is already in group: ", name);
+                json_t *response = json_pack("{siss+}", "status", -1, "error", "Client is already in group: ", name);
                 if (response != NULL) {
                     dime_socket_push(&clnt->sock, response, NULL, 0);
                     json_decref(response);
@@ -455,7 +455,7 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
         strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
         strlcat(srv->err, err.text, sizeof(srv->err));
 
-        json_t *response = json_pack("{sisss+}", "status", -1, "error", "JSON parsing error: ", err.text);
+        json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
             dime_socket_push(&clnt->sock, response, NULL, 0);
             json_decref(response);
@@ -508,7 +508,7 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
         strlcpy(srv->err, "Client is not in group: ", sizeof(srv->err));
         strlcat(srv->err, name, sizeof(srv->err));
 
-        json_t *response = json_pack("{sisss+}", "status", -1, "error", "Client is not in group: ", name);
+        json_t *response = json_pack("{siss+}", "status", -1, "error", "Client is not in group: ", name);
         if (response != NULL) {
             dime_socket_push(&clnt->sock, response, NULL, 0);
             json_decref(response);
@@ -543,7 +543,7 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
         strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
         strlcat(srv->err, err.text, sizeof(srv->err));
 
-        json_t *response = json_pack("{sisss+}", "status", -1, "error", "JSON parsing error: ", err.text);
+        json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
             dime_socket_push(&clnt->sock, response, NULL, 0);
             json_decref(response);
@@ -557,7 +557,7 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
         strlcpy(srv->err, "No such group exists: ", sizeof(srv->err));
         strlcat(srv->err, name, sizeof(srv->err));
 
-        json_t *response = json_pack("{sisss+}", "status", -1, "error", "No such group exists: ", name);
+        json_t *response = json_pack("{siss+}", "status", -1, "error", "No such group exists: ", name);
         if (response != NULL) {
             dime_socket_push(&clnt->sock, response, NULL, 0);
             json_decref(response);
