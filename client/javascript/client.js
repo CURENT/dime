@@ -52,6 +52,42 @@ class DimeClient {
         })
     }
 
+    async join(...names) {
+        this.__send({
+            command: "join",
+            name: names
+        })
+
+        const [jsondata, bindata] = await this.__recv();
+
+        if (jsondata.status < 0) {
+            throw status.error;
+        }
+    }
+
+    async leave(...names) {
+        this.__send({
+            command: "leave",
+            name: names
+        })
+
+        const [jsondata, bindata] = await this.__recv();
+
+        if (jsondata.status < 0) {
+            throw status.error;
+        }
+    }
+
+    async send(name, ...varnames) {
+        const kvpairs = {};
+
+        for (let varname of varnames) {
+            kvpairs[varname] = this.workspace[varname];
+        }
+
+        await send_r(name, kvpairs);
+    }
+
     async send_r(name, kvpairs) {
         if (this.connected) {
             await this.connected;
@@ -77,7 +113,50 @@ class DimeClient {
         }
     }
 
+    async broadcast(name, ...varnames) {
+        const kvpairs = {};
+
+        for (let varname of varnames) {
+            kvpairs[varname] = this.workspace[varname];
+        }
+
+        await broadcast_r(kvpairs);
+    }
+
+    async broadcast_r(kvpairs) {
+        if (this.connected) {
+            await this.connected;
+            this.connected = null;
+        }
+
+        for (let [varname, value] of Object.entries(kvpairs)) {
+            let jsondata = {
+                command: "broadcast",
+                varname: varname,
+                serialization: this.serialization
+            };
+
+            let bindata = dimebdumps(value);
+
+            this.__send(jsondata, bindata);
+            [jsondata, bindata] = await this.__recv();
+
+            if (jsondata.status < 0) {
+                throw jsondata.error;
+            }
+        }
+    }
+
+    async sync(n = -1) {
+        Object.assign(this.workspace, await self.sync_r(n));
+    }
+
     async sync_r(n = -1) {
+        if (this.connected) {
+            await this.connected;
+            this.connected = null;
+        }
+
         this.__send({
             command: "sync",
             n: n
@@ -109,6 +188,16 @@ class DimeClient {
         }
 
         return ret;
+    }
+
+    async wait() {
+        this.__send({command: "wait"})
+
+        const [jsondata, bindata] = await this.__recv();
+
+        if (jsondata.status < 0) {
+            throw status.error;
+        }
     }
 
     __send(jsondata, bindata = new ArrayBuffer(0)) {
