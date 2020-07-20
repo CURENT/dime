@@ -644,6 +644,11 @@ class DimeClient {
     }
 
     async join(...names) {
+        if (this.connected) {
+            await this.connected;
+            this.connected = null;
+        }
+
         this.__send({
             command: "join",
             name: names
@@ -657,6 +662,11 @@ class DimeClient {
     }
 
     async leave(...names) {
+        if (this.connected) {
+            await this.connected;
+            this.connected = null;
+        }
+
         this.__send({
             command: "leave",
             name: names
@@ -782,6 +792,11 @@ class DimeClient {
     }
 
     async wait() {
+        if (this.connected) {
+            await this.connected;
+            this.connected = null;
+        }
+
         this.__send({command: "wait"})
 
         const [jsondata, bindata] = await this.__recv();
