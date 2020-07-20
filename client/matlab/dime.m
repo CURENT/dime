@@ -258,7 +258,8 @@ classdef dime < handle
                     end
                 end
 
-                if serialization ~= obj.serialization
+
+                if ~strcmp(serialization, obj.serialization)
                     send_r(obj, name, v);
                     return;
                 end
@@ -348,7 +349,7 @@ classdef dime < handle
                     end
                 end
 
-                if serialization ~= obj.serialization
+                if ~strcmp(serialization, obj.serialization)
                     broadcast_r(obj, v);
                     return;
                 end
