@@ -7,6 +7,8 @@ import struct
 
 from dime import dimeb
 
+__all__ = ["DimeClient"]
+
 class DimeClient(collections.abc.MutableMapping):
     """DiME client
 

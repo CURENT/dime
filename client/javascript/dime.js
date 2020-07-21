@@ -666,6 +666,12 @@ class DimeClient {
         })
     }
 
+    close() {
+        if (this.ws) {
+            this.ws.close();
+        }
+    }
+
     async join(...names) {
         if (this.connected) {
             await this.connected;
