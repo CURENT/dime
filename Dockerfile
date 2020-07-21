@@ -1,7 +1,7 @@
 FROM alpine
 
 RUN apk update
-RUN apk add gcc make libc-dev jansson-dev libbsd-dev openssl-dev zlib-dev
+RUN apk add gcc make libc-dev jansson-dev openssl-dev zlib-dev
 
 COPY . /tmp
 WORKDIR /tmp/server
