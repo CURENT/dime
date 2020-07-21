@@ -67,7 +67,7 @@ class DimeClient(collections.abc.MutableMapping):
             self.loads = dimeb.loads
             self.dumps = dimeb.dumps
 
-    def close():
+    def close(self):
         self.conn.close()
 
     def join(self, *names):
