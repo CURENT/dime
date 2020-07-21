@@ -80,7 +80,8 @@ int dime_server_init(dime_server_t *srv) {
     switch (srv->protocol) {
     case DIME_UNIX:
         addr.uds.sun_family = AF_UNIX;
-        strlcpy(addr.uds.sun_path, srv->socketname, sizeof(addr.uds.sun_path));
+        strncpy(addr.uds.sun_path, srv->socketname, sizeof(addr.uds.sun_path));
+        addr.uds.sun_path[sizeof(addr.uds.sun_path) - 1] = '\0';
 
         socktype = AF_UNIX;
         proto = 0;
@@ -522,7 +523,8 @@ int dime_server_loop(dime_server_t *srv) {
                         } else {
                             err = -1;
 
-                            strlcpy(srv->err, "Unknown command", sizeof(srv->err));
+                            strncpy(srv->err, "Unknown command", sizeof(srv->err));
+                            srv->err[sizeof(srv->err) - 1] = '\0';
 
                             json_t *response = json_pack("{siss}", "status", -1, "error", "Unknown command");
                             if (response != NULL) {

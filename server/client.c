@@ -159,8 +159,9 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
     json_error_t err;
 
     if (json_unpack_ex(jsondata, &err, 0, "{sssb}", "serialization", &serialization, "tls", &tls) < 0) {
-        strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
-        strlcat(srv->err, err.text, sizeof(srv->err));
+        strncpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
+        strncat(srv->err, err.text, sizeof(srv->err) - strlen(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
@@ -271,8 +272,9 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     json_error_t err;
 
     if (json_unpack_ex(jsondata, &err, 0, "{so}", "name", &arr) < 0) {
-        strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
-        strlcat(srv->err, err.text, sizeof(srv->err));
+        strncpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
+        strncat(srv->err, err.text, sizeof(srv->err) - strlen(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
@@ -289,7 +291,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     json_array_foreach(arr, i, v) {
         const char *name = json_string_value(v);
         if (name == NULL) {
-            strlcpy(srv->err, "JSON parsing error: expected string", sizeof(srv->err));
+            strncpy(srv->err, "JSON parsing error: expected string", sizeof(srv->err));
+            srv->err[sizeof(srv->err) - 1] = '\0';
 
             json_t *response = json_pack("{siss}", "status", -1, "error", "JSON parsing error: expected string");
             if (response != NULL) {
@@ -302,8 +305,9 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
         for (size_t j = 0; j < clnt->groups_len; j++) {
             if (strcmp(name, clnt->groups[j]->name) == 0) {
-                strlcpy(srv->err, "Client is already in group: ", sizeof(srv->err));
-                strlcat(srv->err, name, sizeof(srv->err));
+                strncpy(srv->err, "Client is already in group: ", sizeof(srv->err));
+                strncat(srv->err, name, sizeof(srv->err) - strlen(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss+}", "status", -1, "error", "Client is already in group: ", name);
                 if (response != NULL) {
@@ -319,7 +323,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
         if (group == NULL) {
             group = malloc(sizeof(dime_group_t));
             if (group == NULL) {
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -334,7 +339,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
             if (group->name == NULL) {
                 free(group);
 
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -353,7 +359,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 free(group->name);
                 free(group);
 
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -369,7 +376,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 free(group->name);
                 free(group);
 
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -386,7 +394,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
             dime_group_t **ngroups = realloc(clnt->groups, sizeof(dime_group_t *) * ncap);
             if (ngroups == NULL) {
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -406,7 +415,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
             dime_client_t **nclnts = realloc(group->clnts, sizeof(dime_client_t *) * ncap);
             if (nclnts == NULL) {
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -433,7 +443,8 @@ int dime_client_join(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     }
 
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -452,8 +463,9 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
     json_error_t err;
 
     if (json_unpack_ex(jsondata, &err, 0, "{so}", "name", &arr) < 0) {
-        strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
-        strlcat(srv->err, err.text, sizeof(srv->err));
+        strncpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
+        strncat(srv->err, err.text, sizeof(srv->err) - strlen(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
@@ -470,7 +482,8 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
     json_array_foreach(arr, i, v) {
         const char *name = json_string_value(v);
         if (name == NULL) {
-            strlcpy(srv->err, "JSON parsing error: expected string", sizeof(srv->err));
+            strncpy(srv->err, "JSON parsing error: expected string", sizeof(srv->err));
+            srv->err[sizeof(srv->err) - 1] = '\0';
 
             json_t *response = json_pack("{siss}", "status", -1, "error", "JSON parsing error: expected string");
             if (response != NULL) {
@@ -505,8 +518,9 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
             }
         }
 
-        strlcpy(srv->err, "Client is not in group: ", sizeof(srv->err));
-        strlcat(srv->err, name, sizeof(srv->err));
+        strncpy(srv->err, "Client is not in group: ", sizeof(srv->err));
+        strncat(srv->err, name, sizeof(srv->err) - strlen(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss+}", "status", -1, "error", "Client is not in group: ", name);
         if (response != NULL) {
@@ -521,7 +535,8 @@ int dime_client_leave(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata,
     }
 
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -540,8 +555,9 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     json_error_t err;
 
     if (json_unpack_ex(jsondata, &err, 0, "{ss}", "name", &name) < 0) {
-        strlcpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
-        strlcat(srv->err, err.text, sizeof(srv->err));
+        strncpy(srv->err, "JSON parsing error: ", sizeof(srv->err));
+        strncat(srv->err, err.text, sizeof(srv->err) - strlen(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss+}", "status", -1, "error", "JSON parsing error: ", err.text);
         if (response != NULL) {
@@ -554,8 +570,9 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
     dime_group_t *group = dime_table_search(&srv->name2clnt, name);
     if (group == NULL || group->clnts_len == 0) {
-        strlcpy(srv->err, "No such group exists: ", sizeof(srv->err));
-        strlcat(srv->err, name, sizeof(srv->err));
+        strncpy(srv->err, "No such group exists: ", sizeof(srv->err));
+        strncat(srv->err, name, sizeof(srv->err) - strlen(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss+}", "status", -1, "error", "No such group exists: ", name);
         if (response != NULL) {
@@ -568,7 +585,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
     dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
     if (msg == NULL) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -583,7 +601,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     if (msg->jsondata == NULL) {
         free(msg);
 
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -608,7 +627,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
                 free(msg);
             }
 
-            strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+            strncpy(srv->err, strerror(errno), sizeof(srv->err));
+            srv->err[sizeof(srv->err) - 1] = '\0';
 
             json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
             if (response != NULL) {
@@ -621,7 +641,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 
         if (group->clnts[i]->waiting) {
             if (dime_socket_push_str(&group->clnts[i]->sock, "{\"status\":0}", NULL, 0) < 0) {
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -651,7 +672,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     }
 
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -668,7 +690,8 @@ int dime_client_send(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
     if (msg == NULL) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -683,7 +706,8 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
     if (msg->jsondata == NULL) {
         free(msg);
 
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -715,7 +739,8 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
                     free(msg);
                 }
 
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -728,7 +753,8 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
 
             if (other->waiting) {
                 if (dime_socket_push_str(&other->sock, "{\"status\":0}", NULL, 0) < 0) {
-                    strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                    strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                    srv->err[sizeof(srv->err) - 1] = '\0';
 
                     json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                     if (response != NULL) {
@@ -763,7 +789,8 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
     }
 
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -817,7 +844,8 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
     }
 
     if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -834,7 +862,8 @@ int dime_client_sync(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 int dime_client_wait(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     if (dime_deque_len(&clnt->queue) > 0) {
         if (dime_socket_push_str(&clnt->sock, "{\"status\":0}", NULL, 0) < 0) {
-            strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+            strncpy(srv->err, strerror(errno), sizeof(srv->err));
+            srv->err[sizeof(srv->err) - 1] = '\0';
 
             json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
             if (response != NULL) {
@@ -854,7 +883,8 @@ int dime_client_wait(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, 
 int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondata, void **pbindata, size_t bindata_len) {
     json_t *arr = json_array();
     if (arr == NULL) {
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -877,7 +907,8 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
             if (str == NULL) {
                 json_decref(arr);
 
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -892,7 +923,8 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
                 json_decref(str);
                 json_decref(arr);
 
-                strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
 
                 json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));
                 if (response != NULL) {
@@ -909,7 +941,8 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
     if (response == NULL) {
         json_decref(arr);
 
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {
@@ -923,7 +956,8 @@ int dime_client_devices(dime_client_t *clnt, dime_server_t *srv, json_t *jsondat
     if (dime_socket_push(&clnt->sock, response, NULL, 0) < 0) {
         json_decref(response);
 
-        strlcpy(srv->err, strerror(errno), sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
 
         response = json_pack("{siss}", "status", -1, "error", strerror(errno));
         if (response != NULL) {

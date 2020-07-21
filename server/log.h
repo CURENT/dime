@@ -27,8 +27,6 @@
  * specified at runtime.
  */
 
-#include <bsd/string.h>
-
 #ifndef __DIME_log_H
 #define __DIME_log_H
 
