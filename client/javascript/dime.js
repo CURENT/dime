@@ -34,7 +34,7 @@ class Complex {
 }
 
 class NDArray {
-	constructor(order, shape, complex, array) {
+	constructor(order, shape, complex = false, array = null) {
 		this.order = order;
 		this.shape = shape;
         this.complex = complex;
@@ -229,19 +229,19 @@ const TYPE_ARRAY      = 0x21;
 const TYPE_ASSOCARRAY = 0x22;
 
 function __loadsmat(bytes, dtype, complex) {
-    const [constructor, method, itemsize] = dtype;
+    let [constructor, method, itemsize] = dtype;
 
     let dview = new DataView(bytes, 1);
-    const rank = dview.getUint8(0);
+    let rank = dview.getUint8(0);
 
     dview = new DataView(bytes, 2);
-    const shape = [];
+    let shape = [];
 
     for (let i = 0; i < rank; i++) {
         shape.push(dview.getUint32(i * 4));
     }
 
-    const nelems = shape.reduce((a, b) => a * b) * (complex ? 2 : 1);
+    let nelems = shape.reduce((a, b) => a * b) * (complex ? 2 : 1);
 
     dview = new DataView(bytes, 2 + 4 * rank);
     let array = new constructor(nelems);
@@ -251,8 +251,7 @@ function __loadsmat(bytes, dtype, complex) {
     }
 
     let obj = new NDArray("F", shape, complex, array);
-
-    const nread = 2 + 4 * rank + nelems * itemsize;
+    let nread = 2 + 4 * rank + nelems * itemsize;
 
     return [obj, nread];
 }
@@ -260,7 +259,7 @@ function __loadsmat(bytes, dtype, complex) {
 function __loads(bytes) {
     let obj, nread;
 
-    const dview = new DataView(bytes, 1);
+    let dview = new DataView(bytes, 1);
 
     switch (new DataView(bytes).getUint8(0)) {
     case TYPE_NULL:
@@ -301,6 +300,10 @@ function __loads(bytes) {
 
     case TYPE_I64:
         obj = dview.getBigInt64(0);
+        if (BigInt(-Number.MAX_SAFE_INTEGER) <= obj && obj <= BigInt(Number.MAX_SAFE_INTEGER)) {
+            obj = Number(obj);
+        }
+
         nread = 9;
 
         break;
@@ -325,6 +328,10 @@ function __loads(bytes) {
 
     case TYPE_U64:
         obj = dview.getBigUint64(0);
+        if (obj <= BigInt(Number.MAX_SAFE_INTEGER)) {
+            obj = Number(obj);
+        }
+
         nread = 9;
 
         break;
@@ -343,8 +350,8 @@ function __loads(bytes) {
 
     case TYPE_COMPLEX_SINGLE:
         {
-            const realpart = dview.getFloat32(0);
-            const imagpart = dview.getFloat32(4);
+            let realpart = dview.getFloat32(0);
+            let imagpart = dview.getFloat32(4);
 
             obj = new Complex(realpart, imagpart);
         }
@@ -354,8 +361,8 @@ function __loads(bytes) {
 
     case TYPE_COMPLEX_DOUBLE:
         {
-            const realpart = dview.getFloat64(0);
-            const imagpart = dview.getFloat64(8);
+            let realpart = dview.getFloat64(0);
+            let imagpart = dview.getFloat64(8);
 
             obj = new Complex(realpart, imagpart);
         }
@@ -413,7 +420,7 @@ function __loads(bytes) {
 
     case TYPE_STRING:
         {
-            const len = dview.getUint32(0);
+            let len = dview.getUint32(0);
 
             obj = new TextDecoder().decode(bytes.slice(5, len + 5));
             nread = len + 5;
@@ -423,13 +430,13 @@ function __loads(bytes) {
 
     case TYPE_ARRAY:
         {
-            const len = dview.getUint32(0);
+            let len = dview.getUint32(0);
 
             obj = [];
             nread = 5;
 
             for (let i = 0; i < len; i++) {
-                const [elem, elem_siz] = __loads(bytes.slice(nread));
+                let [elem, elem_siz] = __loads(bytes.slice(nread));
 
                 obj.push(elem);
                 nread += elem_siz;
@@ -440,16 +447,16 @@ function __loads(bytes) {
 
     case TYPE_ASSOCARRAY:
         {
-            const len = dview.getUint32(0);
+            let len = dview.getUint32(0);
 
             obj = {};
             nread = 5;
 
             for (let i = 0; i < len; i++) {
-                const [key, key_siz] = __loads(bytes.slice(nread));
+                let [key, key_siz] = __loads(bytes.slice(nread));
                 nread += key_siz;
 
-                const [val, val_siz] = __loads(bytes.slice(nread));
+                let [val, val_siz] = __loads(bytes.slice(nread));
                 nread += val_siz;
 
                 obj[key] = val;
@@ -463,7 +470,7 @@ function __loads(bytes) {
 }
 
 function dimebloads(bytes) {
-    const [obj, nread] = __loads(bytes);
+    let [obj, nread] = __loads(bytes);
 
     return obj;
 }
@@ -550,8 +557,8 @@ function dimebdumps(obj) {
             itemsize = 8;
         }
 
-        const rank = obj.shape.length;
-        const nelems = obj.array.length;
+        let rank = obj.shape.length;
+        let nelems = obj.array.length;
 
         bytes = new Uint8Array(2 + 4 * rank + nelems * itemsize);
         let dview = new DataView(bytes.buffer, 2);
@@ -569,7 +576,7 @@ function dimebdumps(obj) {
             dview[method](i * itemsize, obj.array[i]);
         }
     } else if (typeof obj === "string") {
-        const stringbytes = new TextEncoder().encode(obj);
+        let stringbytes = new TextEncoder().encode(obj);
 
         bytes = new Uint8Array(5 + stringbytes.length);
         dview = new DataView(bytes.buffer, 1);
@@ -578,7 +585,7 @@ function dimebdumps(obj) {
         dview.setUint32(0, stringbytes.length);
         bytes.set(stringbytes, 5);
     } else if (Array.isArray(obj)) {
-        const elemsbytes = obj.map(dimebdumps);
+        let elemsbytes = obj.map(dimebdumps);
 
         bytes = new Uint8Array(5 + elemsbytes.reduce((acc, elembytes) => acc + elembytes.length, 0));
         let dview = new DataView(bytes.buffer, 1);
@@ -588,12 +595,12 @@ function dimebdumps(obj) {
 
         let pos = 5;
 
-        for (const elembytes of elemsbytes) {
+        for (let elembytes of elemsbytes) {
             bytes.set(elembytes, pos);
             pos += elembytes.length;
         }
     } else {
-        const elemsbytes = Array.prototype.concat.apply([], Object.entries(obj)).map(dimebdumps);
+        let elemsbytes = Array.prototype.concat.apply([], Object.entries(obj)).map(dimebdumps);
 
         bytes = new Uint8Array(5 + elemsbytes.reduce((acc, elembytes) => acc + elembytes.length, 0));
         let dview = new DataView(bytes.buffer, 1);
@@ -603,7 +610,7 @@ function dimebdumps(obj) {
 
         let pos = 5;
 
-        for (const elembytes of elemsbytes) {
+        for (let elembytes of elemsbytes) {
             bytes.set(elembytes, pos);
             pos += elembytes.length;
         }
@@ -628,12 +635,12 @@ class DimeClient {
 
             self.ws.onmessage = function(event) {
                 if (self.recvbuffer.byteLength > 0) {
-                    let recvbuffer = new ArrayBuffer(self.recvbuffer.byteLength + event.data.byteLength);
+                    let tmp = new Uint8Array(self.recvbuffer.byteLength + event.data.byteLength);
 
-                    recvbuffer.set(self.recvbuffer);
-                    recvbuffer.set(event.data, self.recvbuffer.byteLength);
+                    tmp.set(new Uint8Array(self.recvbuffer));
+                    tmp.set(new Uint8Array(event.data), self.recvbuffer.byteLength);
 
-                    self.recvbuffer = recvbuffer;
+                    self.recvbuffer = tmp.buffer;
                 } else {
                     self.recvbuffer = event.data;
                 }
@@ -683,7 +690,7 @@ class DimeClient {
             name: names
         })
 
-        const [jsondata, bindata] = await this.__recv();
+        let [jsondata, bindata] = await this.__recv();
 
         if (jsondata.status < 0) {
             throw status.error;
@@ -701,7 +708,7 @@ class DimeClient {
             name: names
         })
 
-        const [jsondata, bindata] = await this.__recv();
+        let [jsondata, bindata] = await this.__recv();
 
         if (jsondata.status < 0) {
             throw status.error;
@@ -709,7 +716,7 @@ class DimeClient {
     }
 
     async send(name, ...varnames) {
-        const kvpairs = {};
+        let kvpairs = {};
 
         for (let varname of varnames) {
             kvpairs[varname] = this.workspace[varname];
@@ -744,7 +751,7 @@ class DimeClient {
     }
 
     async broadcast(name, ...varnames) {
-        const kvpairs = {};
+        let kvpairs = {};
 
         for (let varname of varnames) {
             kvpairs[varname] = this.workspace[varname];
@@ -792,11 +799,11 @@ class DimeClient {
             n: n
         })
 
-        const ret = {};
+        let ret = {};
         let m = n;
 
         while (true) {
-            const [jsondata, bindata] = await this.__recv();
+            let [jsondata, bindata] = await this.__recv();
 
             if ("status" in jsondata) {
                 if (jsondata.status < 0) {
@@ -828,7 +835,7 @@ class DimeClient {
 
         this.__send({command: "wait"})
 
-        const [jsondata, bindata] = await this.__recv();
+        let [jsondata, bindata] = await this.__recv();
 
         if (jsondata.status < 0) {
             throw status.error;
@@ -839,8 +846,8 @@ class DimeClient {
         jsondata = new TextEncoder().encode(JSON.stringify(jsondata));
         bindata = new Uint8Array(bindata);
 
-        const msg = new Uint8Array(12 + jsondata.length + bindata.length);
-        const dview = new DataView(msg.buffer);
+        let msg = new Uint8Array(12 + jsondata.length + bindata.length);
+        let dview = new DataView(msg.buffer);
 
         dview.setUint32(0, 0x44694D45); // ASCII for "DiME"
         dview.setUint32(4, jsondata.length);
@@ -858,11 +865,11 @@ class DimeClient {
         return new Promise(function(resolve, reject) {
             let callback = function() {
                 if (self.recvbuffer.byteLength >= 12) {
-                    const dview = new DataView(self.recvbuffer);
+                    let dview = new DataView(self.recvbuffer);
 
-                    const magic = dview.getUint32(0);
-                    const jsondata_len = dview.getUint32(4);
-                    const bindata_len = dview.getUint32(8);
+                    let magic = dview.getUint32(0);
+                    let jsondata_len = dview.getUint32(4);
+                    let bindata_len = dview.getUint32(8);
 
                     if (magic != 0x44694D45) { // ASCII for "DiME"
                         self.recvcallback = null;
