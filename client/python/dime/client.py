@@ -67,6 +67,9 @@ class DimeClient(collections.abc.MutableMapping):
             self.loads = dimeb.loads
             self.dumps = dimeb.dumps
 
+    def close():
+        self.conn.close()
+
     def join(self, *names):
         """Send a "join" command to the server
 
