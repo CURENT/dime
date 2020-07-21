@@ -105,47 +105,70 @@ class NDArray {
         }
 	}
 
-	/*column(n) {
+	column(n) {
+        if (this.complex) {
+            throw "Complex matrices are currently unsuppoerted";
+        }
+
 		if (this.order !== 'F') {
 			throw 'bad order, expected "' + this.order + '"';
 		}
+
 		const start = this._makeIndex([0, n], false);
 		const end = this._makeIndex([0, n+1], false);
 		console.log({ start, end });
-		return this.typedArray.slice(start, end);
+		return this.array.slice(start, end);
 	}
 
 	row(n) {
+        if (this.complex) {
+            throw "Complex matrices are currently unsuppoerted";
+        }
+
 		if (this.order !== 'C') {
 			throw 'bad order, expected "' + this.order + '"';
 		}
+
 		const start = this._makeIndex([n, 0], false);
 		const end = this._makeIndex([n+1, 0], false);
 		console.log({ start, end });
-		return this.typedArray.slice(start, end);
+		return this.array.slice(start, end);
 	}
 
 	extents() {
+        if (this.complex) {
+            throw "Complex matrices are currently unsuppoerted";
+        }
+
 		if (this.shape[0] !== 1) {
 			throw 'extents: expected column vector';
 		}
-		const typedArray = this.typedArray;
-		let prev = typedArray[0];
-		for (let i=1; i<typedArray.length; ++i) {
-			const cur = typedArray[i];
+
+		const array = this.array;
+		let prev = array[0];
+		for (let i=1; i<array.length; ++i) {
+			const cur = array[i];
 			if (cur !== prev + 1) {
 				throw 'extents: non contiguous';
 			}
 			prev = cur;
 		}
-		return { begin: typedArray[0], end: typedArray[typedArray.length - 1] + 1 };
+		return { begin: array[0], end: array[array.length - 1] + 1 };
 	}
 
 	subarray({ begin, end }) {
-		return new NDArray(this.order, [1, end - begin - 1], this.typedArray.subarray(begin, end));
+        if (this.complex) {
+            throw "Complex matrices are currently unsuppoerted";
+        }
+
+		return new NDArray(this.order, [1, end - begin - 1], this.array.subarray(begin, end));
 	}
 
 	subindex(idx) {
+        if (this.complex) {
+            throw "Complex matrices are currently unsuppoerted";
+        }
+
 		if (this.shape[0] !== 1) {
 			throw 'extents: expected column vector';
 		}
@@ -156,13 +179,13 @@ class NDArray {
 
 		const out_values = new Float64Array(idx.shape[1]);
 
-		for (let i=0; i<idx.typedArray.length; i++){
-			const pos = idx.typedArray[i];
+		for (let i=0; i<idx.array.length; i++){
+			const pos = idx.array[i];
 			out_values[i] = this.get(0, pos);
 		}
 
 		return new NDArray(this.order, [1, idx.shape[1]], out_values)
-	}*/
+	}
 }
 
 // Boolean sentinels
