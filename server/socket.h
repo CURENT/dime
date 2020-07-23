@@ -45,6 +45,8 @@
 #include <sys/types.h>
 
 #include <jansson.h>
+#include <openssl/ssl.h>
+#include <zlib.h>
 #include "ringbuffer.h"
 
 #ifndef __DIME_socket_H
@@ -77,7 +79,21 @@ typedef struct {
     dime_ringbuffer_t rbuf; /** Inbuffer */
     dime_ringbuffer_t wbuf; /** Outbuffer */
 
-    SSL *tls;      /** OpenSSL state information */
+    struct {
+        int enabled;
+        SSL *ctx;
+    } tls;
+
+    struct {
+        int enabled;
+        dime_ringbuffer_t rbuf;
+    } ws;
+
+    struct {
+        int enabled;
+        z_stream ctx;
+        dime_ringbuffer_t rbuf;
+    } zlib;
 } dime_socket_t;
 
 /**
@@ -85,6 +101,7 @@ typedef struct {
  *
  * @param sock Pointer to a @link dime_socket_t @endlink struct
  * @param fd File descriptor to send/receive on
+ * @param websocket non-zero for a WebSocket connection, zero otherwise
  *
  * @return A nonnegative value on success, or a negative value on
  * failure
@@ -114,7 +131,7 @@ void dime_socket_destroy(dime_socket_t *sock);
 
  *
  * @param sock Pointer to a @link dime_socket_t @endlink struct
- * @param tls OpenSSL context
+ * @param ctx OpenSSL context
  *
  * @return A nonnegative value on success, or a negative value on
  * failure
@@ -123,6 +140,18 @@ void dime_socket_destroy(dime_socket_t *sock);
  * @see dime_socket_init_zlib
  */
 int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *ctx);
+
+/**
+ * @brief Enable WebSocket protocol on the socket
+ *
+ * @param sock Pointer to a @link dime_socket_t @endlink struct
+ *
+ * @return A nonnegative value on success, or a negative value on
+ * failure
+ *
+ * @todo Make this non-blocking
+ */
+int dime_socket_init_ws(dime_socket_t *sock);
 
 /**
  * @brief Enable zlib compression on the socket
