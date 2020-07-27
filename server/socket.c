@@ -249,6 +249,10 @@ int dime_socket_init_ws(dime_socket_t *sock) {
 
     sock->ws.enabled = 1;
 
+    if (dime_ringbuffer_init(&sock->ws.rbuf) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -565,6 +569,8 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     } else {
         rbuf = &sock->rbuf;
     }
+
+    printf("%zu\n", nrecvd);
 
     if (dime_ringbuffer_write(rbuf, buf, nrecvd) < 0) {
         free(buf);
