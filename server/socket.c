@@ -247,6 +247,8 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         return -1;
     }
 
+    sock->ws.enabled = 1;
+
     return 0;
 }
 

@@ -53,7 +53,8 @@ enum dime_serialization {
 
 enum dime_protocol {
     DIME_UNIX,
-    DIME_TCP
+    DIME_TCP,
+    DIME_WS,
     /*
     DIME_TCP_IPV6,
     DIME_SCTP,
@@ -72,6 +73,7 @@ typedef struct {
     unsigned int daemon : 1; /** Daemon flag */
     unsigned int tls : 1;    /** TLS flag */
     unsigned int zlib : 1;   /** zlib flag */
+    unsigned int ws : 1;     /** WebSocket flag */
     char : 0;
 
     const char *certname;    /** Certificate pathname (if using TLS) */
@@ -88,9 +90,6 @@ typedef struct {
     dime_table_t fd2clnt;   /** File descriptor-to-client translation table */
     dime_table_t name2clnt; /** Name-to-client translation table */
     SSL_CTX *tlsctx;        /** OpenSSL context */
-
-    pthread_rwlock_t fd2clnt_rwl;   /** fd2clnt Read-write lock */
-    pthread_rwlock_t name2clnt_rwl; /** name2clnt Read-write lock */
 } dime_server_t;
 
 /**

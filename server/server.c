@@ -89,6 +89,10 @@ int dime_server_init(dime_server_t *srv) {
 
         break;
 
+    case DIME_WS:
+        srv->ws = 1;
+        /* Fallthrough here is intentional */
+
     case DIME_TCP:
         addr.inet6.sin6_family = AF_INET6;
         addr.inet6.sin6_addr = in6addr_any;
@@ -116,7 +120,7 @@ int dime_server_init(dime_server_t *srv) {
     }
 
     /* Fallback to IPv4 if dual-stack IPv4/IPv6 is not suppoerted */
-    if (srv->protocol == DIME_TCP) {
+    if (srv->protocol == DIME_TCP || srv->protocol == DIME_WS) {
         int no = 0;
 
         if (setsockopt(srv->fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(int)) < 0) {
@@ -387,6 +391,19 @@ int dime_server_loop(dime_server_t *srv) {
                 free(pollfds);
 
                 printf("%d\n", __LINE__); return -1;
+            }
+
+            if (srv->protocol == DIME_WS) {
+                if (dime_socket_init_ws(&clnt->sock) < 0) {
+                    dime_client_destroy(clnt);
+                    free(clnt);
+                    signal(SIGPIPE, sigpipe_f);
+                    signal(SIGTERM, sigterm_f);
+                    signal(SIGINT, sigint_f);
+                    free(pollfds);
+
+                    printf("%d\n", __LINE__); return -1;
+                }
             }
 
             if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {

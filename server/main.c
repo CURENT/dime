@@ -50,6 +50,8 @@ int main(int argc, char **argv) {
                 srv.protocol = DIME_UNIX;
             } else if (strcasecmp(optarg, "tcp") == 0) {
                 srv.protocol = DIME_TCP;
+            } else if (strcasecmp(optarg, "ws") == 0) {
+                srv.protocol = DIME_WS;
             } else {
                 goto usage_err;
             }
