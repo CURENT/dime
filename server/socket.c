@@ -570,8 +570,6 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
         rbuf = &sock->rbuf;
     }
 
-    printf("%zu\n", nrecvd);
-
     if (dime_ringbuffer_write(rbuf, buf, nrecvd) < 0) {
         free(buf);
 

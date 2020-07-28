@@ -8,3 +8,5 @@ __pycache__
 /docs
 /client/python/build
 /client/python/dist
+/test/node_modules
+/test/package-lock.json

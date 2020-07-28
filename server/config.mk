@@ -23,5 +23,5 @@ LDFLAGS ?= -pie -pthread -ljansson -lssl -lcrypto -lz
 CFLAGS += -Og -g -fstack-protector-strong
 
 # Uncomment the lines below to enable AddressSanitizer (Valgrind will not work)
-#CFLAGS += -fsanitize=address
-#LDFLAGS += -fsanitize=address
+CFLAGS += -fsanitize=address
+LDFLAGS += -fsanitize=address
