@@ -17,71 +17,61 @@ int main(int argc, char **argv) {
     SSL_load_error_strings();
     atexit(cleanup);
 
+    char *listens[(argc + 1) / 2];
+    size_t listens_i = 0;
+#ifdef _WIN32
+    char listens_default[] = "tcp:5000";
+#else
+    char listens_default[] = "unix:/tmp/dime.sock";
+#endif
+
     dime_server_t srv;
 
     memset(&srv, 0, sizeof(dime_server_t));
 
-    srv.socketname = "/tmp/dime.sock";
-    srv.port = 5000;
     srv.verbosity = 0;
     srv.threads = 1;
 
-#ifdef _WIN32
-    srv.protocol = DIME_TCP;
-#else
-    srv.protocol = DIME_UNIX;
-#endif
-
     int opt;
 
-    while ((opt = getopt(argc, argv, "P:c:df:hj:k:p:v")) >= 0) {
+    while ((opt = getopt(argc, argv, "c:dhj:k:l:v")) >= 0) {
         switch (opt) {
-        case 'h':
-            printf("Usage: %s [-h] [-P unix/tcp] [-p port] [-f socketfile]\n",
-                   argv[0]);
-            return 0;
-
-        case 'd':
-            srv.daemon = 1;
-            break;
-
-        case 'P':
-            if (strcasecmp(optarg, "unix") == 0) {
-                srv.protocol = DIME_UNIX;
-            } else if (strcasecmp(optarg, "tcp") == 0) {
-                srv.protocol = DIME_TCP;
-            } else if (strcasecmp(optarg, "ws") == 0) {
-                srv.protocol = DIME_WS;
-            } else {
-                goto usage_err;
-            }
-
-            break;
-
-        case 'p':
-            srv.port = strtoul(optarg, NULL, 0);
-            if (srv.port == 0) {
-                goto usage_err;
-            }
-
-            break;
-
-        case 'f':
-            srv.socketname = optarg;
-            break;
-
-        case 'v':
-            srv.verbosity++;
-            break;
-
         case 'c':
             srv.tls = 1;
             srv.certname = optarg;
             break;
 
+        case 'd':
+            srv.daemon = 1;
+            break;
+
+        case 'h':
+            printf("Usage: %s [options]\n"
+                   "Options:\n"
+                   "",
+                   argv[0]);
+            return 0;
+
+        case 'j':
+            srv.threads = strtoul(optarg, NULL, 0);
+            if (srv.threads == 0) {
+                goto usage_err;
+            }
+
+            break;
+
         case 'k':
             srv.tls = 1;
             srv.privkeyname = optarg;
+            break;
+
+        case 'l':
+            listens[listens_i] = optarg;
+            listens_i++;
+            break;
+
+        case 'v':
+            srv.verbosity++;
             break;
 
         default:
@@ -93,10 +83,81 @@ int main(int argc, char **argv) {
         goto usage_err;
     }
 
+    if (listens_i == 0) {
+        listens[0] = listens_default;
+        listens_i = 1;
+    }
+
     if (dime_server_init(&srv) < 0) {
         fprintf(stderr, "Fatal error while initializing server: %s\n", srv.err);
 
         return -1;
+    }
+
+    for (size_t i = 0; i < listens_i; i++) {
+        char *type, *saveptr;
+
+        type = strtok_r(listens[i], ":", &saveptr);
+
+        if (strcasecmp(type, "unix") == 0) {
+            const char *pathname = strtok_r(NULL, ":", &saveptr);
+            if (pathname == NULL) {
+                goto usage_err;
+            }
+
+            if (strtok_r(NULL, ":", &saveptr) != NULL) {
+                goto usage_err;
+            }
+
+            if (dime_server_add(&srv, DIME_UNIX, pathname) < 0) {
+                fprintf(stderr, "Fatal error while initializing server: %s\n", srv.err);
+
+                return -1;
+            }
+
+        } else if (strcasecmp(type, "tcp") == 0) {
+            const char *port_s = strtok_r(NULL, ":", &saveptr);
+            if (port_s == NULL) {
+                goto usage_err;
+            }
+
+            if (strtok_r(NULL, ":", &saveptr) != NULL) {
+                goto usage_err;
+            }
+
+            uint16_t port = strtoul(port_s, NULL, 0);
+            if (port == 0) {
+                goto usage_err;
+            }
+
+            if (dime_server_add(&srv, DIME_TCP, port) < 0) {
+                fprintf(stderr, "Fatal error while initializing server: %s\n", srv.err);
+
+                return -1;
+            }
+        } else if (strcasecmp(type, "ws") == 0) {
+            const char *port_s = strtok_r(NULL, ":", &saveptr);
+            if (port_s == NULL) {
+                goto usage_err;
+            }
+
+            if (strtok_r(NULL, ":", &saveptr) != NULL) {
+                goto usage_err;
+            }
+
+            uint16_t port = strtoul(port_s, NULL, 0);
+            if (port == 0) {
+                goto usage_err;
+            }
+
+            if (dime_server_add(&srv, DIME_WS, port) < 0) {
+                fprintf(stderr, "Fatal error while initializing server: %s\n", srv.err);
+
+                return -1;
+            }
+        } else {
+            goto usage_err;
+        }
     }
 
     if (dime_server_loop(&srv) < 0) {

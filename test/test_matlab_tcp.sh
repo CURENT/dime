@@ -20,7 +20,7 @@ while True:
 print(port)
 HEREDOC`
 
-../server/dime -P tcp -p "$DIME_PORT" &
+../server/dime -l "tcp:$DIME_PORT" &
 DIME_PID=$!
 
 env MATLABPATH="../client/matlab" matlab -batch "test_matlab_tcp('localhost', $DIME_PORT)"

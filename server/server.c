@@ -11,6 +11,7 @@
 #include <setjmp.h>
 #include <assert.h>
 #include <fcntl.h>
+#include <stdarg.h>
 
 #include <jansson.h>
 #include <openssl/err.h>
@@ -67,100 +68,23 @@ int dime_server_init(dime_server_t *srv) {
         printf("%d\n", __LINE__); return -1;
     }
 
-    union {
-        struct sockaddr_in inet;
-        struct sockaddr_in6 inet6;
-        struct sockaddr_un uds;
-    } addr;
-    socklen_t addrlen;
-    int socktype, proto;
-
-    memset(&addr, 0, sizeof(addr));
-
-    switch (srv->protocol) {
-    case DIME_UNIX:
-        addr.uds.sun_family = AF_UNIX;
-        strncpy(addr.uds.sun_path, srv->socketname, sizeof(addr.uds.sun_path));
-        addr.uds.sun_path[sizeof(addr.uds.sun_path) - 1] = '\0';
-
-        socktype = AF_UNIX;
-        proto = 0;
-        addrlen = sizeof(struct sockaddr_un);
-
-        break;
-
-    case DIME_WS:
-        srv->ws = 1;
-        /* Fallthrough here is intentional */
-
-    case DIME_TCP:
-        addr.inet6.sin6_family = AF_INET6;
-        addr.inet6.sin6_addr = in6addr_any;
-        addr.inet6.sin6_port = htons(srv->port);
-
-        socktype = AF_INET6;
-        proto = IPPROTO_TCP;
-        addrlen = sizeof(struct sockaddr_in6);
-
-        break;
-
-    default:
-        dime_table_destroy(&srv->fd2clnt);
+    srv->fds_len = 0;
+    srv->fds_cap = 8;
+    srv->fds = malloc(srv->fds_cap * sizeof(dime_server_fd_t));
+    if (srv->fds == NULL) {
         dime_table_destroy(&srv->name2clnt);
+        dime_table_destroy(&srv->fd2clnt);
 
         printf("%d\n", __LINE__); return -1;
     }
 
-    srv->fd = socket(socktype, SOCK_STREAM, proto);
-    if (srv->fd < 0) {
-        dime_table_destroy(&srv->fd2clnt);
+    srv->pathnames_len = 0;
+    srv->pathnames_cap = 8;
+    srv->pathnames = malloc(srv->pathnames_cap * sizeof(char *));
+    if (srv->pathnames == NULL) {
+        free(srv->fds);
         dime_table_destroy(&srv->name2clnt);
-
-        printf("%d\n", __LINE__); return -1;
-    }
-
-    /* Fallback to IPv4 if dual-stack IPv4/IPv6 is not suppoerted */
-    if (srv->protocol == DIME_TCP || srv->protocol == DIME_WS) {
-        int no = 0;
-
-        if (setsockopt(srv->fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(int)) < 0) {
-            if (srv->verbosity >= 1) {
-                dime_warn("Failed to initialize IPv4/IPv6 dual-stack, falling back to IPv4");
-            }
-
-            close(srv->fd);
-
-            memset(&addr, 0, sizeof(addr));
-
-            addr.inet.sin_family = AF_INET;
-            addr.inet.sin_addr.s_addr = INADDR_ANY;
-            addr.inet.sin_port = htons(srv->port);
-
-            socktype = AF_INET;
-            addrlen = sizeof(struct sockaddr_in);
-
-            srv->fd = socket(socktype, SOCK_STREAM, proto);
-            if (srv->fd < 0) {
-                dime_table_destroy(&srv->fd2clnt);
-                dime_table_destroy(&srv->name2clnt);
-
-                printf("%d\n", __LINE__); return -1;
-            }
-        }
-    }
-
-    if (bind(srv->fd, (struct sockaddr *)&addr, addrlen) < 0) {
-        close(srv->fd);
         dime_table_destroy(&srv->fd2clnt);
-        dime_table_destroy(&srv->name2clnt);
-
-        printf("%d\n", __LINE__); return -1;
-    }
-
-    if (listen(srv->fd, 5) < 0) {
-        close(srv->fd);
-        dime_table_destroy(&srv->fd2clnt);
-        dime_table_destroy(&srv->name2clnt);
 
         printf("%d\n", __LINE__); return -1;
     }
@@ -183,7 +107,7 @@ int dime_server_init(dime_server_t *srv) {
         }
     }
 
-    if (srv->tls) {
+/*    if (srv->tls) {
         if (srv->certname == NULL) {
             if (srv->verbosity >= 1) {
                 dime_warn("Certificate file not given, TLS will be disabled");
@@ -235,7 +159,7 @@ int dime_server_init(dime_server_t *srv) {
             goto tls_break;
         }
     }
-tls_break:
+tls_break:*/
 
     srv->serialization = DIME_NO_SERIALIZATION;
 
@@ -243,12 +167,18 @@ tls_break:
 }
 
 void dime_server_destroy(dime_server_t *srv) {
-    if (srv->protocol == DIME_UNIX) {
-        unlink(srv->socketname);
+    for (size_t i = 0; i < srv->pathnames_len; i++) {
+        unlink(srv->pathnames[i]);
+        free(srv->pathnames[i]);
     }
 
-    shutdown(srv->fd, SHUT_RDWR);
-    close(srv->fd);
+    free(srv->pathnames);
+
+    for (size_t i = 0; i < srv->fds_len; i++) {
+        close(srv->fds[i].fd);
+    }
+
+    free(srv->fds);
 
     dime_table_iter_t it;
 
@@ -273,11 +203,143 @@ void dime_server_destroy(dime_server_t *srv) {
     dime_table_destroy(&srv->name2clnt);
 }
 
+int dime_server_add(dime_server_t *srv, int protocol, ...) {
+    if (srv->fds_len >= srv->fds_cap) {
+        size_t ncap = (srv->fds_cap * 3) / 2;
+        dime_server_fd_t *narr = realloc(srv->fds, ncap * sizeof(dime_server_fd_t));
+        if (narr == NULL) {
+            printf("%d\n", __LINE__); return -1;
+        }
+
+        srv->fds = narr;
+        srv->fds_cap = ncap;
+    }
+
+    va_list args;
+    va_start(args, protocol);
+
+    int fd;
+
+    switch (protocol) {
+    case DIME_UNIX:
+        {
+            const char *pathname = va_arg(args, const char *);
+            va_end(args);
+
+            struct sockaddr_un addr;
+
+            memset(&addr, 0, sizeof(struct sockaddr_un));
+            addr.sun_family = AF_UNIX;
+            strncpy(addr.sun_path, pathname, sizeof(addr.sun_path));
+            addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
+
+            char *pathname_copy = strdup(addr.sun_path);
+            if (pathname_copy == NULL) {
+                printf("%d\n", __LINE__); return -1;
+            }
+
+            if (srv->pathnames_len >= srv->pathnames_cap) {
+                size_t ncap = (srv->pathnames_cap * 3) / 2;
+                char **narr = realloc(srv->pathnames, ncap * sizeof(char *));
+                if (narr == NULL) {
+                    free(pathname_copy);
+
+                    printf("%d\n", __LINE__); return -1;
+                }
+
+                srv->pathnames = narr;
+                srv->pathnames_cap = ncap;
+            }
+
+            fd = socket(AF_UNIX, SOCK_STREAM, 0);
+            if (fd < 0) {
+                free(pathname_copy);
+
+                printf("%d\n", __LINE__); return -1;
+            }
+
+            if (bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
+                close(fd);
+                free(pathname_copy);
+
+                printf("%d\n", __LINE__); return -1;
+            }
+
+            srv->pathnames[srv->pathnames_len++] = pathname_copy;
+        }
+        break;
+
+    case DIME_TCP:
+    case DIME_WS:
+        {
+            uint16_t port = va_arg(args, unsigned int);
+            va_end(args);
+
+            union {
+                struct sockaddr_in ipv4;
+                struct sockaddr_in6 ipv6;
+            } addr;
+            socklen_t addrlen;
+
+            memset(&addr, 0, sizeof(struct sockaddr_in6));
+
+            addr.ipv6.sin6_family = AF_INET6;
+            addr.ipv6.sin6_addr = in6addr_any;
+            addr.ipv6.sin6_port = htons(port);
+            addrlen = sizeof(struct sockaddr_in6);
+
+            fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+            if (fd < 0) {
+                printf("%d\n", __LINE__); return -1;
+            }
+
+            int no = 0;
+
+            if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(int)) < 0) {
+                if (srv->verbosity >= 1) {
+                    dime_warn("Failed to initialize IPv4/IPv6 dual-stack, falling back to IPv4");
+                }
+
+                close(fd);
+
+                memset(&addr, 0, sizeof(struct sockaddr_in));
+
+                addr.ipv4.sin_family = AF_INET;
+                addr.ipv4.sin_addr.s_addr = INADDR_ANY;
+                addr.ipv4.sin_port = htons(port);
+                addrlen = sizeof(struct sockaddr_in);
+
+                fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+                if (fd < 0) {
+                    printf("%d\n", __LINE__); return -1;
+                }
+            }
+
+            if (bind(fd, (struct sockaddr *)&addr, addrlen) < 0) {
+                close(fd);
+
+                printf("%d\n", __LINE__); return -1;
+            }
+        }
+        break;
+
+    default:
+        va_end(args);
+        printf("%d\n", __LINE__); return -1;
+    }
+
+    srv->fds[srv->fds_len].fd = fd;
+    srv->fds[srv->fds_len].protocol = protocol;
+    srv->fds_len++;
+
+    return 0;
+}
+
 int dime_server_loop(dime_server_t *srv) {
     struct pollfd *pollfds;
     size_t pollfds_len, pollfds_cap;
 
-    pollfds_cap = 16;
+    pollfds_cap = srv->fds_len + 8;
     pollfds = malloc(pollfds_cap * sizeof(struct pollfd));
     if (pollfds == NULL) {
         printf("%d\n", __LINE__); return -1;
@@ -287,20 +349,20 @@ int dime_server_loop(dime_server_t *srv) {
     void (*sigterm_f)(int);
     void (*sigpipe_f)(int);
 
-    sigint_f = SIG_ERR;
-    sigterm_f = SIG_ERR;
-    sigpipe_f = SIG_ERR;
+    sigint_f = NULL;
+    sigterm_f = NULL;
+    sigpipe_f = NULL;
 
     if (setjmp(ctrlc_env) != 0) {
-        if (sigint_f != SIG_ERR) {
+        if (sigint_f != NULL) {
             signal(SIGINT, sigint_f);
         }
 
-        if (sigterm_f != SIG_ERR) {
+        if (sigterm_f != NULL) {
             signal(SIGTERM, sigint_f);
         }
 
-        if (sigpipe_f != SIG_ERR) {
+        if (sigpipe_f != NULL) {
             signal(SIGPIPE, sigpipe_f);
         }
 
@@ -332,11 +394,22 @@ int dime_server_loop(dime_server_t *srv) {
         printf("%d\n", __LINE__); return -1;
     }
 
-    pollfds[0].fd = srv->fd;
-    pollfds[0].events = POLLIN;
-    pollfds[0].revents = 0;
+    for (size_t i = 0; i < srv->fds_len; i++) {
+        pollfds[i].fd = srv->fds[i].fd;
+        pollfds[i].events = POLLIN;
+        pollfds[i].revents = 0;
 
-    pollfds_len = 1;
+        if (listen(pollfds[i].fd, 0) < 0) {
+            signal(SIGPIPE, sigpipe_f);
+            signal(SIGTERM, sigterm_f);
+            signal(SIGINT, sigint_f);
+            free(pollfds);
+
+            printf("%d\n", __LINE__); return -1;
+        }
+    }
+
+    pollfds_len = srv->fds_len;
 
     while (1) {
         if (poll(pollfds, pollfds_len, -1) < 0) {
@@ -348,54 +421,23 @@ int dime_server_loop(dime_server_t *srv) {
             printf("%d\n", __LINE__); return -1;
         }
 
-        if (pollfds[0].revents & POLLIN) {
-            dime_client_t *clnt = malloc(sizeof(dime_client_t));
-            if (clnt == NULL) {
-                signal(SIGPIPE, sigpipe_f);
-                signal(SIGTERM, sigterm_f);
-                signal(SIGINT, sigint_f);
-                free(pollfds);
+        for (size_t i = 0; i < srv->fds_len; i++) {
+            if (pollfds[0].revents & POLLIN) {
+                dime_client_t *clnt = malloc(sizeof(dime_client_t));
+                if (clnt == NULL) {
+                    signal(SIGPIPE, sigpipe_f);
+                    signal(SIGTERM, sigterm_f);
+                    signal(SIGINT, sigint_f);
+                    free(pollfds);
 
-                printf("%d\n", __LINE__); return -1;
-            }
-
-            struct sockaddr_storage addr;
-            socklen_t siz = sizeof(struct sockaddr_storage);
-
-            int fd = accept(srv->fd, (struct sockaddr *)&addr, &siz);
-            if (fd < 0) {
-                free(clnt);
-                signal(SIGPIPE, sigpipe_f);
-                signal(SIGTERM, sigterm_f);
-                signal(SIGINT, sigint_f);
-                free(pollfds);
-
-                printf("%d\n", __LINE__); return -1;
-            }
-
-            /* Attempt to make sockets non-blocking for network connections */
-            if (srv->protocol != DIME_UNIX) {
-                int flags = fcntl(fd, F_GETFL, 0);
-
-                if (flags >= 0) {
-                    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+                    printf("%d\n", __LINE__); return -1;
                 }
-            }
 
-            if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
-                close(fd);
-                free(clnt);
-                signal(SIGPIPE, sigpipe_f);
-                signal(SIGTERM, sigterm_f);
-                signal(SIGINT, sigint_f);
-                free(pollfds);
+                struct sockaddr_storage addr;
+                socklen_t siz = sizeof(struct sockaddr_storage);
 
-                printf("%d\n", __LINE__); return -1;
-            }
-
-            if (srv->protocol == DIME_WS) {
-                if (dime_socket_init_ws(&clnt->sock) < 0) {
-                    dime_client_destroy(clnt);
+                int fd = accept(srv->fds[i].fd, (struct sockaddr *)&addr, &siz);
+                if (fd < 0) {
                     free(clnt);
                     signal(SIGPIPE, sigpipe_f);
                     signal(SIGTERM, sigterm_f);
@@ -404,24 +446,41 @@ int dime_server_loop(dime_server_t *srv) {
 
                     printf("%d\n", __LINE__); return -1;
                 }
-            }
 
-            if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
-                dime_client_destroy(clnt);
-                free(clnt);
-                signal(SIGPIPE, sigpipe_f);
-                signal(SIGTERM, sigterm_f);
-                signal(SIGINT, sigint_f);
-                free(pollfds);
+                /* Attempt to make sockets non-blocking for network connections */
+                if (srv->fds[i].protocol != DIME_UNIX) {
+                    int flags = fcntl(fd, F_GETFL, 0);
 
-                printf("%d\n", __LINE__); return -1;
-            }
+                    if (flags >= 0) {
+                        fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+                    }
+                }
 
-            if (pollfds_len >= pollfds_cap) {
-                size_t ncap = (3 * pollfds_cap) / 2;
+                if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
+                    close(fd);
+                    free(clnt);
+                    signal(SIGPIPE, sigpipe_f);
+                    signal(SIGTERM, sigterm_f);
+                    signal(SIGINT, sigint_f);
+                    free(pollfds);
 
-                void *narr = realloc(pollfds, ncap * sizeof(struct pollfd));
-                if (narr == NULL) {
+                    printf("%d\n", __LINE__); return -1;
+                }
+
+                if (srv->fds[i].protocol == DIME_WS) {
+                    if (dime_socket_init_ws(&clnt->sock) < 0) {
+                        dime_client_destroy(clnt);
+                        free(clnt);
+                        signal(SIGPIPE, sigpipe_f);
+                        signal(SIGTERM, sigterm_f);
+                        signal(SIGINT, sigint_f);
+                        free(pollfds);
+
+                        printf("%d\n", __LINE__); return -1;
+                    }
+                }
+
+                if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
                     dime_client_destroy(clnt);
                     free(clnt);
                     signal(SIGPIPE, sigpipe_f);
@@ -432,21 +491,36 @@ int dime_server_loop(dime_server_t *srv) {
                     printf("%d\n", __LINE__); return -1;
                 }
 
-                pollfds = narr;
-                pollfds_cap = ncap;
-            }
+                if (pollfds_len >= pollfds_cap) {
+                    size_t ncap = (3 * pollfds_cap) / 2;
+                    struct pollfd *narr = realloc(pollfds, ncap * sizeof(struct pollfd));
+                    if (narr == NULL) {
+                        dime_client_destroy(clnt);
+                        free(clnt);
+                        signal(SIGPIPE, sigpipe_f);
+                        signal(SIGTERM, sigterm_f);
+                        signal(SIGINT, sigint_f);
+                        free(pollfds);
 
-            pollfds[pollfds_len].fd = clnt->fd;
-            pollfds[pollfds_len].events = POLLIN;
-            pollfds[pollfds_len].revents = 0;
-            pollfds_len++;
+                        printf("%d\n", __LINE__); return -1;
+                    }
 
-            if (srv->verbosity >= 1) {
-                dime_info("Opened new connection from %s", clnt->addr);
+                    pollfds = narr;
+                    pollfds_cap = ncap;
+                }
+
+                pollfds[pollfds_len].fd = clnt->fd;
+                pollfds[pollfds_len].events = POLLIN;
+                pollfds[pollfds_len].revents = 0;
+                pollfds_len++;
+
+                if (srv->verbosity >= 1) {
+                    dime_info("Opened new connection from %s", clnt->addr);
+                }
             }
         }
 
-        for (size_t i = 1; i < pollfds_len; i++) {
+        for (size_t i = srv->fds_len; i < pollfds_len; i++) {
             dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &pollfds[i].fd);
             assert(clnt != NULL);
 

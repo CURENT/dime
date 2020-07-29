@@ -20,7 +20,7 @@ while True:
 print(port)
 HEREDOC`
 
-../server/dime -P ws -p "$DIME_PORT" &
+../server/dime -l "ws:$DIME_PORT" &
 DIME_PID=$!
 
 cat ../client/javascript/dime.js test_javascript_send.js | node - "localhost" "$DIME_PORT"

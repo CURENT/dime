@@ -51,15 +51,15 @@ enum dime_serialization {
     DIME_DIMEB
 };
 
+typedef struct {
+    int fd;
+    int protocol;
+} dime_server_fd_t;
+
 enum dime_protocol {
     DIME_UNIX,
     DIME_TCP,
-    DIME_WS,
-    /*
-    DIME_TCP_IPV6,
-    DIME_SCTP,
-    DIME_SCTP_IPV6
-    */
+    DIME_WS
 };
 
 /**
@@ -75,6 +75,14 @@ typedef struct {
     unsigned int zlib : 1;   /** zlib flag */
     unsigned int ws : 1;     /** WebSocket flag */
     char : 0;
+
+    dime_server_fd_t *fds;
+    size_t fds_len;
+    size_t fds_cap;
+
+    char **pathnames;
+    size_t pathnames_len;
+    size_t pathnames_cap;
 
     const char *certname;    /** Certificate pathname (if using TLS) */
     const char *privkeyname; /** Private key pathname (if using TLS) */
@@ -114,6 +122,8 @@ int dime_server_init(dime_server_t *srv);
  * @see dime_server_init
  */
 void dime_server_destroy(dime_server_t *srv);
+
+int dime_server_add(dime_server_t *srv, int protocol, ...);
 
 /**
  * @brief Run the event loop for the server
