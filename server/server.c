@@ -336,6 +336,10 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 }
 
 int dime_server_loop(dime_server_t *srv) {
+    if (srv->fds_len == 0) {
+        return 0;
+    }
+
     struct pollfd *pollfds;
     size_t pollfds_len, pollfds_cap;
 
@@ -422,7 +426,7 @@ int dime_server_loop(dime_server_t *srv) {
         }
 
         for (size_t i = 0; i < srv->fds_len; i++) {
-            if (pollfds[0].revents & POLLIN) {
+            if (pollfds[i].revents & POLLIN) {
                 dime_client_t *clnt = malloc(sizeof(dime_client_t));
                 if (clnt == NULL) {
                     signal(SIGPIPE, sigpipe_f);
@@ -671,7 +675,7 @@ int dime_server_loop(dime_server_t *srv) {
         }
 
         /* Iterate in reverse order for better cache locality */
-        for (size_t i = pollfds_len - 1; i > 0; i--) {
+        for (size_t i = pollfds_len - 1; i >= srv->fds_len; i--) {
             dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &pollfds[i].fd);
             assert(clnt != NULL);
 
