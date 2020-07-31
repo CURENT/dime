@@ -1,17 +1,35 @@
 # dime2
 A re-write of the Distributed Matlab Environment, a library enabling multiple Matlab processes to share data across an operating system or over a network. The original DiME code can be found [here](https://github.com/CURENT/dime). This re-write includes a number of enhancements with regard to simplicity and efficiency, including single-threadedness, (I/O multiplexing is done via [`poll(2)`](https://pubs.opengroup.org/onlinepubs/007908799/xsh/poll.html)) fewer dependencies, and significantly higher throughput.
 
-## Compiling
-
-### Client
-Compiling client code is only necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
+## Setup
 
 ### Server
 To compile the server executable, run `make` in the `server` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided). The server code has the following compile-time dependencies:
 
-* A SUSv2-compatible environment
+* A SUS-compatible environment
   * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/)
 * [Jansson](https://digip.org/jansson/)
+* [OpenSSL](https://www.openssl.org/)
+* [zlib](http://zlib.net/)
+
+### Matlab Client
+To use the Matlab client, add `client/matlab` to your [Matlab path](https://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html).
+
+The Matlab client supports TCP and Unix domain socket connections. Ohowever, compiling some code is necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
+
+### Python Client
+To use the Python client, either add `client/python` to your [PYTHONPATH](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) environment variable, or run `python3 setup.py install` in that directory.
+
+The Python client supports TCP and Unix domain socket connections.
+
+### Javascript Client
+To use the Javascript client, add the following to your `<head>`:
+```html
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2@master/client/javascript/dime.js" crossorigin=""></script>
+```
+Or include `client/javascript/dime.js` into your HTML pages in some other way.
+
+The Javascript client supports WebSocket connections.
 
 ## Running
 To use the software, simply add `client/matlab` to your Matlab path. The following code demonstrates the library in use:
