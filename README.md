@@ -25,7 +25,7 @@ The Python client supports TCP and Unix domain socket connections.
 ### Javascript Client
 To use the Javascript client, add the following to your `<head>`:
 ```html
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2@master/client/javascript/dime.js" crossorigin=""></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2/client/javascript/dime.js" crossorigin=""></script>
 ```
 Or include `client/javascript/dime.js` into your HTML pages in some other way.
 
