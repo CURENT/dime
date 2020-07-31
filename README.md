@@ -66,7 +66,7 @@ $ dime -h
 
 ### Matlab Client
 ```matlab
-% Suppose the DiME server is running on the Unix domain socket at /tmp/dime.sock
+% Suppose the DiME server is running on a Unix domain socket at /tmp/dime.sock
 d = dime('ipc', '/tmp/dime.sock');
 d.join('matlab');
 
@@ -85,7 +85,7 @@ disp(a);
 
 ### Python Client
 ```python
-# Suppose the DiME server is running on the Unix domain socket at /tmp/dime.sock
+# Suppose the DiME server is running on a Unix domain socket at /tmp/dime.sock
 import numpy as np
 from dime import DimeClient
 
@@ -102,6 +102,27 @@ print(d["a"])
 # array([[1, 2, 3],
 #        [4, 5, 6],
 #        [7, 8, 9]])
+```
+
+### Javascript Client
+The Javascript client code relies heavily on promises, so it's recommended to be used in an async function:
+```javascript
+// Suppose the DiME server is running on a WebSocket on the current computer, on port 8888
+let promise = (async function() {
+    let d = new dime.DimeClient("localhost", 8888);
+    await d.join("javascript");
+    
+    d.workspace.a = "Hello world!";
+    await d.send("javascript", "a");
+    delete d.workspace.a;
+    
+    await d.sync();
+    console.log(d.workspace.a);
+    
+    // Hello world!
+})();
+
+// Can do something with the promise if that is desired
 ```
 
 ## Caveats
