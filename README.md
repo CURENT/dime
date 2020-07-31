@@ -13,7 +13,7 @@ To compile the server executable, run `make` in the `server` directory. Build op
 * [zlib](http://zlib.net/)
 
 ### Matlab Client
-To use the Matlab client, add `client/matlab` to your [Matlab path](https://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html).
+To use the Matlab client, add `client/matlab` to your [Matlab search path](https://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html).
 
 The Matlab client supports TCP and Unix domain socket connections. Ohowever, compiling some code is necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
 
@@ -31,23 +31,77 @@ Or include `client/javascript/dime.js` into your HTML pages in some other way.
 
 The Javascript client supports WebSocket connections.
 
-## Running
-To use the software, simply add `client/matlab` to your Matlab path. The following code demonstrates the library in use:
+## Usage
+
+### Server
+To run the server with default settings (assuming `server/dime` has been installed somewhere in your path):
 ```
+$ dime
+```
+
+"Default settings" in this context means listening on the Unix domain socket `/tmp/dime.sock` on Unix-like systems and on the TCP port 5000 on Windows systems. To change this behavior, use the `-l` flag:
+```
+$ dime -l tcp:8888
+```
+
+More than one connection, including connections of different types, can be hosted on using this flag:
+```
+$ dime -l unix:./dime.sock -l unix:/var/run/dime.sock -l tcp:8888 -l ws:8889
+```
+
+By default, nothing is printed to standard output either. The `-v` flag outputs some debug information:
+```
+$ dime -v
+```
+
+Extra `-v` flags increase the level of verbosity:
+```
+$ dime -vvv
+```
+
+For more information, including other, less useful options, run:
+```
+$ dime -h
+```
+
+### Matlab Client
+```matlab
 % Suppose the DiME server is running on the Unix domain socket at /tmp/dime.sock
-d = dime('matlab', 'ipc', '/tmp/dime.sock');
+d = dime('ipc', '/tmp/dime.sock');
+d.join('matlab');
 
 a = [1, 2, 3; 4, 5, 6; 7, 8, 9];
 d.send_var('matlab', 'a');
 clear a;
 
 d.sync();
-a
+disp(a);
 
 % a =
 %      1     2     3
 %      4     5     6
 %      7     8     9
+```
+
+### Python Client
+```python
+# Suppose the DiME server is running on the Unix domain socket at /tmp/dime.sock
+import numpy as np
+from dime import DimeClient
+
+d = DimeClient("ipc", "/tmp/dime.sock")
+d.join("python")
+
+d["a"] = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+d.send("python", "a")
+del d["a"]
+
+d.sync()
+print(d["a"])
+
+# array([[1, 2, 3],
+#        [4, 5, 6],
+#        [7, 8, 9]])
 ```
 
 ## Caveats
