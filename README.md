@@ -23,11 +23,12 @@ To use the Python client, either add `client/python` to your [PYTHONPATH](https:
 The Python client supports TCP and Unix domain socket connections.
 
 ### Javascript Client
-To use the Javascript client, add the following to your `<head>`:
+To use the Javascript client, add the following to your `<head>` element:
 ```html
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2/client/javascript/dime.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js" type="text/javascript" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2/client/javascript/dime.min.js" type="text/javascript" crossorigin=""></script>
 ```
-Or include `client/javascript/dime.js` into your HTML pages in some other way.
+Or include [NumJs](https://github.com/nicolaspanel/numjs) and `client/javascript/dime.js` in your HTML pages in some other way.
 
 The Javascript client supports WebSocket connections.
 
