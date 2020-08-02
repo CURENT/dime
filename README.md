@@ -25,10 +25,9 @@ The Python client supports TCP and Unix domain socket connections.
 ### Javascript Client
 To use the Javascript client, add the following to your `<head>` element:
 ```html
-<script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js" type="text/javascript" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2/client/javascript/dime.min.js" type="text/javascript" crossorigin=""></script>
 ```
-Or include [NumJs](https://github.com/nicolaspanel/numjs) and `client/javascript/dime.js` in your HTML pages in some other way.
+Or include `client/javascript/dime.js` in your HTML pages in some other way.
 
 The Javascript client supports WebSocket connections.
 
@@ -72,7 +71,7 @@ d = dime('ipc', '/tmp/dime.sock');
 d.join('matlab');
 
 a = [1, 2, 3; 4, 5, 6; 7, 8, 9];
-d.send_var('matlab', 'a');
+d.send('matlab', 'a');
 clear a;
 
 d.sync();
