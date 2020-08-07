@@ -116,7 +116,7 @@ class NDArray {
 
 		const start = this._makeIndex([0, n], false);
 		const end = this._makeIndex([0, n+1], false);
-		console.log({ start, end });
+		//console.log({ start, end });
 		return this.array.slice(start, end);
 	}
 
@@ -131,7 +131,7 @@ class NDArray {
 
 		const start = this._makeIndex([n, 0], false);
 		const end = this._makeIndex([n+1, 0], false);
-		console.log({ start, end });
+		//console.log({ start, end });
 		return this.array.slice(start, end);
 	}
 
@@ -250,7 +250,7 @@ function __loadsmat(bytes, dtype, complex) {
         array[i] = dview[method](i * itemsize);
     }
 
-    let obj = new NDArray("F", shape, complex, array);
+    let obj = new dime.NDArray("F", shape, complex, array);
     let nread = 2 + 4 * rank + nelems * itemsize;
 
     return [obj, nread];
@@ -344,7 +344,7 @@ function __loads(bytes) {
 
     case TYPE_DOUBLE:
         obj = dview.getFloat64(0);
-        nread = 5;
+        nread = 9;
 
         break;
 
@@ -464,6 +464,9 @@ function __loads(bytes) {
         }
 
         break;
+
+    default:
+        throw "Invalid dimeb data";
     }
 
     return [obj, nread];
@@ -750,7 +753,7 @@ class DimeClient {
         }
     }
 
-    async broadcast(...varnames) {
+    async broadcast(name, ...varnames) {
         let kvpairs = {};
 
         for (let varname of varnames) {
@@ -840,23 +843,6 @@ class DimeClient {
         if (jsondata.status < 0) {
             throw status.error;
         }
-    }
-
-    async devices() {
-        if (this.connected) {
-            await this.connected;
-            this.connected = null;
-        }
-
-        this.__send({command: "devices"})
-
-        let [jsondata, bindata] = await this.__recv();
-
-        if (jsondata.status < 0) {
-            throw status.error;
-        }
-
-        return jsondata.devices;
     }
 
     __send(jsondata, bindata = new ArrayBuffer(0)) {
