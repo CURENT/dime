@@ -289,6 +289,8 @@ class DimeClient(collections.abc.MutableMapping):
         if jsondata["status"] < 0:
             raise RuntimeError(status["error"])
 
+        return jsondata["n"]
+
     def devices(self):
         """send Send a "devices" command to the server
 

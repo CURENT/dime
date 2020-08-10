@@ -11,7 +11,8 @@ function [] = test_matlab_wait(pathname, which)
         a = 'ping';
         d.send('d2', 'a');
 
-        d.wait();
+        n = d.wait();
+        assert(n == 1 || n == 2);
         d.sync(1);
 
         assert(strcmp(a, 'pong'));
@@ -28,7 +29,8 @@ function [] = test_matlab_wait(pathname, which)
             pause(0.05);
         end
 
-        d.wait();
+        n = d.wait();
+        assert(n == 1);
         d.sync();
 
         assert(strcmp(a, 'ping'));

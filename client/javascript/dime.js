@@ -844,7 +844,7 @@ class DimeClient {
             throw status.error;
         }
 
-        console.log(jsondata.n);
+        return jsondata.n;
     }
 
     async devices() {

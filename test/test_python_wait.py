@@ -22,7 +22,8 @@ if int(sys.argv[2]) == 0:
     d["a"] = "ping"
     d.send("d2", "a")
 
-    d.wait()
+    n = d.wait()
+    assert n == 1 or n == 2
     d.sync(1)
 
     assert d["a"] == "pong"
@@ -40,7 +41,8 @@ else:
     while "d1" not in d.devices():
         time.sleep(0.05)
 
-    d.wait()
+    n = d.wait()
+    assert n == 1
     d.sync()
 
     assert d["a"] == "ping"

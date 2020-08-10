@@ -449,7 +449,7 @@ classdef dime < handle
             end
         end
 
-        function [] = wait(obj)
+        function [n] = wait(obj)
             % Send a "wait" command to the server
             %
             % Tell the server to send a message once at least one message has
@@ -471,6 +471,8 @@ classdef dime < handle
             if jsondata.status < 0
                 error(jsondata.error);
             end
+
+            n = jsondata.n;
         end
 
         function [names] = get_devices(obj)
