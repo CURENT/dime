@@ -843,6 +843,25 @@ class DimeClient {
         if (jsondata.status < 0) {
             throw status.error;
         }
+
+        console.log(jsondata.n);
+    }
+
+    async devices() {
+        if (this.connected) {
+            await this.connected;
+            this.connected = null;
+        }
+
+        this.__send({command: "devices"})
+
+        let [jsondata, bindata] = await this.__recv();
+
+        if (jsondata.status < 0) {
+            throw status.error;
+        }
+
+        return jsondata.devices;
     }
 
     __send(jsondata, bindata = new ArrayBuffer(0)) {
