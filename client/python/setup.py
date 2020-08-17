@@ -3,7 +3,7 @@
 
 from setuptools import setup
 
-with open("../../README.md", "r") as file:
+with open("README.md", "r") as file:
     long_description = file.read()
 
 setup(
