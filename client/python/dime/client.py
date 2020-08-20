@@ -39,7 +39,17 @@ class DimeClient(collections.abc.MutableMapping):
             Additional arguments, as described above.
         """
 
+        self.proto = proto
+        self.args = args
+
         self.workspace = {}
+
+        self.open()
+
+    def open(self, proto = None, *args):
+        if proto is None:
+            proto = self.proto
+            args = self.args
 
         if proto == "ipc":
             if len(args) == 0:
