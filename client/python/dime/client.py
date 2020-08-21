@@ -247,7 +247,11 @@ class DimeClient(collections.abc.MutableMapping):
            The maximum number of variables to receive, or a negative value to
            receive all variables sent.
         """
-        self.workspace.update(self.sync_r(n))
+        updates = self.sync_r(n)
+
+        self.workspace.update(updates)
+
+        return set(updates.keys())
 
     def sync_r(self, n = -1):
         self.__send({"command": "sync", "n": n})
