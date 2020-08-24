@@ -628,12 +628,12 @@ int dime_server_loop(dime_server_t *srv) {
                             }
                         }
 
-                        json_decref(jsondata);
-                        free(bindata);
-
                         if (err < 0 && srv->verbosity >= 1) {
                             dime_warn("Failed to handle command \"%s\" from %s: %s", cmd, clnt->addr, srv->err);
                         }
+
+                        json_decref(jsondata);
+                        free(bindata);
                     } else if (n < 0) {
                         signal(SIGPIPE, sigpipe_f);
                         signal(SIGTERM, sigterm_f);
