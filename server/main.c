@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
         type = strtok_r(listens[i], ":", &saveptr);
 
-        if (strcasecmp(type, "unix") == 0) {
+        if (strcasecmp(type, "unix") == 0 || strcasecmp(type, "ipc") == 0) {
             const char *pathname = strtok_r(NULL, ":", &saveptr);
             if (pathname == NULL) {
                 goto usage_err;
