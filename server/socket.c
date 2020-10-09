@@ -66,11 +66,11 @@ void dime_socket_destroy(dime_socket_t *sock) {
 int dime_socket_init_ws(dime_socket_t *sock) {
     int flags = fcntl(sock->fd, F_GETFL, 0);
     if (flags < 0) {
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     char *http_hdr;
@@ -85,7 +85,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     do {
@@ -98,7 +98,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
                 fcntl(sock->fd, F_SETFL, flags);
             }
 
-            return -1;
+            printf("%d\n", __LINE__); return -1;
         }
 
         http_len += nrecvd;
@@ -114,7 +114,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
                     fcntl(sock->fd, F_SETFL, flags);
                 }
 
-                return -1;
+                printf("%d\n", __LINE__); return -1;
             }
 
             http_hdr = nbuf;
@@ -137,7 +137,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     if (strcmp(method, "GET") != 0) {
@@ -147,7 +147,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     if (major * 10 + minor < 11) {
@@ -157,7 +157,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     char *connection, *upgrade, *sec_ws_key, *sec_ws_version;
@@ -174,7 +174,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
                 fcntl(sock->fd, F_SETFL, flags);
             }
 
-            return -1;
+            printf("%d\n", __LINE__); return -1;
         }
 
         char *key, *val;
@@ -205,7 +205,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     SHA_CTX sha1;
@@ -239,18 +239,18 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     /* Reset the original socket flags */
     if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags) < 0) {
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     sock->ws.enabled = 1;
 
     if (dime_ringbuffer_init(&sock->ws.rbuf) < 0) {
-        return -1;
+        printf("%d\n", __LINE__); return -1;
     }
 
     return 0;

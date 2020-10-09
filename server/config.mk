@@ -17,10 +17,10 @@ CFLAGS ?= -std=c99 -D_XOPEN_SOURCE=500 -Wall -pedantic -Wno-error -fPIE -pthread
 LDFLAGS ?= -pie -pthread -ljansson -lssl -lcrypto -lz
 
 # Uncomment the lines below for a release build
-#CFLAGS += -DNDEBUG -O3
+CFLAGS += -DNDEBUG -O3
 
 # Uncomment the lines below for a debug build
-CFLAGS += -Og -g -fstack-protector-strong
+#CFLAGS += -Og -g -fstack-protector-strong
 
 # Uncomment the lines below to enable AddressSanitizer (Valgrind will not work)
 #CFLAGS += -fsanitize=address

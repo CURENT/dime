@@ -442,13 +442,11 @@ int dime_server_loop(dime_server_t *srv) {
 
                 int fd = accept(srv->fds[i].fd, (struct sockaddr *)&addr, &siz);
                 if (fd < 0) {
-                    free(clnt);
-                    signal(SIGPIPE, sigpipe_f);
-                    signal(SIGTERM, sigterm_f);
-                    signal(SIGINT, sigint_f);
-                    free(pollfds);
+                    dime_err("Failed to accept a socket from fd %d (%s)", srv->fds[i].fd, strerror(errno));
 
-                    printf("%d\n", __LINE__); return -1;
+                    free(clnt);
+
+                    continue;
                 }
 
                 /* Attempt to make sockets non-blocking for network connections */
@@ -473,14 +471,12 @@ int dime_server_loop(dime_server_t *srv) {
 
                 if (srv->fds[i].protocol == DIME_WS) {
                     if (dime_socket_init_ws(&clnt->sock) < 0) {
+                        dime_err("Failed to complete WebSocket handhake for incoming connection %s (%s)", clnt->addr, strerror(errno));
+
                         dime_client_destroy(clnt);
                         free(clnt);
-                        signal(SIGPIPE, sigpipe_f);
-                        signal(SIGTERM, sigterm_f);
-                        signal(SIGINT, sigint_f);
-                        free(pollfds);
 
-                        printf("%d\n", __LINE__); return -1;
+                        continue;
                     }
                 }
 
