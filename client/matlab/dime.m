@@ -87,9 +87,9 @@ classdef dime < handle
             sendmsg(obj, jsondata, uint8.empty);
             [jsondata, ~] = recvmsg(obj);
 
-            %if jsondata.status ~= 0
-            %    error(jsondata.error);
-            %end
+            if jsondata.status < 0
+                error(jsondata.error);
+            end
 
             obj.serialization = jsondata.serialization;
         end

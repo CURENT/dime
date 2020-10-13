@@ -67,8 +67,8 @@ class DimeClient(collections.abc.MutableMapping):
 
         jsondata, _ = self.__recv()
 
-        #if jsondata["status"] != 0:
-        #    raise RuntimeError(status["error"])
+        if jsondata["status"] < 0:
+            raise RuntimeError(status["error"])
 
         self.serialization = jsondata["serialization"]
 
