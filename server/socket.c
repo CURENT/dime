@@ -199,6 +199,15 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         sec_ws_key == NULL || strlen(sec_ws_key) == 0 ||
         sec_ws_version == NULL || strcmp(sec_ws_version, "13") != 0) {
 
+        assert(connection != NULL);
+        assert(strstr(connection, "Upgrade") != NULL);
+        assert(upgrade != NULL);
+        assert(strcmp(upgrade, "websocket") != 0);
+        assert(sec_ws_key != NULL);
+        assert(strlen(sec_ws_key) != 0);
+        assert(sec_ws_version != NULL);
+        assert(strcmp(sec_ws_version, "13") == 0);
+
         free(http_hdr);
 
         if ((flags & ~O_NONBLOCK) != flags) {
