@@ -2,12 +2,15 @@ import collections.abc
 import itertools
 import json
 import pickle
+import re
 import socket
 import struct
 
 from dime import dimeb
 
 __all__ = ["DimeClient"]
+
+ADDRESS_REGEX = re.compile(r"(?P<proto>[a-z]+)://(?P<hostname>([^:]|((?<=\\)(?:\\\\)*:))+)(:(?P<port>[0-9]+))?")
 
 class DimeClient(collections.abc.MutableMapping):
     """DiME client
@@ -47,6 +50,8 @@ class DimeClient(collections.abc.MutableMapping):
         self.open()
 
     def open(self, proto = None, *args):
+        global __ADDRESS_REGEX
+
         if proto is None:
             proto = self.proto
             args = self.args
@@ -61,7 +66,20 @@ class DimeClient(collections.abc.MutableMapping):
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             self.conn.connect(args)
         else:
-            raise TypeError()
+            match = ADDRESS_REGEX.fullmatch(proto)
+
+            if match is None:
+                raise TypeError()
+
+            proto = match.group("proto")
+
+            if match.group("port") is not None:
+                args = (match.group("hostname"), int(match.group("port")))
+            else:
+                args = (match.group("hostname"),)
+
+            self.open(proto, *args)
+            return
 
         self.__send({"command": "handshake", "serialization": "pickle", "tls": False})
 
