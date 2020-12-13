@@ -63,7 +63,7 @@ classdef dime < handle
             end
 
             switch (proto)
-            case 'ipc'
+            case {'ipc', 'unix'}
                 conn = sunconnect(varargin{:});
 
                 obj.send_ll = @(msg) sunsend(conn, msg);
@@ -76,6 +76,27 @@ classdef dime < handle
                 obj.send_ll = @(msg) write(conn, msg);
                 obj.recv_ll = @(n) read(conn, n);
                 obj.close_ll = @() []; % TODO: does clear() close a TCP socket?
+
+            otherwise
+                match = regexp(proto, '^(?<proto>[a-z]+)://(?<hostname>([^:]|((?<=\\)(\\\\)*:))+)(?<port>:[0-9]+)?$', 'names');
+
+                if ~isempty(match)
+                    switch (match.proto)
+                    case {'ipc', 'unix'}
+                        conn = sunconnect(match.hostname);
+
+                        obj.send_ll = @(msg) sunsend(conn, msg);
+                        obj.recv_ll = @(n) sunrecv(conn, n);
+                        obj.close_ll = @() sunclose(conn);
+
+                    case 'tcp'
+                        conn = tcpclient(match.hostname, str2num(match.port(2:length(match.port))));
+
+                        obj.send_ll = @(msg) write(conn, msg);
+                        obj.recv_ll = @(n) read(conn, n);
+                        obj.close_ll = @() []; % TODO: does clear() close a TCP socket?
+                    end
+                end
             end
 
             jsondata = struct();
