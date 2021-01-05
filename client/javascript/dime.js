@@ -699,10 +699,10 @@ class DimeClient {
                     }
 
                     // No serialization methods other than dimeb are supported (for now)
-                    if (jsondata.serialization !== "dimeb") {
+                    if (jsondata.serialization === "dimeb") {
                         self.loads = dimebloads;
                         self.dumps = dimebdumps;
-                    } else if (jsondata.serialization !== "json") {
+                    } else if (jsondata.serialization === "json") {
                         self.loads = jsonloads;
                         self.dumps = JSON.stringify;
                     } else {
