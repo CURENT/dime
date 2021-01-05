@@ -180,44 +180,43 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         serialization_i = DIME_PICKLE;
     } else if (strcmp(serialization, "dimeb") == 0) {
         serialization_i = DIME_DIMEB;
+    }else if (strcmp(serialization, "json") == 0) {
+        serialization_i = DIME_JSON;
     } else {
         return -1;
     }
 
     if (srv->serialization == DIME_NO_SERIALIZATION) {
         srv->serialization = serialization_i;
-    } else if (srv->serialization != serialization_i) {
-        if (srv->serialization != DIME_DIMEB) {
-            json_t *meta = json_pack("{sisbssss}", "status", 1, "meta", 1, "command", "reregister", "serialization", "dimeb");
-            if (meta == NULL) {
-                return -1;
-            }
-
-            char *meta_str = json_dumps(meta, JSON_COMPACT);
-            if (meta_str == NULL) {
-                json_decref(meta);
-
-                return -1;
-            }
-
-            json_decref(meta);
-
-            dime_table_iter_t it;
-            dime_table_iter_init(&it, &srv->fd2clnt);
-
-            while (dime_table_iter_next(&it)) {
-                dime_client_t *other = it.val;
-
-                if (other != clnt && dime_socket_push_str(&other->sock, meta_str, NULL, 0) < 0) {
-                    free(meta_str);
-
-                    return -1;
-                }
-            }
-
-            free(meta_str);
+    } else if (srv->serialization != serialization_i && srv->serialization != DIME_DIMEB && srv->serialization != DIME_JSON) {
+        json_t *meta = json_pack("{sisbssss}", "status", 1, "meta", 1, "command", "reregister", "serialization", "dimeb");
+        if (meta == NULL) {
+            return -1;
         }
 
+        char *meta_str = json_dumps(meta, JSON_COMPACT);
+        if (meta_str == NULL) {
+            json_decref(meta);
+
+            return -1;
+        }
+
+        json_decref(meta);
+
+        dime_table_iter_t it;
+        dime_table_iter_init(&it, &srv->fd2clnt);
+
+        while (dime_table_iter_next(&it)) {
+            dime_client_t *other = it.val;
+
+            if (other != clnt && dime_socket_push_str(&other->sock, meta_str, NULL, 0) < 0) {
+                free(meta_str);
+
+                return -1;
+            }
+        }
+
+        free(meta_str);
         srv->serialization = DIME_DIMEB;
     }
 
@@ -232,6 +231,10 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
 
     case DIME_DIMEB:
         serialization = "dimeb";
+        break;
+
+    case DIME_JSON:
+        serialization = "json";
         break;
     }
 

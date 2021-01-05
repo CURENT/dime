@@ -10,6 +10,49 @@ from dime import dimeb
 
 __all__ = ["DimeClient"]
 
+def json_dechook(obj):
+    """Write a numpy array and its shape to base64 buffers"""
+    shape = obj.shape
+    if len(shape) == 1:
+        shape = (1, obj.shape[0])
+    if obj.flags.c_contiguous:
+        obj = obj.T
+    elif not obj.flags.f_contiguous:
+        obj = asfortranarray(obj.T)
+    else:
+        obj = obj.T
+    try:
+        data = obj.astype(float64).tobytes()
+    except AttributeError:
+        data = obj.astype(float64).tostring()
+
+    data = base64.b64encode(data).decode('utf-8')
+    return data, shape
+
+
+# JSON encoder extension to handle complex numbers and numpy arrays
+class json_enchook(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ndarray) and obj.dtype.kind in 'uif':
+            data, shape = encode_ndarray(obj)
+
+            return {'ndarray': True, 'shape': shape, 'data': data}
+        elif isinstance(obj, ndarray) and obj.dtype.kind == 'c':
+            real, shape = encode_ndarray(obj.real.copy())
+            imag, _ = encode_ndarray(obj.imag.copy())
+
+            return {'ndarray': True, 'shape': shape,
+                    'real': real, 'imag': imag}
+        elif isinstance(obj, ndarray):
+            return obj.tolist()
+        elif isinstance(obj, complex):
+            return {'real': obj.real, 'imag': obj.imag}
+        elif isinstance(obj, generic):
+            return obj.item()
+
+        # Handle the default case
+        return json.JSONEncoder.default(self, obj)
+
 ADDRESS_REGEX = re.compile(r"(?P<proto>[a-z]+)://(?P<hostname>([^:]|((?<=\\)(?:\\\\)*:))+)(:(?P<port>[0-9]+))?")
 
 class DimeClient(collections.abc.MutableMapping):
@@ -49,7 +92,7 @@ class DimeClient(collections.abc.MutableMapping):
 
         self.open()
 
-    def open(self, proto = None, *args):
+    def open(self, proto = None, *args, use_json = False):
         global __ADDRESS_REGEX
 
         if proto is None:
@@ -81,7 +124,8 @@ class DimeClient(collections.abc.MutableMapping):
             self.open(proto, *args)
             return
 
-        self.__send({"command": "handshake", "serialization": "pickle", "tls": False})
+
+        self.__send({"command": "handshake", "serialization": "json" if use_json else "pickle", "tls": False})
 
         jsondata, _ = self.__recv()
 
@@ -96,6 +140,9 @@ class DimeClient(collections.abc.MutableMapping):
         elif jsondata["serialization"] == "dimeb":
             self.loads = dimeb.loads
             self.dumps = dimeb.dumps
+        elif jsondata["serialization"] == "json":
+            self.loads = lambda obj: json.loads(obj, object_hook = json_dechook)
+            self.dumps = lambda obj: json.dumps(obj, cls = json_enchook)
 
     def close(self):
         self.conn.close()
@@ -390,6 +437,9 @@ class DimeClient(collections.abc.MutableMapping):
             elif jsondata["serialization"] == "dimeb":
                 self.loads = dimeb.loads
                 self.dumps = dimeb.dumps
+            elif jsondata["serialization"] == "json":
+                self.loads = lambda obj: json.loads(obj, object_hook = json_dechook)
+                self.dumps = lambda obj: json.dumps(obj, cls = json_enchook)
         else: # No other commands supported yet
             raise RuntimeError("Received unknown meta-status from server")
 

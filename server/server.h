@@ -48,7 +48,8 @@ enum dime_serialization {
     DIME_NO_SERIALIZATION,
     DIME_MATLAB,
     DIME_PICKLE,
-    DIME_DIMEB
+    DIME_DIMEB,
+    DIME_JSON
 };
 
 typedef struct {
