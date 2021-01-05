@@ -698,6 +698,8 @@ class DimeClient {
                         reject(jsondata.error);
                     }
 
+                    self.serialization = jsondata.serialization;
+
                     // No serialization methods other than dimeb are supported (for now)
                     if (jsondata.serialization === "dimeb") {
                         self.loads = dimebloads;

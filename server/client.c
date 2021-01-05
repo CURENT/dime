@@ -180,7 +180,7 @@ int dime_client_handshake(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
         serialization_i = DIME_PICKLE;
     } else if (strcmp(serialization, "dimeb") == 0) {
         serialization_i = DIME_DIMEB;
-    }else if (strcmp(serialization, "json") == 0) {
+    } else if (strcmp(serialization, "json") == 0) {
         serialization_i = DIME_JSON;
     } else {
         return -1;
