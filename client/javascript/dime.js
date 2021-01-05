@@ -658,7 +658,7 @@ class DimeClient {
 
         this.ws = null;
         this.workspace = {};
-        this.serialization = "dimeb";
+        this.serialization = "json";
         this.recvbuffer = new ArrayBuffer(0);
         this.recvcallback = null;
 
