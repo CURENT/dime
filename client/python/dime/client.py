@@ -6,11 +6,35 @@ import re
 import socket
 import struct
 
+from numpy import ndarray, generic, float64, frombuffer, asfortranarray
 from dime import dimeb
 
 __all__ = ["DimeClient"]
 
-def json_dechook(obj):
+def decode_arr(data):
+    """Extract a numpy array from a base64 buffer"""
+    data = data.encode('utf-8')
+    return frombuffer(base64.b64decode(data), float64)
+
+# JSON decoder for arrays and complex numbers
+def json_dechook(dct):
+    if 'ndarray' in dct and 'data' in dct:
+        value = decode_arr(dct['data'])
+        shape = dct['shape']
+        if type(dct['shape']) is not list:
+            shape = decode_arr(dct['shape']).astype(int)
+        return value.reshape(shape, order='F')
+    elif 'ndarray' in dct and 'imag' in dct:
+        real = decode_arr(dct['real'])
+        imag = decode_arr(dct['imag'])
+        shape = decode_arr(dct['shape']).astype(int)
+        data = real + 1j * imag
+        return data.reshape(shape, order='F')
+    elif 'real' in dct and 'imag' in dct:
+        return complex(dct['real'], dct['imag'])
+    return dct
+
+def encode_ndarray(obj):
     """Write a numpy array and its shape to base64 buffers"""
     shape = obj.shape
     if len(shape) == 1:
@@ -28,7 +52,6 @@ def json_dechook(obj):
 
     data = base64.b64encode(data).decode('utf-8')
     return data, shape
-
 
 # JSON encoder extension to handle complex numbers and numpy arrays
 class json_enchook(json.JSONEncoder):
