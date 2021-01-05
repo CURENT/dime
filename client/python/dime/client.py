@@ -141,8 +141,8 @@ class DimeClient(collections.abc.MutableMapping):
             self.loads = dimeb.loads
             self.dumps = dimeb.dumps
         elif jsondata["serialization"] == "json":
-            self.loads = lambda obj: json.loads(obj, object_hook = json_dechook)
-            self.dumps = lambda obj: json.dumps(obj, cls = json_enchook)
+            self.loads = lambda obj: json.loads(obj.decode("utf-8"), object_hook = json_dechook)
+            self.dumps = lambda obj: json.dumps(obj, cls = json_enchook).encode("utf-8")
 
     def close(self):
         self.conn.close()
@@ -337,6 +337,8 @@ class DimeClient(collections.abc.MutableMapping):
                 var = pickle.loads(bindata)
             elif jsondata["serialization"] == "dimeb":
                 var = dimeb.loads(bindata)
+            elif jsondata["serialization"] == "json":
+                var = json.loads(bindata.decode("utf-8"), object_hook = json_dechook)
             else:
                 m -= 1
                 continue
@@ -438,8 +440,8 @@ class DimeClient(collections.abc.MutableMapping):
                 self.loads = dimeb.loads
                 self.dumps = dimeb.dumps
             elif jsondata["serialization"] == "json":
-                self.loads = lambda obj: json.loads(obj, object_hook = json_dechook)
-                self.dumps = lambda obj: json.dumps(obj, cls = json_enchook)
+                self.loads = lambda obj: json.loads(obj.decode("utf-8"), object_hook = json_dechook)
+                self.dumps = lambda obj: json.dumps(obj, cls = json_enchook).encode("utf-8")
         else: # No other commands supported yet
             raise RuntimeError("Received unknown meta-status from server")
 
