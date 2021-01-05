@@ -1,3 +1,4 @@
+import base64
 import collections.abc
 import itertools
 import json
