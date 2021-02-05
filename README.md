@@ -15,7 +15,7 @@ To compile the server executable, run `make` in the `server` directory. Build op
 ### Matlab Client
 To use the Matlab client, add `client/matlab` to your [Matlab search path](https://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html).
 
-The Matlab client supports TCP and Unix domain socket connections. Ohowever, compiling some code is necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
+The Matlab client supports TCP and Unix domain socket connections. However, compiling some code is necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
 
 ### Python Client
 To use the Python client, either add `client/python` to your [PYTHONPATH](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) environment variable, or run `python3 setup.py install` in that directory.
@@ -128,8 +128,7 @@ let promise = (async function() {
 ## Caveats
 
 ### Type conversions between languages
-The following types can be transmitted between Matlab, Python, and Javascript clients, and
-translate according to the following table:
+The following types can be transmitted between Matlab, Python, and Javascript clients, and translate according to the following table:
 
 | Matlab                  | Python                  | Javascript              |
 | ----------------------- | ----------------------- | ----------------------- |
