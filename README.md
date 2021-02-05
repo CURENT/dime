@@ -7,7 +7,7 @@ A re-write of the Distributed Matlab Environment, a library enabling multiple Ma
 To compile the server executable, run `make` in the `server` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided). The server code has the following compile-time dependencies:
 
 * A SUS-compatible environment
-  * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/)
+  * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/) + [Gnulib](http://www.gnu.org/software/gnulib/)
 * [Jansson](https://digip.org/jansson/)
 * [OpenSSL](https://www.openssl.org/)
 * [zlib](http://zlib.net/)
