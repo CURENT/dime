@@ -127,21 +127,21 @@ let promise = (async function() {
 
 ## Caveats
 
-### Matlab/Python intercommunication
-The following types can be transmitted between Matlab and Python clients, and
+### Type conversions between languages
+The following types can be transmitted between Matlab, Python, and Javascript clients, and
 translate according to the following table:
 
-| Matlab                 | Python                 |
-| ---------------------- | ---------------------- |
-| Empty matrix           | `None`                 |
-| Logical                | `bool`                 |
-| Integers               | `int`                  |
-| Single/double          | `float`                |
-| Complex                | `complex`              |
-| Matrix                 | `numpy.ndarray`        |
-| String/Character array | `str`                  |
-| Cell array             | `list`                 |
-| Struct/container.Map   | `dict`                 |
+| Matlab                  | Python                  | Javascript              |
+| ----------------------- | ----------------------- | ----------------------- |
+| Empty matrix            | `None`                  | `null`                  |
+| Logical                 | `bool`                  | `boolean`               |
+| Integers                | `int`                   | `number`                |
+| Single/double           | `float`                 | `number`                |
+| Complex                 | `complex`               | Custom `Complex` object |
+| Matrix                  | `numpy.ndarray`         | Custom `NDArray` object |
+| String/Character array  | `str`                   | `string`                |
+| Cell array              | `list`                  | `Array`                 |
+| Struct/container.Map    | `dict`                  | `object`                |
 
 ## FAQs/Justifications
 
