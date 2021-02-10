@@ -7,7 +7,7 @@ A re-write of the Distributed Matlab Environment, a library enabling multiple Ma
 To compile the server executable, run `make` in the `server` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided). The server code has the following compile-time dependencies:
 
 * A SUS-compatible environment
-  * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/)
+  * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/) + [Gnulib](http://www.gnu.org/software/gnulib/)
 * [Jansson](https://digip.org/jansson/)
 * [OpenSSL](https://www.openssl.org/)
 * [zlib](http://zlib.net/)
@@ -15,7 +15,7 @@ To compile the server executable, run `make` in the `server` directory. Build op
 ### Matlab Client
 To use the Matlab client, add `client/matlab` to your [Matlab search path](https://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html).
 
-The Matlab client supports TCP and Unix domain socket connections. Ohowever, compiling some code is necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
+The Matlab client supports TCP and Unix domain socket connections. However, compiling some code is necessary for Matlab on Unix-like OSes if you wish to connect to Unix domain sockets. To do so, run `make` in the `client/matlab` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided).
 
 ### Python Client
 To use the Python client, either add `client/python` to your [PYTHONPATH](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) environment variable, or run `python3 setup.py install` in that directory.
@@ -127,21 +127,20 @@ let promise = (async function() {
 
 ## Caveats
 
-### Matlab/Python intercommunication
-The following types can be transmitted between Matlab and Python clients, and
-translate according to the following table:
+### Type conversions between languages
+The following types can be transmitted between Matlab, Python, and Javascript clients, and translate according to the following table:
 
-| Matlab                 | Python                 |
-| ---------------------- | ---------------------- |
-| Empty matrix           | `None`                 |
-| Logical                | `bool`                 |
-| Integers               | `int`                  |
-| Single/double          | `float`                |
-| Complex                | `complex`              |
-| Matrix                 | `numpy.ndarray`        |
-| String/Character array | `str`                  |
-| Cell array             | `list`                 |
-| Struct/container.Map   | `dict`                 |
+| Matlab                  | Python                  | Javascript              |
+| ----------------------- | ----------------------- | ----------------------- |
+| Empty matrix            | `None`                  | `null`                  |
+| Logical                 | `bool`                  | `boolean`               |
+| Integers                | `int`                   | `number`                |
+| Single/double           | `float`                 | `number`                |
+| Complex                 | `complex`               | Custom `Complex` object |
+| Matrix                  | `numpy.ndarray`         | Custom `NDArray` object |
+| String/Character array  | `str`                   | `string`                |
+| Cell array              | `list`                  | `Array`                 |
+| Struct/container.Map    | `dict`                  | `object`                |
 
 ## FAQs/Justifications
 
