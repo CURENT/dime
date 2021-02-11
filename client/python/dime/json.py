@@ -14,7 +14,7 @@ class DimeJSONEncoder(json.JSONEncoder):
                 "imag": obj.imag
             }
 
-        if isinstance(obj.np.ndarray):
+        if isinstance(obj, np.ndarray):
             dtype = str(obj.dtype)
 
             if dtype not in {"int8", "int16", "int32", "int64",
@@ -26,7 +26,7 @@ class DimeJSONEncoder(json.JSONEncoder):
             shape = list(obj.shape)
 
             return {
-                "__dime_type": "ndarray",
+                "__dime_type": "matrix",
                 "dtype": dtype,
                 "shape": shape,
                 "data": data
@@ -39,7 +39,7 @@ def dime_JSON_dechook(dct):
         if dct["__dime_type"] == "complex":
             return complex(dct["real"], dct["imag"])
 
-        if dct["__dime_type"] == "ndarray":
+        if dct["__dime_type"] == "matrix":
             return np.frombuffer(base64.b64decode(dct["data"]), dtype = np.dtype(dct["dtype"])).reshape(dct["shape"], order = "F")
 
     return dct
