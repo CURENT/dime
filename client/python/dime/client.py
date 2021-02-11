@@ -297,7 +297,7 @@ class DimeClient(collections.abc.MutableMapping):
             elif jsondata["serialization"] == "dimeb":
                 var = dimeb.loads(bindata)
             elif jsondata["serialization"] == "json":
-                var = json.loads(bindata.decode("utf-8"), object_hook = json_dechook)
+                var = dimejson.loads(bindata)
             else:
                 m -= 1
                 continue

@@ -22,7 +22,7 @@ class DimeJSONEncoder(json.JSONEncoder):
                              "float32", "float64", "complex64", "complex128"}:
                 raise TypeError()
 
-            data = base64.b64encode(np.asfortranarray(obj).tobytes())
+            data = base64.b64encode(np.asfortranarray(obj).tobytes()).decode('ascii')
             shape = list(obj.shape)
 
             return {
@@ -40,7 +40,7 @@ def dime_JSON_dechook(dct):
             return complex(dct["real"], dct["imag"])
 
         if dct["__dime_type"] == "matrix":
-            return np.frombuffer(base64.b64decode(dct["data"]), dtype = np.dtype(dct["dtype"])).reshape(dct["shape"], order = "F")
+            return np.frombuffer(base64.b64decode(dct["data"].encode('ascii')), dtype = np.dtype(dct["dtype"])).reshape(dct["shape"], order = "F")
 
     return dct
 
