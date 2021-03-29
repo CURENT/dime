@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 
 #include <jansson.h>
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 #include "ringbuffer.h"
 #include "socket.h"
 
@@ -25,10 +27,12 @@ int dime_socket_init(dime_socket_t *sock, int fd) {
     sock->fd = fd;
 
     if (dime_ringbuffer_init(&sock->rbuf) < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
     if (dime_ringbuffer_init(&sock->wbuf) < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
         dime_ringbuffer_destroy(&sock->rbuf);
 
         return -1;
@@ -66,11 +70,13 @@ void dime_socket_destroy(dime_socket_t *sock) {
 int dime_socket_init_ws(dime_socket_t *sock) {
     int flags = fcntl(sock->fd, F_GETFL, 0);
     if (flags < 0) {
-        printf("%d\n", __LINE__); return -1;
+        strerror_r(errno, sock->err, sizeof(sock->err));
+        return -1;
     }
 
     if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-        printf("%d\n", __LINE__); return -1;
+        strerror_r(errno, sock->err, sizeof(sock->err));
+        return -1;
     }
 
     char *http_hdr;
@@ -81,24 +87,28 @@ int dime_socket_init_ws(dime_socket_t *sock) {
     http_hdr = malloc(http_cap);
 
     if (http_hdr == NULL) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
+
         if ((flags & ~O_NONBLOCK) != flags) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     do {
         ssize_t nrecvd = recv(sock->fd, http_hdr + http_len, http_cap - http_len, 0);
 
         if (nrecvd < 0) {
+            strerror_r(errno, sock->err, sizeof(sock->err));
+
             free(http_hdr);
 
             if ((flags & ~O_NONBLOCK) != flags) {
                 fcntl(sock->fd, F_SETFL, flags);
             }
 
-            printf("%d\n", __LINE__); return -1;
+            return -1;
         }
 
         http_len += nrecvd;
@@ -108,13 +118,15 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             char *nbuf = realloc(http_hdr, http_cap);
 
             if (nbuf == NULL) {
+                strerror_r(errno, sock->err, sizeof(sock->err));
+
                 free(http_hdr);
 
                 if ((flags & ~O_NONBLOCK) != flags) {
                     fcntl(sock->fd, F_SETFL, flags);
                 }
 
-                printf("%d\n", __LINE__); return -1;
+                return -1;
             }
 
             http_hdr = nbuf;
@@ -131,33 +143,39 @@ int dime_socket_init_ws(dime_socket_t *sock) {
     int major, minor;
 
     if (sscanf(line, "%7s %*s HTTP/%d.%d", method, &major, &minor) != 3) {
+        strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
+
         free(http_hdr);
 
         if ((flags & ~O_NONBLOCK) != flags) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     if (strcmp(method, "GET") != 0) {
+        strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
+
         free(http_hdr);
 
         if ((flags & ~O_NONBLOCK) != flags) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     if (major * 10 + minor < 11) {
+        strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
+
         free(http_hdr);
 
         if ((flags & ~O_NONBLOCK) != flags) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     char *connection, *upgrade, *sec_ws_key, *sec_ws_version;
@@ -168,13 +186,15 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         char *delimiter = strstr(line, ": ");
 
         if (delimiter == NULL) {
+            strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
+
             free(http_hdr);
 
             if ((flags & ~O_NONBLOCK) != flags) {
                 fcntl(sock->fd, F_SETFL, flags);
             }
 
-            printf("%d\n", __LINE__); return -1;
+            return -1;
         }
 
         char *key, *val;
@@ -199,6 +219,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         sec_ws_key == NULL || strlen(sec_ws_key) == 0 ||
         sec_ws_version == NULL || strcmp(sec_ws_version, "13") != 0) {
 
+        /*
         assert(connection != NULL);
         assert(strstr(connection, "Upgrade") != NULL);
         assert(upgrade != NULL);
@@ -207,6 +228,8 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         assert(strlen(sec_ws_key) != 0);
         assert(sec_ws_version != NULL);
         assert(strcmp(sec_ws_version, "13") == 0);
+        */
+        strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
 
         free(http_hdr);
 
@@ -214,7 +237,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     SHA_CTX sha1;
@@ -244,22 +267,26 @@ int dime_socket_init_ws(dime_socket_t *sock) {
     assert(response_len >= 0 && response_len < sizeof(response));
 
     if (send(sock->fd, response, response_len, 0) < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
+
         if ((flags & ~O_NONBLOCK) != flags) {
             fcntl(sock->fd, F_SETFL, flags);
         }
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     /* Reset the original socket flags */
     if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags) < 0) {
-        printf("%d\n", __LINE__); return -1;
+        strerror_r(errno, sock->err, sizeof(sock->err));
+        return -1;
     }
 
     sock->ws.enabled = 1;
 
     if (dime_ringbuffer_init(&sock->ws.rbuf) < 0) {
-        printf("%d\n", __LINE__); return -1;
+        strerror_r(errno, sock->err, sizeof(sock->err));
+        return -1;
     }
 
     return 0;
@@ -269,10 +296,12 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
     /* Ensure the underlying socket is blocking for the TLS handshake */
     int flags = fcntl(sock->fd, F_GETFL, 0);
     if (flags < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
     if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
@@ -296,6 +325,8 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
     SSL_set_mode(sock->tls.ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
 
     if (SSL_set_fd(sock->tls.ctx, sock->fd) <= 0) {
+        ERR_error_string_n(ERR_get_error(), sock->err, sizeof(sock->err));
+
         SSL_free(sock->tls.ctx);
 
         if ((flags & ~O_NONBLOCK) != flags) {
@@ -306,6 +337,8 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
     }
 
     if (SSL_accept(sock->tls.ctx) <= 0) {
+        ERR_error_string_n(ERR_get_error(), sock->err, sizeof(sock->err));
+
         SSL_free(sock->tls.ctx);
 
         if ((flags & ~O_NONBLOCK) != flags) {
@@ -317,6 +350,7 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
 
     /* Reset the original socket flags */
     if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags) < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
@@ -328,6 +362,7 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
 ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void *bindata, size_t bindata_len) {
     char *jsonstr = json_dumps(jsondata, JSON_COMPACT);
     if (jsonstr == NULL) {
+        strncpy(sock->err, "Can't encode JSON data", sizeof(sock->err));
         return -1;
     }
 
@@ -381,6 +416,7 @@ ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const voi
         }
 
         if (dime_ringbuffer_write(&sock->wbuf, ws_hdr, ws_len) < ws_len) {
+            strerror_r(errno, sock->err, sizeof(sock->err));
             return -1;
         }
     }
@@ -389,6 +425,7 @@ ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const voi
         dime_ringbuffer_write(&sock->wbuf, jsonstr, jsondata_len) < jsondata_len ||
         dime_ringbuffer_write(&sock->wbuf, bindata, bindata_len) < bindata_len) {
 
+        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
@@ -456,6 +493,8 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
                 }
 
                 if (dime_ringbuffer_write(&sock->rbuf, frame, frame_len) < 0) {
+                    strerror_r(errno, sock->err, sizeof(sock->err));
+
                     free(msg);
 
                     return -1;
@@ -474,6 +513,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
 
     if (dime_ringbuffer_peek(&sock->rbuf, &hdr, 12) == 12) {
         if (memcmp(&hdr, "DiME", 4) != 0) {
+            strncpy(sock->err, "Invalid DiME header", sizeof(sock->err));
             return -1;
         }
 
@@ -484,6 +524,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
 
         void *buf = malloc(msgsiz);
         if (buf == NULL) {
+            strerror_r(errno, sock->err, sizeof(sock->err));
             return -1;
         }
 
@@ -491,6 +532,8 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
             json_error_t jsonerr;
             json_t *jsondata_p = json_loadb((char *)buf + 12, hdr.jsondata_len, 0, &jsonerr);
             if (jsondata_p == NULL) {
+                strncpy(sock->err, jsonerr->text, sizeof(sock->err));
+
                 free(buf);
 
                 return -1;
@@ -499,6 +542,8 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
             void *bindata_p = malloc(hdr.bindata_len);
 
             if (bindata_p == NULL) {
+                strerror_r(errno, sock->err, sizeof(sock->err));
+
                 json_decref(jsondata_p);
                 free(buf);
 
@@ -539,7 +584,14 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
     }
 
     if (nsent < 0) {
+        if (sock->tls.enabled) {
+            ERR_error_string_n(ERR_get_error(), sock->err, sizeof(sock->err));
+        } else {
+            strerror_r(errno, sock->err, sizeof(sock->err));
+        }
+
         free(buf);
+
         return -1;
     }
 
@@ -552,6 +604,7 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
 ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     void *buf = malloc(RECVBUFLEN);
     if (buf == NULL) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
@@ -564,6 +617,12 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     }
 
     if (nrecvd < 0) {
+        if (sock->tls.enabled) {
+            ERR_error_string_n(ERR_get_error(), sock->err, sizeof(sock->err));
+        } else {
+            strerror_r(errno, sock->err, sizeof(sock->err));
+        }
+
         free(buf);
 
         return -1;
@@ -580,6 +639,8 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     }
 
     if (dime_ringbuffer_write(rbuf, buf, nrecvd) < 0) {
+        strerror_r(errno, sock->err, sizeof(sock->err));
+
         free(buf);
 
         return -1;

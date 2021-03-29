@@ -69,7 +69,7 @@ enum dime_protocol {
  * Contains all data relevant to a single server's state. The configuration variables should be set before calling @link dime_server_init @endlink.
  */
 typedef struct {
-    char err[161]; /** Error string */
+    char err[81]; /** Error string */
 
     unsigned int daemon : 1; /** Daemon flag */
     unsigned int tls : 1;    /** TLS flag */

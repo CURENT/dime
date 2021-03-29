@@ -110,13 +110,13 @@ class NDArray {
             throw "Complex matrices are currently unsuppoerted";
         }
 
-		if (this.order !== 'F') {
-			throw 'bad order, expected "' + this.order + '"';
-		}
-
         if (this.shape.length === 1) {
             return this.array;
         }
+
+		if (this.order !== 'F') {
+			throw 'bad order, expected "' + this.order + '"';
+		}
 
 		const start = this._makeIndex([0, n], false);
 		const end = this._makeIndex([0, n+1], false);
@@ -129,13 +129,13 @@ class NDArray {
             throw "Complex matrices are currently unsuppoerted";
         }
 
-		if (this.order !== 'C') {
-			throw 'bad order, expected "' + this.order + '"';
-		}
-
         if (this.shape.length === 1) {
             return this.array;
         }
+
+		if (this.order !== 'C') {
+			throw 'bad order, expected "' + this.order + '"';
+		}
 
 		const start = this._makeIndex([n, 0], false);
 		const end = this._makeIndex([n+1, 0], false);

@@ -94,6 +94,8 @@ typedef struct {
         z_stream ctx;
         dime_ringbuffer_t rbuf;
     } zlib;
+
+    char err[81]; /** Error string */
 } dime_socket_t;
 
 /**

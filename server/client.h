@@ -105,6 +105,8 @@ struct __dime_client {
 
     dime_socket_t sock; /** DiME socket */
     dime_deque_t queue; /** Queue of reference-counted messages */
+
+    char err[81]; /** Error string */
 };
 
 /**
