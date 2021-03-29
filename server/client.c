@@ -1,6 +1,8 @@
+/*
 #ifdef __linux__
 #   define _GNU_SOURCE
 #endif
+*/
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
@@ -23,6 +25,7 @@
 int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
     clnt->fd = fd;
     clnt->waiting = 0;
+    clnt->err[0] = '\0';
 
     switch (addr->sa_family) {
     case AF_INET6:
@@ -58,7 +61,8 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
         break;
 
     case AF_UNIX:
-        /* Attempt to get PID of other process on Linux */
+        /*
+        // Attempt to get PID of other process on Linux
 #ifdef __linux__
         {
             struct ucred cred;
@@ -76,6 +80,7 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
             }
         }
 #endif
+        */
 
     default:
         clnt->addr = malloc(14);

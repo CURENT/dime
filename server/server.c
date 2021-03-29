@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <jansson.h>
 #include <openssl/err.h>
@@ -58,49 +59,60 @@ static void ctrlc_handler(int signum) {
 }
 
 int dime_server_init(dime_server_t *srv) {
+    srv->err[0] = '\0';
+
     if (dime_table_init(&srv->fd2clnt, cmp_fd, hash_fd) < 0) {
-        printf("%d\n", __LINE__); return -1;
+        strerror_r(errno, srv->err, sizeof(srv->err));
+        return -1;
     }
 
     if (dime_table_init(&srv->name2clnt, cmp_name, hash_name) < 0) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         dime_table_destroy(&srv->fd2clnt);
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     srv->fds_len = 0;
     srv->fds_cap = 8;
     srv->fds = malloc(srv->fds_cap * sizeof(dime_server_fd_t));
     if (srv->fds == NULL) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         dime_table_destroy(&srv->name2clnt);
         dime_table_destroy(&srv->fd2clnt);
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     srv->pathnames_len = 0;
     srv->pathnames_cap = 8;
     srv->pathnames = malloc(srv->pathnames_cap * sizeof(char *));
     if (srv->pathnames == NULL) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         free(srv->fds);
         dime_table_destroy(&srv->name2clnt);
         dime_table_destroy(&srv->fd2clnt);
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     if (srv->daemon) {
         pid_t pid = fork();
 
         if (pid < 0) {
+            strerror_r(errno, srv->err, sizeof(srv->err));
+
             close(srv->fd);
             dime_table_destroy(&srv->fd2clnt);
             dime_table_destroy(&srv->name2clnt);
 
-            printf("%d\n", __LINE__); return -1;
+            return -1;
         } else if (pid != 0) {
             if (srv->verbosity >= 1) {
-                dime_info("Forked from main, PID is %d", (int)pid);
+                dime_info("Forked from main, PID is %ld", (long)pid);
             }
 
             exit(0);
@@ -208,7 +220,8 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
         size_t ncap = (srv->fds_cap * 3) / 2;
         dime_server_fd_t *narr = realloc(srv->fds, ncap * sizeof(dime_server_fd_t));
         if (narr == NULL) {
-            printf("%d\n", __LINE__); return -1;
+            strerror_r(errno, srv->err, sizeof(srv->err));
+            return -1;
         }
 
         srv->fds = narr;
@@ -235,16 +248,19 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
             char *pathname_copy = strdup(addr.sun_path);
             if (pathname_copy == NULL) {
-                printf("%d\n", __LINE__); return -1;
+                strerror_r(errno, srv->err, sizeof(srv->err));
+                return -1;
             }
 
             if (srv->pathnames_len >= srv->pathnames_cap) {
                 size_t ncap = (srv->pathnames_cap * 3) / 2;
                 char **narr = realloc(srv->pathnames, ncap * sizeof(char *));
                 if (narr == NULL) {
+                    strerror_r(errno, srv->err, sizeof(srv->err));
+
                     free(pathname_copy);
 
-                    printf("%d\n", __LINE__); return -1;
+                    return -1;
                 }
 
                 srv->pathnames = narr;
@@ -253,16 +269,20 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
             fd = socket(AF_UNIX, SOCK_STREAM, 0);
             if (fd < 0) {
+                strerror_r(errno, srv->err, sizeof(srv->err));
+
                 free(pathname_copy);
 
-                printf("%d\n", __LINE__); return -1;
+                return -1;
             }
 
             if (bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
+                strerror_r(errno, srv->err, sizeof(srv->err));
+
                 close(fd);
                 free(pathname_copy);
 
-                printf("%d\n", __LINE__); return -1;
+                return -1;
             }
 
             srv->pathnames[srv->pathnames_len++] = pathname_copy;
@@ -290,14 +310,15 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
             fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
             if (fd < 0) {
-                printf("%d\n", __LINE__); return -1;
+                strerror_r(errno, srv->err, sizeof(srv->err));
+                return -1;
             }
 
             int no = 0;
 
             if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(int)) < 0) {
                 if (srv->verbosity >= 1) {
-                    dime_warn("Failed to initialize IPv4/IPv6 dual-stack, falling back to IPv4");
+                    dime_warn("Failed to initialize IPv4/IPv6 dual-stack, falling back to IPv4 only");
                 }
 
                 close(fd);
@@ -311,21 +332,26 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
                 fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
                 if (fd < 0) {
-                    printf("%d\n", __LINE__); return -1;
+                    strerror_r(errno, srv->err, sizeof(srv->err));
+                    return -1;
                 }
             }
 
             if (bind(fd, (struct sockaddr *)&addr, addrlen) < 0) {
+                strerror_r(errno, srv->err, sizeof(srv->err));
+
                 close(fd);
 
-                printf("%d\n", __LINE__); return -1;
+                return -1;
             }
         }
         break;
 
     default:
+        snprintf(srv->err, sizeof(srv->err), "Unknown connection protocol %d", protocol);
+
         va_end(args);
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     srv->fds[srv->fds_len].fd = fd;
@@ -346,7 +372,9 @@ int dime_server_loop(dime_server_t *srv) {
     pollfds_cap = srv->fds_len + 8;
     pollfds = malloc(pollfds_cap * sizeof(struct pollfd));
     if (pollfds == NULL) {
-        printf("%d\n", __LINE__); return -1;
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
+        return -1;
     }
 
     void (*sigint_f)(int);
@@ -358,6 +386,8 @@ int dime_server_loop(dime_server_t *srv) {
     sigpipe_f = NULL;
 
     if (setjmp(ctrlc_env) != 0) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         if (sigint_f != NULL) {
             signal(SIGINT, sigint_f);
         }
@@ -376,26 +406,32 @@ int dime_server_loop(dime_server_t *srv) {
 
     sigint_f = signal(SIGINT, ctrlc_handler);
     if (sigint_f == SIG_ERR) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         free(pollfds);
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     sigterm_f = signal(SIGTERM, ctrlc_handler);
     if (sigterm_f == SIG_ERR) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         signal(SIGINT, sigint_f);
         free(pollfds);
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     sigpipe_f = signal(SIGPIPE, SIG_IGN);
     if (sigpipe_f == SIG_ERR) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
         signal(SIGTERM, sigterm_f);
         signal(SIGINT, sigint_f);
         free(pollfds);
 
-        printf("%d\n", __LINE__); return -1;
+        return -1;
     }
 
     for (size_t i = 0; i < srv->fds_len; i++) {
@@ -404,12 +440,14 @@ int dime_server_loop(dime_server_t *srv) {
         pollfds[i].revents = 0;
 
         if (listen(pollfds[i].fd, 0) < 0) {
+            strerror_r(errno, srv->err, sizeof(srv->err));
+
             signal(SIGPIPE, sigpipe_f);
             signal(SIGTERM, sigterm_f);
             signal(SIGINT, sigint_f);
             free(pollfds);
 
-            printf("%d\n", __LINE__); return -1;
+            return -1;
         }
     }
 
@@ -417,24 +455,28 @@ int dime_server_loop(dime_server_t *srv) {
 
     while (1) {
         if (poll(pollfds, pollfds_len, -1) < 0) {
+            strerror_r(errno, srv->err, sizeof(srv->err));
+
             signal(SIGPIPE, sigpipe_f);
             signal(SIGTERM, sigterm_f);
             signal(SIGINT, sigint_f);
             free(pollfds);
 
-            printf("%d\n", __LINE__); return -1;
+            return -1;
         }
 
         for (size_t i = 0; i < srv->fds_len; i++) {
             if (pollfds[i].revents & POLLIN) {
                 dime_client_t *clnt = malloc(sizeof(dime_client_t));
                 if (clnt == NULL) {
+                    strerror_r(errno, srv->err, sizeof(srv->err));
+
                     signal(SIGPIPE, sigpipe_f);
                     signal(SIGTERM, sigterm_f);
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
-                    printf("%d\n", __LINE__); return -1;
+                    return -1;
                 }
 
                 struct sockaddr_storage addr;
@@ -442,7 +484,9 @@ int dime_server_loop(dime_server_t *srv) {
 
                 int fd = accept(srv->fds[i].fd, (struct sockaddr *)&addr, &siz);
                 if (fd < 0) {
-                    dime_err("Failed to accept a socket from fd %d (%s)", srv->fds[i].fd, strerror(errno));
+                    strerror_r(errno, srv->err, sizeof(srv->err));
+                    dime_err("Failed to accept a socket from fd %d (%s)", srv->fds[i].fd, srv->err);
+                    srv->err[0] = '\0';
 
                     free(clnt);
 
@@ -459,6 +503,8 @@ int dime_server_loop(dime_server_t *srv) {
                 }
 
                 if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
+                    strncpy(srv->err, clnt->err, sizeof(srv->err));
+
                     close(fd);
                     free(clnt);
                     signal(SIGPIPE, sigpipe_f);
@@ -466,12 +512,12 @@ int dime_server_loop(dime_server_t *srv) {
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
-                    printf("%d\n", __LINE__); return -1;
+                    return -1;
                 }
 
                 if (srv->fds[i].protocol == DIME_WS) {
                     if (dime_socket_init_ws(&clnt->sock) < 0) {
-                        dime_err("Failed to complete WebSocket handhake for incoming connection %s (%s)", clnt->addr, strerror(errno));
+                        dime_err("Failed to complete WebSocket handhake for incoming connection %s (%s)", clnt->addr, clnt->sock.err);
 
                         dime_client_destroy(clnt);
                         free(clnt);
@@ -481,6 +527,8 @@ int dime_server_loop(dime_server_t *srv) {
                 }
 
                 if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
+                    strerror_r(errno, srv->err, sizeof(srv->err));
+
                     dime_client_destroy(clnt);
                     free(clnt);
                     signal(SIGPIPE, sigpipe_f);
@@ -488,13 +536,15 @@ int dime_server_loop(dime_server_t *srv) {
                     signal(SIGINT, sigint_f);
                     free(pollfds);
 
-                    printf("%d\n", __LINE__); return -1;
+                    return -1;
                 }
 
                 if (pollfds_len >= pollfds_cap) {
                     size_t ncap = (3 * pollfds_cap) / 2;
                     struct pollfd *narr = realloc(pollfds, ncap * sizeof(struct pollfd));
                     if (narr == NULL) {
+                        strerror_r(errno, srv->err, sizeof(srv->err));
+
                         dime_client_destroy(clnt);
                         free(clnt);
                         signal(SIGPIPE, sigpipe_f);
@@ -502,7 +552,7 @@ int dime_server_loop(dime_server_t *srv) {
                         signal(SIGINT, sigint_f);
                         free(pollfds);
 
-                        printf("%d\n", __LINE__); return -1;
+                        return -1;
                     }
 
                     pollfds = narr;
@@ -631,12 +681,14 @@ int dime_server_loop(dime_server_t *srv) {
                         json_decref(jsondata);
                         free(bindata);
                     } else if (n < 0) {
+                        strerror_r(errno, srv->err, sizeof(srv->err));
+
                         signal(SIGPIPE, sigpipe_f);
                         signal(SIGTERM, sigterm_f);
                         signal(SIGINT, sigint_f);
                         free(pollfds);
 
-                        printf("%d\n", __LINE__); return -1;
+                        return -1;
                     } else {
                         break;
                     }
