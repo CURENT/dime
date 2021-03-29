@@ -11,7 +11,7 @@ PREFIX ?= /usr/local
 MANDIR ?= ${PREFIX}/share/man
 
 # C compilation flags
-CFLAGS ?= -std=c99 -D_XOPEN_SOURCE=500 -Wall -pedantic -Wno-error -fPIE -pthread
+CFLAGS ?= -std=c99 -D_POSIX_C_SOURCE=200112L -D_XOPEN_SOURCE=500 -Wall -pedantic -Wno-error -fPIE -pthread
 
 # C linker flags
 LDFLAGS ?= -pie -pthread -ljansson -lssl -lcrypto -lz

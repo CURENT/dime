@@ -533,7 +533,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
             json_error_t jsonerr;
             json_t *jsondata_p = json_loadb((char *)buf + 12, hdr.jsondata_len, 0, &jsonerr);
             if (jsondata_p == NULL) {
-                strncpy(sock->err, jsonerr->text, sizeof(sock->err));
+                strncpy(sock->err, jsonerr.text, sizeof(sock->err));
 
                 free(buf);
 
