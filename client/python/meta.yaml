@@ -1,0 +1,22 @@
+package:
+  name: dime
+  version: latest
+
+source:
+  git_rev: latest
+  git_url: https://github.com/TheHashTableSlasher/dime2.git
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  imports:
+    -
+
+about:
+  home: https://github.com/TheHashTableSlasher/dime2
