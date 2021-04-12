@@ -1,16 +1,15 @@
-FROM alpine
+FROM debian
 
-RUN apk update
-RUN apk add gcc make libc-dev jansson-dev openssl-dev zlib-dev
+RUN apt update
+RUN apt install -y git build-essential libjansson-dev zlib1g-dev libssl-dev
+
+COPY Miniconda3.sh /tmp
+RUN bash -c 'yes yes | bash /tmp/Miniconda3.sh'
+RUN bash -c 'source /root/.bashrc ; conda install -y conda-build'
 
 COPY . /tmp
-WORKDIR /tmp/server
+WORKDIR /tmp
+RUN bash -c 'source /root/.bashrc ; conda build .'
+RUN bash -c 'source /root/.bashrc ; conda install -y --use-local dime2'
 
-RUN make clean
-RUN make
-RUN make install
-
-EXPOSE 5000
-
-ENTRYPOINT ["/usr/local/bin/dime"]
-CMD ["-P", "tcp", "-p", "5000"]
+ENTRYPOINT []

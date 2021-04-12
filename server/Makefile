@@ -17,4 +17,4 @@ install: all
 clean:
 	rm -f dime ${OBJS}
 
-.PHONY: all clean
+.PHONY: all install clean
