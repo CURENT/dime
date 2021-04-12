@@ -6,6 +6,7 @@ RUN apt install -y git build-essential libjansson-dev zlib1g-dev libssl-dev
 COPY Miniconda3.sh /tmp
 RUN bash -c 'yes yes | bash /tmp/Miniconda3.sh'
 RUN bash -c 'source /root/.bashrc ; conda install -y conda-build'
+RUN bash -c 'source /root/.bashrc ; conda install -c conda-forge jansson'
 
 COPY . /tmp
 WORKDIR /tmp

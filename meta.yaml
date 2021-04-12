@@ -1,28 +1,25 @@
 package:
-  name: dime2
-  version: latest
+    name: dime2
+    version: latest
 
 source:
-  git_url: https://github.com/TheHashTableSlasher/dime2.git
+    git_url: https://github.com/TheHashTableSlasher/dime2.git
 
 requirements:
-  build:
-    - setuptools
-    - {{ compiler('c') }}
-    - make
+    build:
+        - git
+        - make
 
-  host:
-    - python
-    - jansson
-    - openssl
-    - zlib
+    host:
+        - {{ compiler('c') }}
+        - openssl
+        - zlib
+        - python
+        - setuptools
 
-  run:
-    - python
-
-test:
-  imports:
-    -
+    run:
+        - python
+        - numpy
 
 about:
   home: https://github.com/TheHashTableSlasher/dime2
