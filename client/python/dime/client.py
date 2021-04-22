@@ -57,8 +57,7 @@ class DimeClient(collections.abc.MutableMapping):
         if proto is None:
             proto = self.proto
             args = self.args
-
-        if proto == "ipc" or proto == "unix":
+        elif proto == "ipc" or proto == "unix":
             if len(args) == 0:
                 args = ("/tmp/dime.sock",)
 
