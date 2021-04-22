@@ -57,7 +57,8 @@ class DimeClient(collections.abc.MutableMapping):
         if proto is None:
             proto = self.proto
             args = self.args
-        elif proto == "ipc" or proto == "unix":
+
+        if proto == "ipc" or proto == "unix":
             if len(args) == 0:
                 args = ("/tmp/dime.sock",)
 
@@ -81,7 +82,6 @@ class DimeClient(collections.abc.MutableMapping):
 
             self.open(proto, *args)
             return
-
 
         self.__send({"command": "handshake", "serialization": "json" if use_json else "pickle", "tls": False})
 
