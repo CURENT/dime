@@ -7,7 +7,7 @@ OBJS = ${SRCS:.c=.o}
 	${CC} $< ${CFLAGS} -c -o $@
 
 dime: ${OBJS}
-	${CC} ${OBJS} ${LDFLAGS} -o $@
+	${CC} ${OBJS} ${LDFLAGS} -o $@ -ljansson -lssl -lcrypto -lz
 
 all: dime
 
