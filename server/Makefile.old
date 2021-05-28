@@ -1,0 +1,18 @@
+SRCS = main.c
+OBJS = ${SRCS:.c=.o}
+
+%.o: %.c
+	${CC} $< ${CFLAGS} -c -o $@
+
+hello: ${OBJS}
+	${CC} ${OBJS} ${LDFLAGS} -o $@ -lz -ljansson
+
+all: hello
+
+install: all
+	install -s hello ${PREFIX}/bin
+
+clean:
+	rm -f hello ${OBJS}
+
+.PHONY: all install clean
