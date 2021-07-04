@@ -44,6 +44,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 
+#include <ev.h>
 #include <jansson.h>
 #include <openssl/ssl.h>
 #include <zlib.h>
@@ -94,6 +95,10 @@ typedef struct {
         z_stream ctx;
         dime_ringbuffer_t rbuf;
     } zlib;
+
+    ev_io rwatcher;
+    ev_io wwatcher;
+    struct ev_loop *loop;
 
     char err[81]; /** Error string */
 } dime_socket_t;

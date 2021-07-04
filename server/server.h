@@ -16,8 +16,8 @@
  */
 
 /**
- * @file client.h
- * @brief Client-related subroutines
+ * @file server.h
+ * @brief Server-related subroutines
  * @author Nicholas West
  * @date 2020
  *
@@ -33,6 +33,7 @@
 
 #include <stdint.h>
 
+#include <ev.h>
 #include <openssl/ssl.h>
 
 #include "table.h"
@@ -55,6 +56,8 @@ enum dime_serialization {
 typedef struct {
     int fd;
     int protocol;
+    ev_io watcher;
+    void *srv;
 } dime_server_fd_t;
 
 enum dime_protocol {

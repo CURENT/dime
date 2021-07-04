@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <ev.h>
 #include <jansson.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -38,6 +39,8 @@ int dime_socket_init(dime_socket_t *sock, int fd) {
 
         return -1;
     }
+
+    sock->loop = NULL;
 
     sock->tls.enabled = 0;
     sock->ws.enabled = 0;
@@ -375,6 +378,10 @@ ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void
 
 ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const void *bindata, size_t bindata_len) {
     dime_header_t hdr;
+
+    if (dime_ringbuffer_len(&sock->wbuf) == 0 && sock->loop != NULL) {
+        ev_io_start(sock->loop, &sock->wwatcher);
+    }
 
     memcpy(hdr.magic, "DiME", 4);
 

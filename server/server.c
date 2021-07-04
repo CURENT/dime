@@ -356,12 +356,13 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
     srv->fds[srv->fds_len].fd = fd;
     srv->fds[srv->fds_len].protocol = protocol;
+    srv->fds[srv->fds_len].srv = srv;
     srv->fds_len++;
 
     return 0;
 }
 
-int dime_server_loop(dime_server_t *srv) {
+int __dime_server_loop(dime_server_t *srv) {
     if (srv->fds_len == 0) {
         return 0;
     }
@@ -736,4 +737,338 @@ int dime_server_loop(dime_server_t *srv) {
             pollfds[i].revents = 0;
         }
     }
+}
+
+dime_server_t *srv;
+
+static void ev_client_writable(struct ev_loop *loop, ev_io *watcher, int revents) {
+    dime_client_t *clnt = watcher->data;
+    dime_server_t *srv = clnt->srv;
+
+    if ((revents & EV_READ) && (revents & EV_WRITE)) {
+        if (srv->verbosity >= 1) {
+            dime_info("Closed connection from %s", clnt->addr);
+        }
+
+        ev_io_stop(loop, watcher);
+        ev_io_stop(loop, &clnt->sock.rwatcher);
+
+        dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+        dime_client_destroy(clnt);
+        free(clnt);
+
+        return;
+    }
+
+    ssize_t n = dime_socket_sendpartial(&clnt->sock);
+
+    /* Note: The server should close the socket here, not crash */
+    if (n < 0) {
+        if (srv->verbosity >= 1) {
+            dime_err("Write failed on %s (%s), closing", clnt->addr, strerror(errno));
+        }
+
+        ev_io_stop(loop, watcher);
+        ev_io_stop(loop, &clnt->sock.rwatcher);
+
+        dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+        dime_client_destroy(clnt);
+        free(clnt);
+
+        return;
+    }
+
+    if (srv->verbosity >= 3) {
+        dime_info("Sent %zd bytes of data to %s", n, clnt->addr);
+    }
+
+    if (dime_socket_sendlen(&clnt->sock) == 0) {
+        ev_io_stop(loop, watcher);
+    }
+}
+
+static void ev_client_readable(struct ev_loop *loop, ev_io *watcher, int revents) {
+    dime_client_t *clnt = watcher->data;
+    dime_server_t *srv = clnt->srv;
+
+    if ((revents & EV_READ) && (revents & EV_WRITE)) {
+        if (srv->verbosity >= 1) {
+            dime_info("Closed connection from %s", clnt->addr);
+        }
+
+        ev_io_stop(loop, watcher);
+        ev_io_stop(loop, &clnt->sock.wwatcher);
+
+        dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+        dime_client_destroy(clnt);
+        free(clnt);
+
+        return;
+    }
+
+    ssize_t n = dime_socket_recvpartial(&clnt->sock);
+
+    if (n <= 0) {
+        if (srv->verbosity >= 1) {
+            if (n == 0) {
+                dime_info("Connection closed from %s", clnt->addr);
+            } else {
+                dime_err("Read failed on %s (%s), closing", clnt->addr, strerror(errno));
+            }
+        }
+
+        ev_io_stop(loop, watcher);
+        ev_io_stop(loop, &clnt->sock.wwatcher);
+
+        dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+        dime_client_destroy(clnt);
+        free(clnt);
+
+        return;
+    }
+
+    if (srv->verbosity >= 3) {
+        dime_info("Received %zd bytes of data from %s", n, clnt->addr);
+    }
+
+    while (1) {
+        json_t *jsondata;
+        void *bindata;
+        size_t bindata_len;
+
+        n = dime_socket_pop(&clnt->sock, &jsondata, &bindata, &bindata_len);
+
+        if (n > 0) {
+            const char *cmd;
+
+            if (json_unpack(jsondata, "{ss}", "command", &cmd) < 0) {
+                /* Just let this case propagate, it'll be caught below */
+                cmd = "";
+            }
+
+            if (srv->verbosity >= 3) {
+                dime_info("Got DiME message with command \"%s\" from %s", cmd, clnt->addr);
+            }
+
+            int err;
+
+            /*
+             * As more commands are added, this section of code
+             * might be more efficient as a table of function
+             * pointers
+             */
+            if (strcmp(cmd, "handshake") == 0) {
+                err = dime_client_handshake(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "join") == 0) {
+                err = dime_client_join(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "leave") == 0) {
+                err = dime_client_leave(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "send") == 0) {
+                err = dime_client_send(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "broadcast") == 0) {
+                err = dime_client_broadcast(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "sync") == 0) {
+                err = dime_client_sync(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "wait") == 0) {
+                err = dime_client_wait(clnt, srv, jsondata, &bindata, bindata_len);
+            } else if (strcmp(cmd, "devices") == 0) {
+                err = dime_client_devices(clnt, srv, jsondata, &bindata, bindata_len);
+            } else {
+                err = -1;
+
+                strncpy(srv->err, "Unknown command", sizeof(srv->err));
+                srv->err[sizeof(srv->err) - 1] = '\0';
+
+                json_t *response = json_pack("{siss}", "status", -1, "error", "Unknown command");
+                if (response != NULL) {
+                    dime_socket_push(&clnt->sock, response, NULL, 0);
+                    json_decref(response);
+                }
+            }
+
+            if (err < 0 && srv->verbosity >= 1) {
+                dime_warn("Failed to handle command \"%s\" from %s: %s", cmd, clnt->addr, srv->err);
+            }
+
+            json_decref(jsondata);
+            free(bindata);
+        } else if (n < 0) {
+            strerror_r(errno, srv->err, sizeof(srv->err));
+
+            ev_unloop(loop, EVUNLOOP_ALL);
+        } else {
+            break;
+        }
+    }
+}
+
+static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents) {
+    dime_server_fd_t *srvfd = watcher->data;
+    dime_server_t *srv = srvfd->srv;
+    dime_client_t *clnt = malloc(sizeof(dime_client_t));
+
+    if (clnt == NULL) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
+        ev_unloop(loop, EVUNLOOP_ALL);
+    }
+
+    struct sockaddr_storage addr;
+    socklen_t siz = sizeof(struct sockaddr_storage);
+
+    int fd = accept(watcher->fd, (struct sockaddr *)&addr, &siz);
+    if (fd < 0) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+        dime_err("Failed to accept a socket from fd %d (%s)", watcher->fd, srv->err);
+        srv->err[0] = '\0';
+
+        free(clnt);
+
+        return;
+    }
+
+    /* Attempt to make sockets non-blocking for network connections */
+#ifdef __unix__
+    if (srvfd->protocol != DIME_UNIX) {
+        int flags = fcntl(fd, F_GETFL, 0);
+
+        if (flags >= 0) {
+            fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+        }
+    }
+#endif
+
+    if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
+        strncpy(srv->err, clnt->err, sizeof(srv->err));
+
+        close(fd);
+        free(clnt);
+
+        ev_unloop(loop, EVUNLOOP_ALL);
+    }
+
+    clnt->srv = srv;
+
+    if (srvfd->protocol == DIME_WS) {
+        if (dime_socket_init_ws(&clnt->sock) < 0) {
+            dime_err("Failed to complete WebSocket handhake for incoming connection %s (%s)", clnt->addr, clnt->sock.err);
+
+            dime_client_destroy(clnt);
+            free(clnt);
+
+            return;
+        }
+    }
+
+    if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
+        dime_client_destroy(clnt);
+        free(clnt);
+
+        ev_unloop(loop, EVUNLOOP_ALL);
+    }
+
+    ev_io_init(&clnt->sock.rwatcher, ev_client_readable, clnt->fd, EV_READ);
+    ev_io_init(&clnt->sock.wwatcher, ev_client_writable, clnt->fd, EV_WRITE);
+    clnt->sock.loop = loop;
+    clnt->sock.rwatcher.data = clnt;
+    clnt->sock.wwatcher.data = clnt;
+
+    ev_io_start(loop, &clnt->sock.rwatcher);
+
+    if (srv->verbosity >= 1) {
+        dime_info("Opened new connection from %s", clnt->addr);
+    }
+}
+
+int dime_server_loop(dime_server_t *srv) {
+    /* Handle signals */
+    void (*sigint_f)(int);
+    void (*sigterm_f)(int);
+    void (*sigpipe_f)(int);
+
+    sigint_f = NULL;
+    sigterm_f = NULL;
+    sigpipe_f = NULL;
+
+    if (setjmp(ctrlc_env) != 0) {
+        if (sigint_f != NULL) {
+            signal(SIGINT, sigint_f);
+        }
+
+        if (sigterm_f != NULL) {
+            signal(SIGTERM, sigint_f);
+        }
+
+        if (sigpipe_f != NULL) {
+            signal(SIGPIPE, sigpipe_f);
+        }
+
+        return 0;
+    }
+
+    sigint_f = signal(SIGINT, ctrlc_handler);
+    if (sigint_f == SIG_ERR) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
+        return -1;
+    }
+
+    sigterm_f = signal(SIGTERM, ctrlc_handler);
+    if (sigterm_f == SIG_ERR) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
+        signal(SIGINT, sigint_f);
+
+        return -1;
+    }
+
+    sigpipe_f = signal(SIGPIPE, SIG_IGN);
+    if (sigpipe_f == SIG_ERR) {
+        strerror_r(errno, srv->err, sizeof(srv->err));
+
+        signal(SIGTERM, sigterm_f);
+        signal(SIGINT, sigint_f);
+
+        return -1;
+    }
+
+    struct ev_loop *loop = ev_default_loop(0);
+    if (loop == NULL) {
+        signal(SIGPIPE, sigpipe_f);
+        signal(SIGTERM, sigterm_f);
+        signal(SIGINT, sigint_f);
+
+        return -1;
+    }
+
+    for (size_t i = 0; i < srv->fds_len; i++) {
+        ev_io_init(&srv->fds[i].watcher, ev_server_readable, srv->fds[i].fd, EV_READ);
+        ev_io_start(loop, &srv->fds[i].watcher);
+        srv->fds[i].watcher.data = &srv->fds[i];
+
+        if (listen(srv->fds[i].fd, 0) < 0) {
+            strerror_r(errno, srv->err, sizeof(srv->err));
+
+            signal(SIGPIPE, sigpipe_f);
+            signal(SIGTERM, sigterm_f);
+            signal(SIGINT, sigint_f);
+
+            return -1;
+        }
+    }
+
+    srv = srv;
+    ev_loop(loop, 0);
+
+    signal(SIGPIPE, sigpipe_f);
+    signal(SIGTERM, sigterm_f);
+    signal(SIGINT, sigint_f);
+
+    return -1;
 }

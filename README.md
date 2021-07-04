@@ -9,6 +9,7 @@ To compile the server executable, run `make` in the `server` directory. Build op
 * A SUS-compatible environment
   * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/) + [Gnulib](http://www.gnu.org/software/gnulib/)
 * [Jansson](https://digip.org/jansson/)
+* [libev](http://software.schmorp.de/pkg/libev.html)
 * [OpenSSL](https://www.openssl.org/)
 * [zlib](http://zlib.net/)
 
@@ -111,14 +112,14 @@ The Javascript client code relies heavily on promises, so it's recommended to be
 let promise = (async function() {
     let d = new dime.DimeClient("localhost", 8888);
     await d.join("javascript");
-    
+
     d.workspace.a = "Hello world!";
     await d.send("javascript", "a");
     delete d.workspace.a;
-    
+
     await d.sync();
     console.log(d.workspace.a);
-    
+
     // Hello world!
 })();
 
