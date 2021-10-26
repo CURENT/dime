@@ -27,7 +27,6 @@
  */
 
 #include <stdint.h>
-#include <sys/socket.h>
 
 #include <jansson.h>
 #include "deque.h"

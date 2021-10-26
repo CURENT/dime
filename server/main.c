@@ -1,9 +1,14 @@
-#include <unistd.h>
+#ifdef _WIN32
+#   include <winsock2.h>
+#   include <ws2tcpip.h>
+#endif
+
+#   include <unistd.h>
+#   include <strings.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include <openssl/ssl.h>
 #include "server.h"
