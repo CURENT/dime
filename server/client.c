@@ -3,16 +3,22 @@
 #   define _GNU_SOURCE
 #endif
 */
-#include <arpa/inet.h>
+#ifdef _WIN32
+#   include <winsock2.h>
+#   include <ws2tcpip.h>
+#else
+#   include <arpa/inet.h>
+#   include <netinet/in.h>
+#   include <unistd.h>
+#   include <sys/socket.h>
+#   include <sys/un.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
 #include <jansson.h>
 #include "client.h"
@@ -60,7 +66,9 @@ int dime_client_init(dime_client_t *clnt, int fd, const struct sockaddr *addr) {
 
         break;
 
+#ifndef _WIN32
     case AF_UNIX:
+#endif
         /*
         // Attempt to get PID of other process on Linux
 #ifdef __linux__
@@ -716,6 +724,7 @@ int dime_client_broadcast(dime_client_t *clnt, dime_server_t *srv, json_t *jsond
     dime_rcmessage_t *msg = malloc(sizeof(dime_rcmessage_t));
     if (msg == NULL) {
         strncpy(srv->err, strerror(errno), sizeof(srv->err));
+        srv->err[sizeof(srv->err) - 1] = '\0';
         srv->err[sizeof(srv->err) - 1] = '\0';
 
         json_t *response = json_pack("{siss}", "status", -1, "error", strerror(errno));

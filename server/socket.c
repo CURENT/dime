@@ -1,17 +1,26 @@
-#include <arpa/inet.h>
+#ifdef _WIN32
+#   include <winsock2.h>
+#   include <ws2tcpip.h>
+#   define close(x) closesocket(x)
+#   define fcntl(x) ioctlsocket(x)
+#else
+#   include <arpa/inet.h>
+#   include <fcntl.h>
+#   include <unistd.h>
+#   include <sys/socket.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 #include <ev.h>
 #include <jansson.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
 #include "ringbuffer.h"
 #include "socket.h"
 

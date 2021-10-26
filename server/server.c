@@ -1,19 +1,27 @@
+#ifdef _WIN32
+#   include <winsock2.h>
+#   include <ws2tcpip.h>
+#   define close(x) closesocket(x)
+#   define fcntl(x) ioctlsocket(x)
+#else
+#   include <arpa/inet.h>
+#   include <fcntl.h>
+#   include <netinet/in.h>
+#   include <unistd.h>
+#   include <sys/socket.h>
+#   include <sys/un.h>
+#endif
+
 #include <stdint.h>
-#include <netinet/in.h>
-#include <sys/un.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <poll.h>
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <assert.h>
-#include <fcntl.h>
 #include <stdarg.h>
 #include <errno.h>
 
+#include <ev.h>
 #include <jansson.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -234,6 +242,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
     int fd;
 
     switch (protocol) {
+#ifndef _WIN32
     case DIME_UNIX:
         {
             const char *pathname = va_arg(args, const char *);
@@ -288,6 +297,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
             srv->pathnames[srv->pathnames_len++] = pathname_copy;
         }
         break;
+#endif
 
     case DIME_TCP:
     case DIME_WS:

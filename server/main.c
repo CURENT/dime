@@ -21,6 +21,12 @@ int main(int argc, char **argv) {
     size_t listens_i = 0;
 #ifdef _WIN32
     char listens_default[] = "tcp:5000";
+    WSADATA _d;
+
+    if (WSAStartup(MAKEWORD(2, 2), &_d)) {
+        fputs("Fatal error while initializing server: Failed to initialize WinSock2", stderr);
+        return -1;
+    }
 #else
     char listens_default[] = "unix:/tmp/dime.sock";
 #endif
