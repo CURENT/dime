@@ -1,8 +1,7 @@
 #ifdef _WIN32
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
-#   define close(x) closesocket(x)
-#   define fcntl(x) ioctlsocket(x)
+#   pragma comment(lib, "Ws2_32.lib")
 #else
 #   include <arpa/inet.h>
 #   include <fcntl.h>
@@ -32,6 +31,10 @@
 #include "deque.h"
 #include "socket.h"
 #include "log.h"
+
+#ifdef _WIN32
+#   define close closesocket
+#endif
 
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
@@ -70,12 +73,12 @@ int dime_server_init(dime_server_t *srv) {
     srv->err[0] = '\0';
 
     if (dime_table_init(&srv->fd2clnt, cmp_fd, hash_fd) < 0) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
         return -1;
     }
 
     if (dime_table_init(&srv->name2clnt, cmp_name, hash_name) < 0) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         dime_table_destroy(&srv->fd2clnt);
 
@@ -86,7 +89,7 @@ int dime_server_init(dime_server_t *srv) {
     srv->fds_cap = 8;
     srv->fds = malloc(srv->fds_cap * sizeof(dime_server_fd_t));
     if (srv->fds == NULL) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         dime_table_destroy(&srv->name2clnt);
         dime_table_destroy(&srv->fd2clnt);
@@ -98,7 +101,7 @@ int dime_server_init(dime_server_t *srv) {
     srv->pathnames_cap = 8;
     srv->pathnames = malloc(srv->pathnames_cap * sizeof(char *));
     if (srv->pathnames == NULL) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         free(srv->fds);
         dime_table_destroy(&srv->name2clnt);
@@ -108,10 +111,13 @@ int dime_server_init(dime_server_t *srv) {
     }
 
     if (srv->daemon) {
+#ifdef _WIN32
+        dime_warn("-d specified on Windows");
+#else
         pid_t pid = fork();
 
         if (pid < 0) {
-            strerror_r(errno, srv->err, sizeof(srv->err));
+            strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
             close(srv->fd);
             dime_table_destroy(&srv->fd2clnt);
@@ -125,6 +131,7 @@ int dime_server_init(dime_server_t *srv) {
 
             exit(0);
         }
+#endif
     }
 
 /*    if (srv->tls) {
@@ -228,7 +235,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
         size_t ncap = (srv->fds_cap * 3) / 2;
         dime_server_fd_t *narr = realloc(srv->fds, ncap * sizeof(dime_server_fd_t));
         if (narr == NULL) {
-            strerror_r(errno, srv->err, sizeof(srv->err));
+            strncpy(srv->err, strerror(errno), sizeof(srv->err));
             return -1;
         }
 
@@ -257,7 +264,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
             char *pathname_copy = strdup(addr.sun_path);
             if (pathname_copy == NULL) {
-                strerror_r(errno, srv->err, sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
                 return -1;
             }
 
@@ -265,7 +272,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
                 size_t ncap = (srv->pathnames_cap * 3) / 2;
                 char **narr = realloc(srv->pathnames, ncap * sizeof(char *));
                 if (narr == NULL) {
-                    strerror_r(errno, srv->err, sizeof(srv->err));
+                    strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
                     free(pathname_copy);
 
@@ -278,7 +285,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
             fd = socket(AF_UNIX, SOCK_STREAM, 0);
             if (fd < 0) {
-                strerror_r(errno, srv->err, sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
                 free(pathname_copy);
 
@@ -286,7 +293,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
             }
 
             if (bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
-                strerror_r(errno, srv->err, sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
                 close(fd);
                 free(pathname_copy);
@@ -320,13 +327,13 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
             fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
             if (fd < 0) {
-                strerror_r(errno, srv->err, sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
                 return -1;
             }
 
             int no = 0;
 
-            if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(int)) < 0) {
+            if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&no, sizeof(int)) < 0) {
                 if (srv->verbosity >= 1) {
                     dime_warn("Failed to initialize IPv4/IPv6 dual-stack, falling back to IPv4 only");
                 }
@@ -342,13 +349,13 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
 
                 fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
                 if (fd < 0) {
-                    strerror_r(errno, srv->err, sizeof(srv->err));
+                    strncpy(srv->err, strerror(errno), sizeof(srv->err));
                     return -1;
                 }
             }
 
             if (bind(fd, (struct sockaddr *)&addr, addrlen) < 0) {
-                strerror_r(errno, srv->err, sizeof(srv->err));
+                strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
                 close(fd);
 
@@ -528,7 +535,7 @@ static void ev_client_readable(struct ev_loop *loop, ev_io *watcher, int revents
             json_decref(jsondata);
             free(bindata);
         } else if (n < 0) {
-            strerror_r(errno, srv->err, sizeof(srv->err));
+            strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
             ev_unloop(loop, EVUNLOOP_ALL);
         } else {
@@ -543,7 +550,7 @@ static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents
     dime_client_t *clnt = malloc(sizeof(dime_client_t));
 
     if (clnt == NULL) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         ev_unloop(loop, EVUNLOOP_ALL);
     }
@@ -553,7 +560,7 @@ static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents
 
     int fd = accept(watcher->fd, (struct sockaddr *)&addr, &siz);
     if (fd < 0) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
         dime_err("Failed to accept a socket from fd %d (%s)", watcher->fd, srv->err);
         srv->err[0] = '\0';
 
@@ -596,7 +603,7 @@ static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents
     }
 
     if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         dime_client_destroy(clnt);
         free(clnt);
@@ -616,6 +623,10 @@ static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents
         dime_info("Opened new connection from %s", clnt->addr);
     }
 }
+
+#ifndef SIGPIPE
+#   define SIGPIPE (-1)
+#endif
 
 int dime_server_loop(dime_server_t *srv) {
     /* Handle signals */
@@ -645,14 +656,14 @@ int dime_server_loop(dime_server_t *srv) {
 
     sigint_f = signal(SIGINT, ctrlc_handler);
     if (sigint_f == SIG_ERR) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         return -1;
     }
 
     sigterm_f = signal(SIGTERM, ctrlc_handler);
     if (sigterm_f == SIG_ERR) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         signal(SIGINT, sigint_f);
 
@@ -661,7 +672,7 @@ int dime_server_loop(dime_server_t *srv) {
 
     sigpipe_f = signal(SIGPIPE, SIG_IGN);
     if (sigpipe_f == SIG_ERR) {
-        strerror_r(errno, srv->err, sizeof(srv->err));
+        strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
         signal(SIGTERM, sigterm_f);
         signal(SIGINT, sigint_f);
@@ -684,7 +695,7 @@ int dime_server_loop(dime_server_t *srv) {
         srv->fds[i].watcher.data = &srv->fds[i];
 
         if (listen(srv->fds[i].fd, 0) < 0) {
-            strerror_r(errno, srv->err, sizeof(srv->err));
+            strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
             signal(SIGPIPE, sigpipe_f);
             signal(SIGTERM, sigterm_f);

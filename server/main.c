@@ -1,10 +1,9 @@
 #ifdef _WIN32
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
+#   pragma comment(lib, "Ws2_32.lib")
 #endif
 
-#   include <unistd.h>
-#   include <strings.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +22,7 @@ int main(int argc, char **argv) {
     atexit(cleanup);
 
     char *listens[(argc + 1) / 2];
-    size_t listens_i = 0;
+    size_t listens_len = 0;
 #ifdef _WIN32
     char listens_default[] = "tcp:5000";
     WSADATA _d;
@@ -43,7 +42,80 @@ int main(int argc, char **argv) {
     srv.verbosity = 0;
     srv.threads = 1;
 
-    int opt;
+    for (int argi = 1; argi < argc; argi++) {
+        int skip = 0;
+
+        if (argv[argi][0] == '-') {
+            for (unsigned int j = 1; argv[argi][j] != '\0'; j++) {
+                switch (argv[argi][j]) {
+                case 'c':
+                    if (argi + 1 > argc) {
+                        goto usage_err;
+                    }
+
+                    skip = 1;
+                    srv.tls = 1;
+                    srv.certname = argv[argi + 1];
+
+                    break;
+
+                case 'd':
+                    srv.daemon = 1;
+                    break;
+
+                case 'h':
+                    goto usage_err;
+
+                case 'j':
+                    if (argi + 1 > argc) {
+                        goto usage_err;
+                    }
+
+                    skip = 1;
+                    srv.threads = strtoul(argv[argi + 1], NULL, 0);
+                    if (srv.threads == 0) {
+                        goto usage_err;
+                    }
+
+                    break;
+
+                case 'k':
+                    if (argi + 1 > argc) {
+                        goto usage_err;
+                    }
+
+                    skip = 1;
+                    srv.tls = 1;
+                    srv.privkeyname = argv[argi + 1];
+
+                    break;
+
+                case 'l':
+                    if (argi + 1 > argc) {
+                        goto usage_err;
+                    }
+
+                    skip = 1;
+                    listens[listens_len++] = argv[argi + 1];
+
+                    break;
+
+                case 'v':
+                    srv.verbosity++;
+                    break;
+
+                default:
+                    goto usage_err;
+                }
+            }
+        } else {
+            goto usage_err;
+        }
+
+        argi += skip;
+    }
+
+    /*int opt;
 
     while ((opt = getopt(argc, argv, "c:dhj:k:l:v")) >= 0) {
         switch (opt) {
@@ -77,8 +149,8 @@ int main(int argc, char **argv) {
             break;
 
         case 'l':
-            listens[listens_i] = optarg;
-            listens_i++;
+            listens[listens_len] = optarg;
+            listens_len++;
             break;
 
         case 'v':
@@ -92,11 +164,13 @@ int main(int argc, char **argv) {
 
     if (optind < argc) {
         goto usage_err;
-    }
+    }*/
 
-    if (listens_i == 0) {
+
+
+    if (listens_len == 0) {
         listens[0] = listens_default;
-        listens_i = 1;
+        listens_len = 1;
     }
 
     if (dime_server_init(&srv) < 0) {
@@ -105,18 +179,18 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    for (size_t i = 0; i < listens_i; i++) {
-        char *type, *saveptr;
+    for (size_t i = 0; i < listens_len; i++) {
+        char *type;
 
-        type = strtok_r(listens[i], ":", &saveptr);
+        type = strtok(listens[i], ":");
 
-        if (strcasecmp(type, "unix") == 0 || strcasecmp(type, "ipc") == 0) {
-            const char *pathname = strtok_r(NULL, ":", &saveptr);
+        if (strcmp(type, "unix") == 0 || strcmp(type, "ipc") == 0) {
+            const char *pathname = strtok(NULL, ":");
             if (pathname == NULL) {
                 goto usage_err;
             }
 
-            if (strtok_r(NULL, ":", &saveptr) != NULL) {
+            if (strtok(NULL, ":") != NULL) {
                 goto usage_err;
             }
 
@@ -126,13 +200,13 @@ int main(int argc, char **argv) {
                 return -1;
             }
 
-        } else if (strcasecmp(type, "tcp") == 0) {
-            const char *port_s = strtok_r(NULL, ":", &saveptr);
+        } else if (strcmp(type, "tcp") == 0) {
+            const char *port_s = strtok(NULL, ":");
             if (port_s == NULL) {
                 goto usage_err;
             }
 
-            if (strtok_r(NULL, ":", &saveptr) != NULL) {
+            if (strtok(NULL, ":") != NULL) {
                 goto usage_err;
             }
 
@@ -146,13 +220,13 @@ int main(int argc, char **argv) {
 
                 return -1;
             }
-        } else if (strcasecmp(type, "ws") == 0) {
-            const char *port_s = strtok_r(NULL, ":", &saveptr);
+        } else if (strcmp(type, "ws") == 0) {
+            const char *port_s = strtok(NULL, ":");
             if (port_s == NULL) {
                 goto usage_err;
             }
 
-            if (strtok_r(NULL, ":", &saveptr) != NULL) {
+            if (strtok(NULL, ":") != NULL) {
                 goto usage_err;
             }
 

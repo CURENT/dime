@@ -1,8 +1,7 @@
 #ifdef _WIN32
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
-#   define close(x) closesocket(x)
-#   define fcntl(x) ioctlsocket(x)
+#   pragma comment(lib, "Ws2_32.lib")
 #else
 #   include <arpa/inet.h>
 #   include <fcntl.h>
@@ -24,6 +23,12 @@
 #include "ringbuffer.h"
 #include "socket.h"
 
+#ifdef _WIN32
+#   define close closesocket
+#   define SHUT_RDWR SD_BOTH
+#   define O_NONBLOCK FIONBIO
+#endif
+
 typedef struct {
     int8_t magic[4];
     uint32_t jsondata_len;
@@ -33,17 +38,37 @@ typedef struct {
 static const size_t SENDBUFLEN = 200000000;
 static const size_t RECVBUFLEN = 200000000;
 
+static int dime_socket_setnonblocking(dime_socket_t *sock, int nonblocking) {
+#ifdef _WIN32
+    unsigned long _nonblocking = nonblocking;
+    return ioctlsocket(sock->fd, FIONBIO, &_nonblocking);
+#else
+    int flags = fcntl(sock->fd, F_GETFL, 0);
+    if (flags < 0) {
+        return -1;
+    }
+
+    if (nonblocking) {
+        flags |= O_NONBLOCK;
+    } else {
+        flags &= ~O_NONBLOCK;
+    }
+
+    return fcntl(sock->fd, F_SETFL, flags);
+#endif
+}
+
 int dime_socket_init(dime_socket_t *sock, int fd) {
     sock->fd = fd;
     sock->err[0] = '\0';
 
     if (dime_ringbuffer_init(&sock->rbuf) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
         return -1;
     }
 
     if (dime_ringbuffer_init(&sock->wbuf) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
         dime_ringbuffer_destroy(&sock->rbuf);
 
         return -1;
@@ -81,14 +106,9 @@ void dime_socket_destroy(dime_socket_t *sock) {
 }
 
 int dime_socket_init_ws(dime_socket_t *sock) {
-    int flags = fcntl(sock->fd, F_GETFL, 0);
-    if (flags < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-        return -1;
-    }
+    if (dime_socket_setnonblocking(sock, 0) < 0) {
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
-    if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
         return -1;
     }
 
@@ -100,11 +120,7 @@ int dime_socket_init_ws(dime_socket_t *sock) {
     http_hdr = malloc(http_cap);
 
     if (http_hdr == NULL) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
         return -1;
     }
@@ -113,13 +129,9 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         ssize_t nrecvd = recv(sock->fd, http_hdr + http_len, http_cap - http_len, 0);
 
         if (nrecvd < 0) {
-            strerror_r(errno, sock->err, sizeof(sock->err));
+            strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
             free(http_hdr);
-
-            if ((flags & ~O_NONBLOCK) != flags) {
-                fcntl(sock->fd, F_SETFL, flags);
-            }
 
             return -1;
         }
@@ -131,13 +143,9 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             char *nbuf = realloc(http_hdr, http_cap);
 
             if (nbuf == NULL) {
-                strerror_r(errno, sock->err, sizeof(sock->err));
+                strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
                 free(http_hdr);
-
-                if ((flags & ~O_NONBLOCK) != flags) {
-                    fcntl(sock->fd, F_SETFL, flags);
-                }
 
                 return -1;
             }
@@ -160,10 +168,6 @@ int dime_socket_init_ws(dime_socket_t *sock) {
 
         free(http_hdr);
 
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
-
         return -1;
     }
 
@@ -172,10 +176,6 @@ int dime_socket_init_ws(dime_socket_t *sock) {
 
         free(http_hdr);
 
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
-
         return -1;
     }
 
@@ -183,10 +183,6 @@ int dime_socket_init_ws(dime_socket_t *sock) {
         strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
 
         free(http_hdr);
-
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
 
         return -1;
     }
@@ -202,10 +198,6 @@ int dime_socket_init_ws(dime_socket_t *sock) {
             strncpy(sock->err, "Invalid HTTP response", sizeof(sock->err));
 
             free(http_hdr);
-
-            if ((flags & ~O_NONBLOCK) != flags) {
-                fcntl(sock->fd, F_SETFL, flags);
-            }
 
             return -1;
         }
@@ -246,10 +238,6 @@ int dime_socket_init_ws(dime_socket_t *sock) {
 
         free(http_hdr);
 
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
-
         return -1;
     }
 
@@ -280,25 +268,22 @@ int dime_socket_init_ws(dime_socket_t *sock) {
     assert(response_len >= 0 && response_len < sizeof(response));
 
     if (send(sock->fd, response, response_len, 0) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
         return -1;
     }
 
     /* Reset the original socket flags */
-    if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-        return -1;
+    if (dime_socket_setnonblocking(sock, 1) < 0) {
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
+
+        return 0;
     }
 
     sock->ws.enabled = 1;
 
     if (dime_ringbuffer_init(&sock->ws.rbuf) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
         return -1;
     }
 
@@ -307,25 +292,16 @@ int dime_socket_init_ws(dime_socket_t *sock) {
 
 int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
     /* Ensure the underlying socket is blocking for the TLS handshake */
-    int flags = fcntl(sock->fd, F_GETFL, 0);
-    if (flags < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-        return -1;
-    }
+    if (dime_socket_setnonblocking(sock, 0) < 0) {
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
-    if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-        return -1;
+        return 0;
     }
 
     assert(dime_ringbuffer_len(&sock->rbuf) == 0);
 
     while (dime_ringbuffer_len(&sock->wbuf) > 0) {
         if (dime_socket_sendpartial(sock) < 0) {
-            if ((flags & ~O_NONBLOCK) != flags) {
-                fcntl(sock->fd, F_SETFL, flags);
-            }
-
             return -1;
         }
     }
@@ -342,10 +318,6 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
 
         SSL_free(sock->tls.ctx);
 
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
-
         return -1;
     }
 
@@ -354,17 +326,14 @@ int dime_socket_init_tls(dime_socket_t *sock, SSL_CTX *tlsctx) {
 
         SSL_free(sock->tls.ctx);
 
-        if ((flags & ~O_NONBLOCK) != flags) {
-            fcntl(sock->fd, F_SETFL, flags);
-        }
-
         return -1;
     }
 
     /* Reset the original socket flags */
-    if ((flags & ~O_NONBLOCK) != flags && fcntl(sock->fd, F_SETFL, flags) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
-        return -1;
+    if (dime_socket_setnonblocking(sock, 1) < 0) {
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
+
+        return 0;
     }
 
     sock->tls.enabled = 1;
@@ -433,7 +402,7 @@ ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const voi
         }
 
         if (dime_ringbuffer_write(&sock->wbuf, ws_hdr, ws_len) < ws_len) {
-            strerror_r(errno, sock->err, sizeof(sock->err));
+            strncpy(sock->err, strerror(errno), sizeof(sock->err));
             return -1;
         }
     }
@@ -442,7 +411,7 @@ ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const voi
         dime_ringbuffer_write(&sock->wbuf, jsonstr, jsondata_len) < jsondata_len ||
         dime_ringbuffer_write(&sock->wbuf, bindata, bindata_len) < bindata_len) {
 
-        strerror_r(errno, sock->err, sizeof(sock->err));
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
         return -1;
     }
 
@@ -510,7 +479,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
                 }
 
                 if (dime_ringbuffer_write(&sock->rbuf, frame, frame_len) < 0) {
-                    strerror_r(errno, sock->err, sizeof(sock->err));
+                    strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
                     free(msg);
 
@@ -541,7 +510,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
 
         void *buf = malloc(msgsiz);
         if (buf == NULL) {
-            strerror_r(errno, sock->err, sizeof(sock->err));
+            strncpy(sock->err, strerror(errno), sizeof(sock->err));
             return -1;
         }
 
@@ -559,7 +528,7 @@ ssize_t dime_socket_pop(dime_socket_t *sock, json_t **jsondata, void **bindata, 
             void *bindata_p = malloc(hdr.bindata_len);
 
             if (bindata_p == NULL) {
-                strerror_r(errno, sock->err, sizeof(sock->err));
+                strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
                 json_decref(jsondata_p);
                 free(buf);
@@ -604,7 +573,7 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
         if (sock->tls.enabled) {
             ERR_error_string_n(ERR_get_error(), sock->err, sizeof(sock->err));
         } else {
-            strerror_r(errno, sock->err, sizeof(sock->err));
+            strncpy(sock->err, strerror(errno), sizeof(sock->err));
         }
 
         free(buf);
@@ -621,7 +590,7 @@ ssize_t dime_socket_sendpartial(dime_socket_t *sock) {
 ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     void *buf = malloc(RECVBUFLEN);
     if (buf == NULL) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
         return -1;
     }
 
@@ -637,7 +606,7 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
         if (sock->tls.enabled) {
             ERR_error_string_n(ERR_get_error(), sock->err, sizeof(sock->err));
         } else {
-            strerror_r(errno, sock->err, sizeof(sock->err));
+            strncpy(sock->err, strerror(errno), sizeof(sock->err));
         }
 
         free(buf);
@@ -656,7 +625,7 @@ ssize_t dime_socket_recvpartial(dime_socket_t *sock) {
     }
 
     if (dime_ringbuffer_write(rbuf, buf, nrecvd) < 0) {
-        strerror_r(errno, sock->err, sizeof(sock->err));
+        strncpy(sock->err, strerror(errno), sizeof(sock->err));
 
         free(buf);
 
