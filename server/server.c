@@ -63,12 +63,6 @@ static uint64_t hash_name(const void *a) {
     return y;
 }
 
-static jmp_buf ctrlc_env;
-
-static void ctrlc_handler(int signum) {
-    longjmp(ctrlc_env, 1);
-}
-
 int dime_server_init(dime_server_t *srv) {
     srv->err[0] = '\0';
 
@@ -629,62 +623,9 @@ static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents
 #endif
 
 int dime_server_loop(dime_server_t *srv) {
-    /* Handle signals */
-    void (*sigint_f)(int);
-    void (*sigterm_f)(int);
-    void (*sigpipe_f)(int);
-
-    sigint_f = NULL;
-    sigterm_f = NULL;
-    sigpipe_f = NULL;
-
-    if (setjmp(ctrlc_env) != 0) {
-        if (sigint_f != NULL) {
-            signal(SIGINT, sigint_f);
-        }
-
-        if (sigterm_f != NULL) {
-            signal(SIGTERM, sigint_f);
-        }
-
-        if (sigpipe_f != NULL) {
-            signal(SIGPIPE, sigpipe_f);
-        }
-
-        return 0;
-    }
-
-    sigint_f = signal(SIGINT, ctrlc_handler);
-    if (sigint_f == SIG_ERR) {
-        strncpy(srv->err, strerror(errno), sizeof(srv->err));
-
-        return -1;
-    }
-
-    sigterm_f = signal(SIGTERM, ctrlc_handler);
-    if (sigterm_f == SIG_ERR) {
-        strncpy(srv->err, strerror(errno), sizeof(srv->err));
-
-        signal(SIGINT, sigint_f);
-
-        return -1;
-    }
-
-    sigpipe_f = signal(SIGPIPE, SIG_IGN);
-    if (sigpipe_f == SIG_ERR) {
-        strncpy(srv->err, strerror(errno), sizeof(srv->err));
-
-        signal(SIGTERM, sigterm_f);
-        signal(SIGINT, sigint_f);
-
-        return -1;
-    }
-
-    struct ev_loop *loop = ev_default_loop(0);
+    struct ev_loop *loop = ev_default_loop(0); // TODO: fix
     if (loop == NULL) {
-        signal(SIGPIPE, sigpipe_f);
-        signal(SIGTERM, sigterm_f);
-        signal(SIGINT, sigint_f);
+        strncpy(srv->err, "Could not initialize libev", sizeof(srv->err));
 
         return -1;
     }
@@ -697,10 +638,6 @@ int dime_server_loop(dime_server_t *srv) {
         if (listen(srv->fds[i].fd, 0) < 0) {
             strncpy(srv->err, strerror(errno), sizeof(srv->err));
 
-            signal(SIGPIPE, sigpipe_f);
-            signal(SIGTERM, sigterm_f);
-            signal(SIGINT, sigint_f);
-
             return -1;
         }
     }
@@ -708,9 +645,5 @@ int dime_server_loop(dime_server_t *srv) {
     srv = srv;
     ev_loop(loop, 0);
 
-    signal(SIGPIPE, sigpipe_f);
-    signal(SIGTERM, sigterm_f);
-    signal(SIGINT, sigint_f);
-
-    return -1;
+    return 0;
 }

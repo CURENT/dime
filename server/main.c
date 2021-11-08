@@ -12,8 +12,11 @@
 #include <openssl/ssl.h>
 #include "server.h"
 
+static dime_server_t srv;
+
 static void cleanup() {
     EVP_cleanup();
+    dime_server_destroy(&srv);
 }
 
 int main(int argc, char **argv) {
@@ -34,8 +37,6 @@ int main(int argc, char **argv) {
 #else
     char listens_default[] = "unix:/tmp/dime.sock";
 #endif
-
-    dime_server_t srv;
 
     memset(&srv, 0, sizeof(dime_server_t));
 
@@ -247,12 +248,9 @@ int main(int argc, char **argv) {
 
     if (dime_server_loop(&srv) < 0) {
         fprintf(stderr, "Fatal error while running server: %s\n", srv.err);
-        dime_server_destroy(&srv);
-
         return -1;
     }
 
-    dime_server_destroy(&srv);
     return 0;
 
 usage_err:
