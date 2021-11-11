@@ -74,7 +74,9 @@ int dime_socket_init(dime_socket_t *sock, int fd) {
         return -1;
     }
 
+#ifdef DIME_USE_LIBEV
     sock->loop = NULL;
+#endif
 
     sock->tls.enabled = 0;
     sock->ws.enabled = 0;

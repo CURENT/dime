@@ -683,6 +683,19 @@ int dime_server_loop(dime_server_t *srv) {
                 clnt = dime_table_search(&srv->fd2clnt, &i);
 
                 if (clnt == NULL) {
+                    dime_server_fd_t *srvfd = NULL;
+
+                    for (size_t j = 0; j < srv->fds_len; j++) {
+                        if (srv->fds[j].fd == i) {
+                            srvfd = &srv->fds[j];
+                            break;
+                        }
+                    }
+
+                    if (srvfd == NULL) {
+                        continue;
+                    }
+
                     clnt = malloc(sizeof(dime_client_t));
 
                     if (clnt == NULL) {
@@ -695,10 +708,10 @@ int dime_server_loop(dime_server_t *srv) {
                     struct sockaddr_storage addr;
                     socklen_t siz = sizeof(struct sockaddr_storage);
 
-                    int fd = accept(srv->fds[i].fd, (struct sockaddr *)&addr, &siz);
+                    int fd = accept(i, (struct sockaddr *)&addr, &siz);
                     if (fd < 0) {
                         strncpy(srv->err, strerror(errno), sizeof(srv->err));
-                        dime_err("Failed to accept a socket from fd %d (%s)", watcher->fd, srv->err);
+                        dime_err("Failed to accept a socket from fd %d (%s)", i, srv->err);
                         srv->err[0] = '\0';
 
                         free(clnt);
@@ -736,7 +749,7 @@ int dime_server_loop(dime_server_t *srv) {
                             dime_client_destroy(clnt);
                             free(clnt);
 
-                            return;
+                            continue;
                         }
                     }
 
@@ -876,7 +889,7 @@ int dime_server_loop(dime_server_t *srv) {
                     dime_client_destroy(clnt);
                     free(clnt);
 
-                    return;
+                    continue;
                 }
 
                 if (srv->verbosity >= 3) {
@@ -897,10 +910,11 @@ int dime_server_loop(dime_server_t *srv) {
                     if (dime_socket_sendlen(&clnt->sock) > 0) {
                         FD_SET(i, &wfds[0]);
                     } else {
-                        FD_CLEAR(i, &wfds[0]);
+                        FD_CLR(i, &wfds[0]);
                     }
                 }
             }
+        }
     }
 }
 #if 0
