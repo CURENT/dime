@@ -96,9 +96,11 @@ typedef struct {
         dime_ringbuffer_t rbuf;
     } zlib;
 
+#ifdef DIME_USE_LIBEV
     ev_io rwatcher;
     ev_io wwatcher;
     struct ev_loop *loop;
+#endif
 
     char err[81]; /** Error string */
 } dime_socket_t;

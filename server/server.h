@@ -33,7 +33,9 @@
 
 #include <stdint.h>
 
-#include <ev.h>
+#ifdef DIME_USE_LIBEV
+#   include <ev.h>
+#endif
 #include <openssl/ssl.h>
 
 #include "table.h"
@@ -56,7 +58,9 @@ enum dime_serialization {
 typedef struct {
     int fd;
     int protocol;
+#ifdef DIME_USE_LIBEV
     ev_io watcher;
+#endif
     void *srv;
 } dime_server_fd_t;
 

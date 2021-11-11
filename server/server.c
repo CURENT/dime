@@ -7,6 +7,7 @@
 #   include <fcntl.h>
 #   include <netinet/in.h>
 #   include <unistd.h>
+#   include <sys/select.h>
 #   include <sys/socket.h>
 #   include <sys/un.h>
 #endif
@@ -20,7 +21,9 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#include <ev.h>
+#ifdef DIME_USE_LIBEV
+#   include <ev.h>
+#endif
 #include <jansson.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -373,6 +376,7 @@ int dime_server_add(dime_server_t *srv, int protocol, ...) {
     return 0;
 }
 
+#ifdef DIME_USE_LIBEV
 static void ev_client_writable(struct ev_loop *loop, ev_io *watcher, int revents) {
     dime_client_t *clnt = watcher->data;
     dime_server_t *srv = clnt->srv;
@@ -618,12 +622,9 @@ static void ev_server_readable(struct ev_loop *loop, ev_io *watcher, int revents
     }
 }
 
-#ifndef SIGPIPE
-#   define SIGPIPE (-1)
-#endif
-
 int dime_server_loop(dime_server_t *srv) {
-    struct ev_loop *loop = ev_default_loop(0); // TODO: fix
+    struct ev_loop *loop = ev_default_loop(0); // TODO: fix for Windows
+
     if (loop == NULL) {
         strncpy(srv->err, "Could not initialize libev", sizeof(srv->err));
 
@@ -647,3 +648,437 @@ int dime_server_loop(dime_server_t *srv) {
 
     return 0;
 }
+#else
+int dime_server_loop(dime_server_t *srv) {
+    int maxfd = -1;
+    fd_set rfds[2], wfds[2];
+
+    FD_ZERO(&rfds[0]);
+    FD_ZERO(&wfds[0]);
+
+    for (size_t i = 0; i < srv->fds_len; i++) {
+        FD_SET(srv->fds[i].fd, &rfds[0]);
+
+        if (listen(srv->fds[i].fd, 0) < 0) {
+            return -1;
+        }
+
+        if (maxfd < srv->fds[i].fd + 1) {
+            maxfd = srv->fds[i].fd + 1;
+        }
+    }
+
+    while (1) {
+        memcpy(&rfds[1], &rfds[0], sizeof(fd_set));
+        memcpy(&wfds[1], &wfds[0], sizeof(fd_set));
+
+        if (select(maxfd, &rfds[1], &wfds[1], NULL, NULL) < 0) {
+            return -1;
+        }
+
+        for (int i = 3; i < maxfd; i++) {
+            dime_client_t *clnt = NULL;
+
+            if (FD_ISSET(i, &rfds[1])) {
+                clnt = dime_table_search(&srv->fd2clnt, &i);
+
+                if (clnt == NULL) {
+                    clnt = malloc(sizeof(dime_client_t));
+
+                    if (clnt == NULL) {
+                        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                        srv->err[0] = '\0';
+
+                        return -1;
+                    }
+
+                    struct sockaddr_storage addr;
+                    socklen_t siz = sizeof(struct sockaddr_storage);
+
+                    int fd = accept(srv->fds[i].fd, (struct sockaddr *)&addr, &siz);
+                    if (fd < 0) {
+                        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+                        dime_err("Failed to accept a socket from fd %d (%s)", watcher->fd, srv->err);
+                        srv->err[0] = '\0';
+
+                        free(clnt);
+
+                        continue;
+                    }
+
+                    /* Attempt to make sockets non-blocking for network connections */
+    #ifdef __unix__
+                    if (srvfd->protocol != DIME_UNIX) {
+                        int flags = fcntl(fd, F_GETFL, 0);
+
+                        if (flags >= 0) {
+                            fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+                        }
+                    }
+    #endif
+
+                    if (dime_client_init(clnt, fd, (struct sockaddr *)&addr) < 0) {
+                        strncpy(srv->err, clnt->err, sizeof(srv->err));
+                        srv->err[0] = '\0';
+
+                        close(fd);
+                        free(clnt);
+
+                        return -1;
+                    }
+
+                    clnt->srv = srv;
+
+                    if (srvfd->protocol == DIME_WS) {
+                        if (dime_socket_init_ws(&clnt->sock) < 0) {
+                            dime_err("Failed to complete WebSocket handhake for incoming connection %s (%s)", clnt->addr, clnt->sock.err);
+
+                            dime_client_destroy(clnt);
+                            free(clnt);
+
+                            return;
+                        }
+                    }
+
+                    if (dime_table_insert(&srv->fd2clnt, &clnt->fd, clnt) < 0) {
+                        strncpy(srv->err, strerror(errno), sizeof(srv->err));
+
+                        dime_client_destroy(clnt);
+                        free(clnt);
+                    }
+
+                    FD_SET(fd, &rfds[0]);
+
+                    if (maxfd < fd + 1) {
+                        maxfd = fd + 1;
+                    }
+
+                    if (srv->verbosity >= 1) {
+                        dime_info("Opened new connection from %s", clnt->addr);
+                    }
+
+                    clnt = NULL;
+                } else {
+                    ssize_t n = dime_socket_recvpartial(&clnt->sock);
+
+                    if (n <= 0) {
+                        if (srv->verbosity >= 1) {
+                            if (n == 0) {
+                                dime_info("Connection closed from %s", clnt->addr);
+                            } else {
+                                dime_err("Read failed on %s (%s), closing", clnt->addr, strerror(errno));
+                            }
+                        }
+
+                        dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                        dime_client_destroy(clnt);
+                        free(clnt);
+
+                        continue;
+                    }
+
+                    if (srv->verbosity >= 3) {
+                        dime_info("Received %zd bytes of data from %s", n, clnt->addr);
+                    }
+
+                    while (1) {
+                        json_t *jsondata;
+                        void *bindata;
+                        size_t bindata_len;
+
+                        n = dime_socket_pop(&clnt->sock, &jsondata, &bindata, &bindata_len);
+
+                        if (n > 0) {
+                            const char *cmd;
+
+                            if (json_unpack(jsondata, "{ss}", "command", &cmd) < 0) {
+                                /* Just let this case propagate, it'll be caught below */
+                                cmd = "";
+                            }
+
+                            if (srv->verbosity >= 3) {
+                                dime_info("Got DiME message with command \"%s\" from %s", cmd, clnt->addr);
+                            }
+
+                            int err;
+
+                            /*
+                             * As more commands are added, this section of code
+                             * might be more efficient as a table of function
+                             * pointers
+                             */
+                            if (strcmp(cmd, "handshake") == 0) {
+                                err = dime_client_handshake(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "join") == 0) {
+                                err = dime_client_join(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "leave") == 0) {
+                                err = dime_client_leave(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "send") == 0) {
+                                err = dime_client_send(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "broadcast") == 0) {
+                                err = dime_client_broadcast(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "sync") == 0) {
+                                err = dime_client_sync(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "wait") == 0) {
+                                err = dime_client_wait(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else if (strcmp(cmd, "devices") == 0) {
+                                err = dime_client_devices(clnt, srv, jsondata, &bindata, bindata_len);
+                            } else {
+                                err = -1;
+
+                                strncpy(srv->err, "Unknown command", sizeof(srv->err));
+                                srv->err[sizeof(srv->err) - 1] = '\0';
+
+                                json_t *response = json_pack("{siss}", "status", -1, "error", "Unknown command");
+                                if (response != NULL) {
+                                    dime_socket_push(&clnt->sock, response, NULL, 0);
+                                    json_decref(response);
+                                }
+                            }
+
+                            if (err < 0 && srv->verbosity >= 1) {
+                                dime_warn("Failed to handle command \"%s\" from %s: %s", cmd, clnt->addr, srv->err);
+                            }
+
+                            json_decref(jsondata);
+                            free(bindata);
+                        } else if (n < 0) {
+                            strncpy(srv->err, strerror(errno), sizeof(srv->err));
+
+                            return -1;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (FD_ISSET(i, &wfds[1])) {
+                if (clnt == NULL) {
+                    clnt = dime_table_search(&srv->fd2clnt, &i);
+
+                    if (clnt == NULL) {
+                        continue;
+                    }
+                }
+
+                ssize_t n = dime_socket_sendpartial(&clnt->sock);
+
+                /* Note: The server should close the socket here, not crash */
+                if (n < 0) {
+                    if (srv->verbosity >= 1) {
+                        dime_err("Write failed on %s (%s), closing", clnt->addr, strerror(errno));
+                    }
+
+                    dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                    dime_client_destroy(clnt);
+                    free(clnt);
+
+                    return;
+                }
+
+                if (srv->verbosity >= 3) {
+                    dime_info("Sent %zd bytes of data to %s", n, clnt->addr);
+                }
+
+                if (dime_socket_sendlen(&clnt->sock) == 0) {
+                    return -1;
+                }
+            }
+        }
+
+        for (int i = 3; i < maxfd; i++) {
+            if (FD_ISSET(i, &rfds[0])) {
+                dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &i);
+
+                if (clnt != NULL) {
+                    if (dime_socket_sendlen(&clnt->sock) > 0) {
+                        FD_SET(i, &wfds[0]);
+                    } else {
+                        FD_CLEAR(i, &wfds[0]);
+                    }
+                }
+            }
+    }
+}
+#if 0
+
+    while (1) {
+        if (poll(pollfds, pollfds_len, -1) < 0) {
+            signal(SIGPIPE, sigpipe_f);
+            signal(SIGTERM, sigterm_f);
+            signal(SIGINT, sigint_f);
+            free(pollfds);
+
+            printf("%d\n", __LINE__); return -1;
+        }
+
+        for (size_t i = srv->fds_len; i < pollfds_len; i++) {
+            dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &pollfds[i].fd);
+            assert(clnt != NULL);
+
+            if (pollfds[i].revents & POLLHUP) {
+                if (srv->verbosity >= 1) {
+                    dime_info("Closed connection from %s", clnt->addr);
+                }
+
+                dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                dime_client_destroy(clnt);
+                free(clnt);
+
+                pollfds[i] = pollfds[pollfds_len - 1];
+                pollfds_len--;
+                i--;
+
+                continue;
+            }
+
+            if (pollfds[i].revents & POLLIN) {
+                ssize_t n = dime_socket_recvpartial(&clnt->sock);
+
+                if (n <= 0) {
+                    if (srv->verbosity >= 1) {
+                        if (n == 0) {
+                            dime_info("Connection closed from %s", clnt->addr);
+                        } else {
+                            dime_err("Read failed on %s (%s), closing", clnt->addr, strerror(errno));
+                        }
+                    }
+
+                    dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                    dime_client_destroy(clnt);
+                    free(clnt);
+
+                    pollfds[i] = pollfds[pollfds_len - 1];
+                    pollfds_len--;
+                    i--;
+
+                    continue;
+                }
+
+                if (srv->verbosity >= 3) {
+                    dime_info("Received %zd bytes of data from %s", n, clnt->addr);
+                }
+
+                while (1) {
+                    json_t *jsondata;
+                    void *bindata;
+                    size_t bindata_len;
+
+                    n = dime_socket_pop(&clnt->sock, &jsondata, &bindata, &bindata_len);
+
+                    if (n > 0) {
+                        const char *cmd;
+
+                        if (json_unpack(jsondata, "{ss}", "command", &cmd) < 0) {
+                            /* Just let this case propagate, it'll be caught below */
+                            cmd = "";
+                        }
+
+                        if (srv->verbosity >= 3) {
+                            dime_info("Got DiME message with command \"%s\" from %s", cmd, clnt->addr);
+                        }
+
+                        int err;
+
+                        /*
+                         * As more commands are added, this section of code
+                         * might be more efficient as a table of function
+                         * pointers
+                         */
+                        if (strcmp(cmd, "handshake") == 0) {
+                            err = dime_client_handshake(clnt, srv, jsondata, &bindata, bindata_len);
+                        }else if (strcmp(cmd, "join") == 0) {
+                            err = dime_client_join(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "leave") == 0) {
+                            err = dime_client_leave(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "send") == 0) {
+                            err = dime_client_send(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "broadcast") == 0) {
+                            err = dime_client_broadcast(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "sync") == 0) {
+                            err = dime_client_sync(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "wait") == 0) {
+                            err = dime_client_wait(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else if (strcmp(cmd, "devices") == 0) {
+                            err = dime_client_devices(clnt, srv, jsondata, &bindata, bindata_len);
+                        } else {
+                            err = -1;
+
+                            strncpy(srv->err, "Unknown command", sizeof(srv->err));
+                            srv->err[sizeof(srv->err) - 1] = '\0';
+
+                            json_t *response = json_pack("{siss}", "status", -1, "error", "Unknown command");
+                            if (response != NULL) {
+                                dime_socket_push(&clnt->sock, response, NULL, 0);
+                                json_decref(response);
+                            }
+                        }
+
+                        if (err < 0 && srv->verbosity >= 1) {
+                            dime_warn("Failed to handle command \"%s\" from %s: %s", cmd, clnt->addr, srv->err);
+                        }
+
+                        json_decref(jsondata);
+                        free(bindata);
+                    } else if (n < 0) {
+                        signal(SIGPIPE, sigpipe_f);
+                        signal(SIGTERM, sigterm_f);
+                        signal(SIGINT, sigint_f);
+                        free(pollfds);
+
+                        printf("%d\n", __LINE__); return -1;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            if (pollfds[i].revents & POLLOUT) {
+                ssize_t n = dime_socket_sendpartial(&clnt->sock);
+
+                /* Note: The server should close the socket here, not crash */
+                if (n < 0) {
+                    if (srv->verbosity >= 1) {
+                        dime_err("Write failed on %s (%s), closing", clnt->addr, strerror(errno));
+                    }
+
+                    dime_table_remove(&srv->fd2clnt, &clnt->fd);
+
+                    dime_client_destroy(clnt);
+                    free(clnt);
+
+                    pollfds[i] = pollfds[pollfds_len - 1];
+                    pollfds_len--;
+                    i--;
+
+                    continue;
+                }
+
+                if (srv->verbosity >= 3) {
+                    dime_info("Sent %zd bytes of data to %s", n, clnt->addr);
+                }
+            }
+        }
+
+        /* Iterate in reverse order for better cache locality */
+        for (size_t i = pollfds_len - 1; i >= srv->fds_len; i--) {
+            dime_client_t *clnt = dime_table_search(&srv->fd2clnt, &pollfds[i].fd);
+            assert(clnt != NULL);
+
+            if (dime_socket_sendlen(&clnt->sock) > 0) {
+                pollfds[i].events |= POLLOUT;
+            } else {
+                pollfds[i].events &= ~POLLOUT;
+            }
+
+            pollfds[i].revents = 0;
+        }
+    }
+}
+#endif
+#endif

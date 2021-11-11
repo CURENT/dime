@@ -357,9 +357,11 @@ ssize_t dime_socket_push(dime_socket_t *sock, const json_t *jsondata, const void
 ssize_t dime_socket_push_str(dime_socket_t *sock, const char *jsonstr, const void *bindata, size_t bindata_len) {
     dime_header_t hdr;
 
+#ifdef DIME_USE_LIBEV
     if (dime_ringbuffer_len(&sock->wbuf) == 0 && sock->loop != NULL) {
         ev_io_start(sock->loop, &sock->wwatcher);
     }
+#endif
 
     memcpy(hdr.magic, "DiME", 4);
 
