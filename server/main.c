@@ -4,6 +4,7 @@
 #   pragma comment(lib, "Ws2_32.lib")
 #endif
 
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,10 @@
 
 static dime_server_t srv;
 
+static void sighandler(int signal) {
+    exit(0);
+}
+
 static void cleanup() {
     EVP_cleanup();
     dime_server_destroy(&srv);
@@ -23,6 +28,17 @@ int main(int argc, char **argv) {
     SSL_library_init();
     SSL_load_error_strings();
     atexit(cleanup);
+
+    signal(SIGTERM, sighandler);
+    signal(SIGINT, sighandler);
+
+#ifdef SIGPIPE
+    signal(SIGPIPE, SIG_IGN);
+#endif
+
+#ifdef SIGHUP
+    signal(SIGHUP, sighandler);
+#endif
 
     char *listens[(argc + 1) / 2];
     size_t listens_len = 0;
