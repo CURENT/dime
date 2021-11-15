@@ -1,17 +1,16 @@
 # dime
-A re-write of the Distributed Matlab Environment, a library enabling multiple Matlab processes to share data across an operating system or over a network. The original DiME code can be found [here](https://github.com/CURENT/dime). This re-write includes a number of enhancements with regard to simplicity and efficiency, including single-threadedness, (I/O multiplexing is done via [`poll(2)`](https://pubs.opengroup.org/onlinepubs/007908799/xsh/poll.html)) fewer dependencies, and significantly higher throughput.
+A re-write of the Distributed Matlab Environment, a library enabling multiple Matlab processes to share data across an operating system or over a network. The original DiME code can be found [here](https://github.com/CURENT/dime). This re-write includes a number of enhancements with regard to simplicity and efficiency, including single-threadedness, (I/O multiplexing is done via [`select(2)`](https://pubs.opengroup.org/onlinepubs/007908799/xsh/select.html)) fewer dependencies, and significantly higher throughput.
 
 ## Setup
 
 ### Server
 To compile the server executable, run `make` in the `server` directory. Build options can be tweaked by editing the Makefile (sane defaults are provided). The server code has the following compile-time dependencies:
 
-* A SUS-compatible environment
-  * Windows servers need to be built with [Cygwin](https://www.cygwin.com/) or [MSYS2](https://www.msys2.org/) + [Gnulib](http://www.gnu.org/software/gnulib/)
 * [Jansson](https://digip.org/jansson/)
-* [libev](http://software.schmorp.de/pkg/libev.html)
 * [OpenSSL](https://www.openssl.org/)
 * [zlib](http://zlib.net/)
+
+I have successfully compiled Windows servers with [MinGW](https://www.mingw-w64.org/) and WinSock2. You might be able to use another compiler like MSVC, but I don't guarantee it.
 
 ### Matlab Client
 To use the Matlab client, add `client/matlab` to your [Matlab search path](https://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html).
