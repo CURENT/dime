@@ -81,9 +81,35 @@ int main(int argc, char **argv) {
                     break;
 
                 case 'h':
-                    goto usage_err;
+                    printf("Usage: %s [options]\n"
+                           "\n"
+                           "Options:\n"
+                           "-c <certfile>          Specifies a certificate file to use for TLS "
+                           "                       encryption. Requires -k to be specified as well. \n"
+                           "                       Note that TLS is a work in progress, and is \n"
+                           "                       currently only supported by the Python client.\n"
+                           "-d                     Forks the process to the background as a daemon. \n"
+                           "                       Only works on Unix like systems.\n"
+                           "-h                     Displays this help message.\n"
+                           "-k <privkeyfile>       Specifies a private key file to use for TLS \n"
+                           "                       encryption. Requires -c to be specified as well. \n"
+                           "                       Note that TLS is a work in progress, and is \n"
+                           "                       currently only supported by the Python client.\n"
+                           "-l <protocol>:<info>   Specifies an additional method for clients to \n"
+                           "                       connect to the server. Valid protocols are unix, \n"
+                           "                       ipc (an alias for unix), tcp, and ws. Additional \n"
+                           "                       information is either a socket file (in the case \n"
+                           "                       of unix) or a port on the local machine (in the \n"
+                           "                       case of tcp and ws). The unix protocol only works \n"
+                           "                       on Unix like systems.\n"
+                           "-v                     Increases the verbosity of the server.\n",
+                           argv[0]);
+                        
+                    return 0;
 
                 case 'j':
+                    goto usage_err; // disable this for now
+                        
                     if (argi + 1 > argc) {
                         goto usage_err;
                     }
