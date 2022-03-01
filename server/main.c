@@ -88,8 +88,8 @@ int main(int argc, char **argv) {
                            "                       encryption. Requires -k to be specified as well. \n"
                            "                       Note that TLS is a work in progress, and is \n"
                            "                       currently only supported by the Python client.\n"
-                           "-d                     Forks the process to the background Only works \n"
-                           "                       on Unix like systems.\n"
+                           "-d                     Forks the process to the background Only works on \n"
+                           "                       Unix-like systems.\n"
                            "-h                     Displays this help message.\n"
                            "-k <privkeyfile>       Specifies a private key file to use for TLS \n"
                            "                       encryption. Requires -c to be specified as well. \n"
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
                            "                       information is either a socket file (in the case \n"
                            "                       of unix) or a port on the local machine (in the \n"
                            "                       case of tcp and ws). The unix protocol only works \n"
-                           "                       on Unix like systems.\n"
+                           "                       on Unix-like systems.\n"
                            "-v                     Increases the verbosity of the server.\n",
                            argv[0]);
                         
