@@ -1,0 +1,20 @@
+site_name: DiME
+site_url: https://ltbdime.readthedocs.io
+nav:
+  - Home: 'index.md'
+  - 'Quick Start': 
+    - 'quick_start/linux.md'
+    - 'quick_start/windows.md'
+
+  - 'API Reference':
+    - 'MATLAB API': 'api/matlab.md'
+    - 'Python API': 'api/python.md'
+    - 'JavaScript API': 'api/javascript.md'
+
+  - 'Examples': 
+    - 'MATLAB Examples': 'examples/mex.md'
+    - 'Python Examples': 'examples/pex.md'
+    - 'Javascript Examples': 'examples/jex.md'
+    - 'Combined Examples': 'examples/cex.md'
+      
+theme: readthedocs
