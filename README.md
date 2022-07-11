@@ -161,3 +161,7 @@ That having been said, multi-threading may not be avoided in the future. A techn
 ~~Because your favorite language is bad.~~
 
 We wanted a language that was small, simple, efficient, allowed for hacks to improve performance, and compiled to machine code without depending on several shared libraries. This narrowed our options to C and Go. Go might've been a better option with its features oriented to building servers. However, C was chosen on the basis that it would be more familiar to undergraduate and guaduate computer scientists at UTK.
+
+## Documentation
+
+[DiME](https://ltbdime.readthedocs.io)
