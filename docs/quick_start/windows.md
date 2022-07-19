@@ -100,4 +100,4 @@ Python is basically the exact same, just use ```pacman -S mingw-w64-python-numpy
 There is no way to use the JavaScript client with a Windows-run DiME server. Since the JavaScript client only connects to WebSockets, and the Windows version of DiME can only do TCP, they are incompatible.
 
 ### Further Information
-['DiME README'](https://github.com/CURENT/dime2/blob/master/README.md)
+['DiME README'](https://github.com/CURENT/dime/blob/master/README.md)
