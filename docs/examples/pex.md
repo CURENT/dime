@@ -1,5 +1,5 @@
 # Python Examples
-This example will walk you through some simple Python programs that show off DiME's API calls. All of the examples are going to operate off the assumption that the DiME server is running on the default Linux settings. There are also ready to run examples on the DiME repository.
+This page will walk you through some simple Python programs that show off DiME's API calls. All of the examples are going to operate off the assumption that the DiME server is running on the default Linux settings. There are also ready to run examples on the DiME repository.
 
 ## Join and Devices
 The simplest way to check if connections are properly being made is with the Join and Devices calls, so we'll start there.
@@ -104,9 +104,9 @@ Your output should look like this:
 20
 900
 ```
-Note how d2 and d3's *b* variables have both been changed, meanwhile only only d2's *a* variable has been changed. This is because Broadcast sends the provided variables to every client that isn't the sender. Send, on the other hand, only sends the given variables to the specified groups.
+Note how d2 and d3's *b* variables have both been changed, meanwhile only d2's *a* variable has been changed. This is because Broadcast sends the provided variables to every client that isn't the sender. Send, on the other hand, only sends the given variables to the specified groups.
 
-###Changing Variables After Sending Them
+### Changing Variables After Sending Them
 As you might expect, the values sent with Broadcast and Send are not dynamic. If a client changes a variable after it was sent, the variable the receiving client gets will reflect the state of the variable at the time of sending. This snippet and its associated output will demonstrate this:
 ```
 from dime import DimeClient
@@ -152,7 +152,7 @@ The output is this:
 
 The values d2 and d3's *c* variables are synced to is d1's *c* variable before it was changed to have a value of 0.
 
-###Self-Sending
+### Self-Sending
 Since Broadcast sends variables to every client other than the sending client, it is not possible for a client to send itself data using Broadcast, at least without an intermediary. This is not true for Send, however, which sends data to specific groups. If a client sends data to a group that it is a part of, it can send data to itself.
 ```
 from dime import DimeClient
@@ -177,7 +177,7 @@ d3["a"] = 3
 d3["b"] = 60
 d3["c"] = 900
 
-d1.broadcast()
+d1.broadcast("b")
 d1["b"] = 0
 
 d1.sync()
