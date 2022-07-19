@@ -61,7 +61,7 @@ Sends one or more variables to the specified group.
 >> **varargin:** ***string, string, ...***
 >>> A tuple of the names of the variables being sent.
 
-## Braodcast
+## Broadcast
 ```
 DimeClient.broadcast(varargin)
 ```

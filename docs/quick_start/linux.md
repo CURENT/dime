@@ -15,7 +15,7 @@ These contain some necessary dependencies for DiME and will make the installatio
 Enter the following commands:
 
 ```
-https://github.com/openssl/openssl.git
+git clone https://github.com/openssl/openssl.git
 cd openssl
 ./config
 make
@@ -26,15 +26,6 @@ If ```make test``` returns a success, then run:
 
 ```
 make install
-```
-
-#### Troubleshooting
-When you try to compile DiME later, you may receive an error along the lines of ```'openssl: error while loading shared libraries: libssl.so.3: cannot open shared object file: No such file or directory'```.
-
-If you do, then run:
-
-```
-ldconfig /usr/local/lib64
 ```
 
 ### zlib
@@ -71,13 +62,13 @@ make install
 Now that all the dependencies have been installed, DiME can now be compiled and installed if you so choose. If you have not already, clone the Dime repository with:
 
 ```
-git clone https://github.com/CURENT/dime2.git
+git clone https://github.com/CURENT/dime.git
 ```
 
 Now run the following:
 
 ```
-cd dime2/server
+cd dime/server
 make
 make install
 ```
@@ -91,10 +82,10 @@ dime &
 This will start a DiMe server in the background with default settings. If you move to ```/usr/temp``` and see ```dime.sock```, then it is running. Now you just need to do a little setup for the clients you want to work with.
 
 ### Using the MATLAB client
-First, add ```dime2/client/matlab``` to your search path in MATLAB. Then run:
+First, add ```dime/client/matlab``` to your search path in MATLAB. Then run:
 
 ```
-cd dime2/client/matlab
+cd dime/client/matlab
 make
 ```
 
@@ -102,7 +93,7 @@ make
 Run the following commands:
 
 ```
-cd dime2/client/python
+cd dime/client/python
 python3 setup.py install
 ```
 
@@ -133,4 +124,4 @@ The following types can be transmitted between MATLAB, Python, and Javascript cl
 | Struct/container.Map    | `dict`                  | `object`                |
 
 ## Further Information
-['DiME README'](https://github.com/CURENT/dime2/blob/master/README.md)
+['DiME README'](https://github.com/CURENT/dime/blob/master/README.md)
