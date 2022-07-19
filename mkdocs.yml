@@ -15,6 +15,5 @@ nav:
     - 'MATLAB Examples': 'examples/mex.md'
     - 'Python Examples': 'examples/pex.md'
     - 'Javascript Examples': 'examples/jex.md'
-    - 'Combined Examples': 'examples/cex.md'
       
 theme: readthedocs
