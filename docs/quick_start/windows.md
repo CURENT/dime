@@ -91,7 +91,7 @@ install -s dime /c/msys64/mingw64/bin
 Assuming you used the default installation location for MSYS2, then you should now be able to run DiME from your command line. Simply running ```dime``` in your command line will create a DiME server running on TCP port 5000.
 
 ### DiME Clients
-Instructions on running creating and running the DiME clients are essentially the same as they are in the [Linux Quick Start Guide](/quick_start/linux). This section will point out a few key differences.
+Instructions on running creating and running the DiME clients are essentially the same as they are in the [Linux Quick Start Guide](../quick_start/linux.md). This section will point out a few key differences.
 
 If you are connecting the MATLAB client to a Windows-run DiME server, you do not have to run the ```make``` command in the MATLAB client directory. You only need to link it.
 
