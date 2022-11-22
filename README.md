@@ -2,6 +2,8 @@
 
 **L**arge-scale **T**est**B**ed - **Di**stributed **M**essaging **E**nvironment (short as LTB-DiME or DiME), data exchange environment for [CURENT](https://github.com/CURENT) [Large-scale Testbed](https://github.com/CURENT/ltb2).
 
+Online documentation is available at [DiME](https://ltbdime.readthedocs.io).
+
 # Why DiME
 
 DiME enables **high-concurrency**, **high-volume** **real-time** data exchange in **large-scale power** system simulations using a **shared workspace**.
@@ -15,8 +17,6 @@ Interactions between server and clients in DiME:
 Data exchange in DiME:
 
 <img width="500" alt="image" src="https://user-images.githubusercontent.com/79226045/203223229-229a1321-64a7-4751-8261-7372a2b19128.png">
-
-Full documentation is available at [DiME](https://ltbdime.readthedocs.io)
 
 # Citing DiME
 
