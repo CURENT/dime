@@ -1,4 +1,8 @@
 include config.mk
+# Print CFLAGS and LDFLAGS
+$(info PREFIX: $(PREFIX))
+$(info CFLAGS: $(CFLAGS))
+$(info LDFLAGS: $(LDFLAGS))
 
 SRCS = deque.c client.c main.c log.c ringbuffer.c server.c socket.c table.c
 OBJS = ${SRCS:.c=.o}
