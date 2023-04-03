@@ -10,3 +10,5 @@ __pycache__
 /client/python/dist
 /test/node_modules
 /test/package-lock.json
+
+.vscode/
