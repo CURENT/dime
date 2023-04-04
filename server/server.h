@@ -47,6 +47,8 @@
 extern "C" {
 #endif
 
+void permeable();
+
 enum dime_serialization {
     DIME_NO_SERIALIZATION,
     DIME_MATLAB,

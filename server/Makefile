@@ -1,4 +1,6 @@
 include config.mk
+# Print CFLAGS and LDFLAGS
+$(info LDFLAGS: $(LDFLAGS))
 
 SRCS = deque.c client.c main.c log.c ringbuffer.c server.c socket.c table.c
 OBJS = ${SRCS:.c=.o}
@@ -6,15 +8,15 @@ OBJS = ${SRCS:.c=.o}
 %.o: %.c
 	${CC} $< ${CFLAGS} -c -o $@
 
-dime: ${OBJS}
-	${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
+dimes: ${OBJS}
+	${CC} ${OBJS} -o $@ -lev -ljansson -lssl -lcrypto -lz ${LDFLAGS}
 
-all: dime
+all: dimes
 
 install: all
-	install -s dime ${PREFIX}/bin
+	install -s dimes ${PREFIX}/bin
 
 clean:
-	rm -f dime ${OBJS}
+	rm -f dimes ${OBJS}
 
 .PHONY: all install clean

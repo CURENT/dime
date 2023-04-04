@@ -39,6 +39,10 @@
 #   define close closesocket
 #endif
 
+void permeable() {
+    printf("DiME Server Version 1.0\n");
+}
+
 static int cmp_fd(const void *a, const void *b) {
     return (*(const int *)b) - (*(const int *)a);
 }

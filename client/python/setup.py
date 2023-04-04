@@ -7,16 +7,16 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 setup(
-    name = "dime",
-    version = "0.0.1",
+    name="dime-client",
+    version="0.0.1",
 
-    description = "DiME client for Python",
-    long_description = long_description,
-    long_description_content_type = "text/markdown",
+    description="DiME client for Python",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
 
-    author = "Nicholas West",
-    author_email = "nwest13@vols.utk.edu",
+    author=["Nicholas West", "Nicholas Parsly", "Jinning Wang"],
+    author_email=["nwest13@vols.utk.edu", "nparsly@vols.utk.edu", "jinninggm@gmail.com"],
 
-    url = "https://github.com/TheHashTableSlasher/dime2",
-    packages = ["dime"]
+    url="https://github.com/CURENT/dime",
+    packages=["dime"]
 )

@@ -1,0 +1,4 @@
+libev
+zlib
+openssl
+jansson
