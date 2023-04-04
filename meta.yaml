@@ -1,5 +1,5 @@
 package:
-    name: dime2
+    name: dime
     version: "0.0.1"
 
 source:
@@ -8,20 +8,37 @@ source:
 requirements:
     build:
         - make
+        - cmake
+        - python
+        - setuptools
+        - pip
 
     host:
         - {{ compiler('c') }}
-        - python
         - setuptools
-        - zlib
-        - openssl
-        - jansson
 
     run:
         - python
         - zlib
         - openssl
         - jansson
+        - dime-server
+        - dime-client
 
 about:
-    home: https://github.com/TheHashTableSlasher/dime2
+    home: https://github.com/CURENT/dime
+    license: GPL-3.0
+    summary: LTB DiME - Distributed Monitoring Environment for CURENT Large-scale Testbed
+
+extra:
+  recipe-maintainers:
+    - Jinning Wang <jinninggm@gmail.com>
+
+# package both client and server
+outputs:
+  - name: dime-client
+    files:
+      - dime/client/*
+  - name: dime-server
+    files:
+      - dime/server/*

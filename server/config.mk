@@ -5,7 +5,7 @@ CC := gcc
 MAKE := make
 
 # Installation directory
-PREFIX := $(shell conda info --base)/envs/$(shell conda env list | grep "*" | cut -f1 -d ' ')
+PREFIX := $(shell conda info --base)
 
 JANSSON_INC := $(PREFIX)/include
 JANSSON_LIB := $(PREFIX)/lib
@@ -18,9 +18,9 @@ CFLAGS := ${CFLAGS} -I$(JANSSON_INC) -std=c99 -D_POSIX_C_SOURCE=200112L -D_XOPEN
 # CFLAGS := ${CFLAGS} -I${PREFIX}/include
 
 # C linker flags
-LDFLAGS := ${LDFLAGS} -pie -pthread -L$(JANSSON_LIB)/lib
-# LD_LIBRARY_PATH = $(CONDA_PREFIX)/lib
-# LDFLAGS := ${LDFLAGS} -L${PREFIX}/lib -ljansson -lev -lssl -lcrypto -lz
+LDFLAGS := -L${PREFIX}/lib -Wl,-rpath,${PREFIX}/lib -Wl,-rpath,${CONDA_PREFIX}/lib
+LDFLAGS := ${LDFLAGS} -pie -pthread
+DYLD_LIBRARY_PATH = $(CONDA_PREFIX)/lib
 
 # Uncomment the lines below for a release build
 #CFLAGS += -DNDEBUG -O3

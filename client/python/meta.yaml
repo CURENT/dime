@@ -1,0 +1,32 @@
+package:
+  name: dime-client
+  version: "0.0.1"
+
+source:
+  path: client/python
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - pip
+
+  host:
+    - { { compiler('c') } }
+
+  run:
+    - python
+    - numpy
+
+about:
+  home: https://github.com/CURENT/dime
+  license: GPL-3.0
+  summary: LTB DiME - Distributed Monitoring Environment for CURENT Large-scale Testbed
+
+extra:
+  recipe-maintainers:
+    - Jinning Wang <jinninggm@gmail.com>
+
+# Package the client component
+files:
+  - dime/server/*
