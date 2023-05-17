@@ -181,7 +181,7 @@ class DimeClient(collections.abc.MutableMapping):
 
         name : str
            the group name.
-
+           
         **kvpairs : dict
             Keyword arguments representing the variable name(s) and their corresponding values.
         """
