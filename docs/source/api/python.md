@@ -59,18 +59,20 @@ Sends one or more variables from the mapping of this instance to all clients in 
 > **Parameters:**
 >> **name:** ***string***
 >>> The name of the group to send the variables to.
+
 >> **varargin:** ***string, string, ...***
 >>> A tuple of the names of the variables being sent.
 
 ## Send R
 ```
-DimeClient.send_r(self, name, **kvpairs)
+DimeClient.send_r(name, **kvpairs)
 ```
 Sends one or more variables to all clients in a specified group.
 
 > **Parameters:**
 >> **name:** ***string***
 >>> The name of the group to send the variables to.
+
 >> **\*\*kvpairs**
 >>> Key value pairs, mapping variables to values, to be sent to the server.
 
