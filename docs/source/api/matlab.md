@@ -77,9 +77,7 @@ Sends one or more variables to all clients in a specified group.
 
 >> **varargin**
 >>> varargin : cell array     
->>>> A single argument, a struct whose field names are variable names and values are the variables themselves
-
->>>> Two or more arguments alternating between strings specifying the variable names and arbitrary values representing the variables (similar to the struct constructor with one or more initial fields)
+>>>> A single argument, a struct whose field names are variable names and values are the variables themselves. OR two or more arguments alternating between strings specifying the variable names and arbitrary values representing the variables (similar to the struct constructor with one or more initial fields)
 
 ## Broadcast
 ```
