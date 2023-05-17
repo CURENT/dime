@@ -10,9 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('.'))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
@@ -27,19 +27,11 @@ release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 
-# Set root file path
-master_doc = 'docs/source/index'
-
-# Suffix of source file
-source_suffix = ['.rst']
-
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
         'myst_parser'
-        'sphinx.ext.autodoc'
-        'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
