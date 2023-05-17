@@ -170,6 +170,22 @@ class DimeClient(collections.abc.MutableMapping):
         self.send_r(name, **{varname: self.workspace[varname] for varname in varnames})
 
     def send_r(self, name, **kvpairs):
+        """Send key value pairs to the server
+
+        Sends one or more variables to all clients in a specified group.
+
+        Parameters
+        ----------
+        self : DimeClient
+            The dime instance.
+
+        name : str
+           the group name.
+
+        **kvpairs : dict
+            Keyword arguments representing the variable name(s) and their corresponding values.
+        """
+        
         kviter = iter(kvpairs.items())
         serialization = self.serialization
 
