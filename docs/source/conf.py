@@ -28,7 +28,7 @@ release = '2.0.0'
 # -- General configuration ---------------------------------------------------
 
 # Set root file path
-master_doc = 'index'
+master_doc = 'docs/source/index'
 
 # Suffix of source file
 source_suffix = ['.rst']
