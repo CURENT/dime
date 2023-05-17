@@ -1,7 +1,7 @@
 Welcome to DiME
 ###############
 
-What is DiME?
+What is DiME? TESTING
 -------------
 
 **DiME** (\ **Di**\ stributed **M**\ essaging **E**\ nvironment) is a library enabling multiple Matlab processes to share data across an operating system or over a network. This version is a rewrite of the original DiME, which suffered from severe slowdown from for large workloads. The current rewrite has many improvements upon the original, including single-threadedness, (I/O multiplexing is done via select(2)) fewer dependencies, and significantly higher throughput. DiME is compatible with MATLAB, Python, and JavaScript.

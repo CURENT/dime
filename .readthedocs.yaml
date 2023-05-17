@@ -13,7 +13,7 @@ build:
 
 sphinx:
   builder: html
-  configuration: conf.py
+  configuration: docs/source/conf.py
 
 
 # Optionally declare the Python requirements required to build your docs
