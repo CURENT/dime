@@ -12,7 +12,7 @@
 #
 import os
 import sys
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
@@ -27,8 +27,10 @@ release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 
+# Set root file path
 master_doc = 'index'
 
+# Suffix of source file
 source_suffix = ['.rst']
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -36,6 +38,8 @@ source_suffix = ['.rst']
 # ones.
 extensions = [
         'myst_parser'
+        'sphinx.ext.autodoc'
+        'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
