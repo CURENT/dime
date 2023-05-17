@@ -65,6 +65,22 @@ Sends one or more variables to the specified group.
 >> **varargin:** ***string, string, ...***
 >>> The names of the variables being sent.
 
+## Send R
+```
+send_r(name, varargin)
+```
+Sends one or more variables to all clients in a specified group.
+
+> **Parameters:**
+>> **name:** ***string***
+>>> The name of the group to send the variables to.
+
+>> **varargin**
+>>> varargin : cell array     
+>>>> A single argument, a struct whose field names are variable names and values are the variables themselves
+
+>>>> Two or more arguments alternating between strings specifying the variable names and arbitrary values representing the variables (similar to the struct constructor with one or more initial fields)
+
 ## Broadcast
 ```
 dime.broadcast(varargin)
