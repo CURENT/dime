@@ -55,6 +55,19 @@ Sends one or more variables to the specified group.
 >> **varargin:** ***string, string, ...***
 >>> The names of the variables being sent.
 
+## Send R
+```
+DimeClient.send_r(name, kvpairs)
+```
+Sends one or more variables to all clients in a specified group.
+
+> **Parameters:**
+>> **name:** ***string***
+>>> The name of the group to send the variables to.
+
+>> **\*\*kvpairs**
+>>> Key value pairs to be sent to the server.
+
 ## Broadcast
 ```
 DimeClient.broadcast(varargin)

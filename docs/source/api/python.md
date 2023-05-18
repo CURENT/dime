@@ -67,14 +67,14 @@ Sends one or more variables from the mapping of this instance to all clients in 
 ```
 DimeClient.send_r(name, **kvpairs)
 ```
-Sends one or more variables to all clients in a specified group.
+Sends one or more key value pairs to all clients in a specified group.
 
 > **Parameters:**
 >> **name:** ***string***
 >>> The name of the group to send the variables to.
 
 >> **\*\*kvpairs**
->>> Key value pairs, mapping variables to values, to be sent to the server.
+>>> Key value pairs to be sent to the server.
 
 ## Broadcast
 ```
