@@ -307,6 +307,11 @@ class DimeClient(collections.abc.MutableMapping):
         n : int (optional)
            The maximum number of variables to receive, or a negative value to
            receive all variables sent.
+
+        Raises
+        ----------
+        RuntimeError
+            If the received status is less than 0
         """
 
         self.__send({"command": "sync", "n": n})
