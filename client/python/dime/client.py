@@ -238,6 +238,18 @@ class DimeClient(collections.abc.MutableMapping):
         self.broadcast_r(**{varname: self.workspace[varname] for varname in varnames})
 
     def broadcast_r(self, **kvpairs):
+        """Send a "broadcast" command to the server
+
+        Sends one or more key value pairs to all other clients.
+
+        Parameters
+        ----------
+        self : DimeClient
+            The dime instance.
+
+        **kvpairs : dict
+            Keyword arguments representing the variable name(s) and their corresponding values.
+        """
         kviter = iter(kvpairs.items())
         serialization = self.serialization
 
@@ -274,8 +286,7 @@ class DimeClient(collections.abc.MutableMapping):
     def sync(self, n = -1):
         """Send a "sync" command to the server
 
-        Sends one or more variables from the mapping of this instance to all
-        other clients.
+        Receives all variables sent to this client by all other clients.
 
         Parameters
         ----------
@@ -296,8 +307,7 @@ class DimeClient(collections.abc.MutableMapping):
         """
         Send a "sync" command to the server
 
-        Sends one or more variables from the mapping of this instance to all
-        other clients.
+        Receives all variables sent to this client by all other clients.
 
         Parameters
         ----------

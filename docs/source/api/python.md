@@ -63,7 +63,7 @@ Sends one or more variables from the mapping of this instance to all clients in 
 >> **varargin:** ***string, string, ...***
 >>> A tuple of the names of the variables being sent.
 
-## Send R
+## Send_R
 ```
 DimeClient.send_r(name, **kvpairs)
 ```
@@ -86,9 +86,31 @@ Sends one or more variables to all other clients.
 >> **varargin:** ***string, string, ...***
 >>> A tuple of the names of the variables being sent.
 
+## Broadcast_R
+```
+DimeClient.broadcast_r(**kvpairs)
+```
+Sends one or more key value pairs to all other clients.
+
+> **Parameters:**
+>> **\*\*kvpairs**
+>>> Key value pairs to be sent to the server.
+
 ## Sync
 ```
 DimeClient.sync(n)
+```
+Requests all variables that have been sent to this client by other clients.
+
+> **Parameters:**
+>> **n:** ***int***
+>>> The number of variables to retrieve from the server.
+
+Sync will retrieve all variables if n is left unspecified or set to a negative value.
+
+## Sync_R
+```
+DimeClient.sync_r(n)
 ```
 Requests all variables that have been sent to this client by other clients.
 

@@ -65,9 +65,9 @@ Sends one or more variables to the specified group.
 >> **varargin:** ***string, string, ...***
 >>> The names of the variables being sent.
 
-## Send R
+## Send_R
 ```
-send_r(name, varargin)
+dime.send_r(name, varargin)
 ```
 Sends one or more variables passed either as a struct or as key-value pairs to all clients in a specified group.
 
@@ -76,7 +76,7 @@ Sends one or more variables passed either as a struct or as key-value pairs to a
 >>> The name of the group to send the variables to.
 
 >> **varargin: cell array**     
->>> Can be either a single argument, a struct whose field names are variable names and values are the variables themselves OR two or more arguments alternating between strings specifying the variable names and arbitrary values representing the variables (similar to the struct constructor with one or more initial fields)
+>>> A single argument: a struct whose field names are variable names and values are the variables themselves OR two or more arguments alternating between strings specifying the variable names and arbitrary values representing the variables (similar to the struct constructor with one or more initial fields)
 
 ## Broadcast
 ```
@@ -88,6 +88,16 @@ Sends one or more variables to all other clients.
 >> **varargin:** ***string, string, ...***
 >>> The names of the variables being sent.
 
+## Broadcast_R
+```
+dime.broadcast_r(varargin)
+```
+Sends one or more variables to all other clients.
+
+> **Parameters:**
+>> **varargin: cell array**     
+>>> A single argument: a struct whose field names are variable names and values are the variables themselves OR two or more arguments alternating between strings specifying the variable names and arbitrary values representing the variables (similar to the struct constructor with one or more initial fields)
+
 ## Sync
 ```
 dime.sync(n)
@@ -95,10 +105,26 @@ dime.sync(n)
 Requests all variables that have been sent to this client by other clients.
 
 > **Parameters:**
->> **n:** ***integer***
->>> The number of variables to retrieve from the server.
+>> **n:** ***scalar***
+>>> Number of variables to retrieve from the server. Retrieves all variables if left unspecified or set to a negative value.
 
-Sync will retrieve all variables if n is left unspecified or set to a negative value.
+> **Returns**
+>> **struct**
+>>> A struct of the retrieved variable names and their corresponding values.
+
+## Sync_R
+```
+dime.sync_r(n)
+```
+Requests all variables that have been sent to this client by other clients. Does not access the workspace.
+
+> **Parameters:**
+>> **n:** ***scalar***
+>>> Number of variables to retrieve from the server. Retrieves all variables if left unspecified or set to a negative value.
+
+> **Returns**
+>> **struct**
+>>> A struct of the retrieved variable names and their corresponding values.
 
 ## Wait
 ```

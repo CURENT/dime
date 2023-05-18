@@ -55,7 +55,7 @@ Sends one or more variables to the specified group.
 >> **varargin:** ***string, string, ...***
 >>> The names of the variables being sent.
 
-## Send R
+## Send_R
 ```
 DimeClient.send_r(name, kvpairs)
 ```
@@ -65,7 +65,7 @@ Sends one or more variables to all clients in a specified group.
 >> **name:** ***string***
 >>> The name of the group to send the variables to.
 
->> **\*\*kvpairs**
+>> **kvpairs**
 >>> Key value pairs to be sent to the server.
 
 ## Broadcast
@@ -78,9 +78,31 @@ Sends one or more variables to all other clients.
 >> **varargin:** ***string, string, ...***
 >>> The names of the variables being sent.
 
+## Broadcast_R
+```
+DimeClient.broadcast_r(kvpairs)
+```
+Sends one or more key value pairs to all other clients.
+
+> **Parameters:**
+>> **kvpairs**
+>>> Key value pairs to be sent to the server.
+
 ## Sync
 ```
 DimeClient.sync(n)
+```
+Requests all variables that have been sent to this client by other clients.
+
+> **Parameters:**
+>> **n:** ***number***
+>>> The number of variables to retrieve from the server.
+
+Sync will retrieve all variables if n is left unspecified or set to a negative value.
+
+## Sync_R
+```
+DimeClient.sync_r(n)
 ```
 Requests all variables that have been sent to this client by other clients.
 
