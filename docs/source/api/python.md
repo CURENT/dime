@@ -73,7 +73,7 @@ Sends one or more key value pairs to all clients in a specified group.
 >> **name:** ***string***
 >>> The name of the group to send the variables to.
 
->> **\*\*kvpairs**
+>> **\*\*kvpairs:** ***dict***
 >>> Key value pairs to be sent to the server.
 
 ## Broadcast
@@ -93,7 +93,7 @@ DimeClient.broadcast_r(**kvpairs)
 Sends one or more key value pairs to all other clients.
 
 > **Parameters:**
->> **\*\*kvpairs**
+>> **\*\*kvpairs** ***dict***
 >>> Key value pairs to be sent to the server.
 
 ## Sync
@@ -119,6 +119,10 @@ Requests all variables that have been sent to this client by other clients.
 >>> The number of variables to retrieve from the server.
 
 Sync will retrieve all variables if n is left unspecified or set to a negative value.
+
+> **Returns:**
+>> **dict**
+>>> A dictionary of variable names and values sent to the client
 
 ## Wait
 ```

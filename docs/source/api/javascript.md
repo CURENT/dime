@@ -65,7 +65,7 @@ Sends one or more variables to all clients in a specified group.
 >> **name:** ***string***
 >>> The name of the group to send the variables to.
 
->> **kvpairs**
+>> **kvpairs** ***associative array***
 >>> Key value pairs to be sent to the server.
 
 ## Broadcast
@@ -85,7 +85,7 @@ DimeClient.broadcast_r(kvpairs)
 Sends one or more key value pairs to all other clients.
 
 > **Parameters:**
->> **kvpairs**
+>> **kvpairs** ***associative array***
 >>> Key value pairs to be sent to the server.
 
 ## Sync
