@@ -170,6 +170,22 @@ class DimeClient(collections.abc.MutableMapping):
         self.send_r(name, **{varname: self.workspace[varname] for varname in varnames})
 
     def send_r(self, name, **kvpairs):
+        """Send key value pairs to the server
+
+        Sends one or more variables to all clients in a specified group.
+
+        Parameters
+        ----------
+        self : DimeClient
+            The dime instance.
+
+        name : str
+           the group name.
+           
+        **kvpairs : dict
+            Keyword arguments representing the variable name(s) and their corresponding values.
+        """
+        
         kviter = iter(kvpairs.items())
         serialization = self.serialization
 
@@ -222,6 +238,18 @@ class DimeClient(collections.abc.MutableMapping):
         self.broadcast_r(**{varname: self.workspace[varname] for varname in varnames})
 
     def broadcast_r(self, **kvpairs):
+        """Send a "broadcast" command to the server
+
+        Sends one or more key value pairs to all other clients.
+
+        Parameters
+        ----------
+        self : DimeClient
+            The dime instance.
+
+        **kvpairs : dict
+            Keyword arguments representing the variable name(s) and their corresponding values.
+        """
         kviter = iter(kvpairs.items())
         serialization = self.serialization
 
@@ -258,8 +286,7 @@ class DimeClient(collections.abc.MutableMapping):
     def sync(self, n = -1):
         """Send a "sync" command to the server
 
-        Sends one or more variables from the mapping of this instance to all
-        other clients.
+        Receives all variables sent to this client by all other clients.
 
         Parameters
         ----------
@@ -269,6 +296,11 @@ class DimeClient(collections.abc.MutableMapping):
         n : int
            The maximum number of variables to receive, or a negative value to
            receive all variables sent.
+
+        Returns
+        ----------
+        dict
+            Key value pairs sent to the client
         """
         updates = self.sync_r(n)
 
@@ -277,6 +309,31 @@ class DimeClient(collections.abc.MutableMapping):
         return set(updates.keys())
 
     def sync_r(self, n = -1):
+        """
+        Send a "sync" command to the server
+
+        Receives all variables sent to this client by all other clients.
+
+        Parameters
+        ----------
+        self : DimeClient
+            The dime instance.
+
+        n : int (optional)
+           The maximum number of variables to receive, or a negative value to
+           receive all variables sent.
+
+        Returns
+        ----------
+        dict
+            Key value pairs sent to the client
+
+        Raises
+        ----------
+        RuntimeError
+            If the received status is less than 0
+        """
+
         self.__send({"command": "sync", "n": n})
 
         ret = {}
