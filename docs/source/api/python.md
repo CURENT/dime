@@ -52,7 +52,9 @@ Instructs the DiME server to remove the client from the specified groups.
 ```
 DimeClient.send(name, varargin)
 ```
-Sends one or more variables to the specified group.
+Send a "send" command to the server.
+
+Sends one or more variables from the mapping of this instance to all clients in a specified group.
 
 > **Parameters:**
 >> **name:** ***string***
@@ -60,6 +62,19 @@ Sends one or more variables to the specified group.
 
 >> **varargin:** ***string, string, ...***
 >>> A tuple of the names of the variables being sent.
+
+## Send_R
+```
+DimeClient.send_r(name, **kvpairs)
+```
+Sends one or more key value pairs to all clients in a specified group.
+
+> **Parameters:**
+>> **name:** ***string***
+>>> The name of the group to send the variables to.
+
+>> **\*\*kvpairs:** ***dict***
+>>> Key value pairs to be sent to the server.
 
 ## Broadcast
 ```
@@ -70,6 +85,16 @@ Sends one or more variables to all other clients.
 > **Parameters:**
 >> **varargin:** ***string, string, ...***
 >>> A tuple of the names of the variables being sent.
+
+## Broadcast_R
+```
+DimeClient.broadcast_r(**kvpairs)
+```
+Sends one or more key value pairs to all other clients.
+
+> **Parameters:**
+>> **\*\*kvpairs:** ***dict***
+>>> Key value pairs to be sent to the server.
 
 ## Sync
 ```
@@ -82,6 +107,22 @@ Requests all variables that have been sent to this client by other clients.
 >>> The number of variables to retrieve from the server.
 
 Sync will retrieve all variables if n is left unspecified or set to a negative value.
+
+## Sync_R
+```
+DimeClient.sync_r(n)
+```
+Requests all variables that have been sent to this client by other clients.
+
+> **Parameters:**
+>> **n:** ***int***
+>>> The number of variables to retrieve from the server.
+
+Sync will retrieve all variables if n is left unspecified or set to a negative value.
+
+> **Returns:**
+>> **dict**
+>>> A dictionary of variable names and values sent to the client
 
 ## Wait
 ```
