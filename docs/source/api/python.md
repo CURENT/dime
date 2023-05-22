@@ -93,7 +93,7 @@ DimeClient.broadcast_r(**kvpairs)
 Sends one or more key value pairs to all other clients.
 
 > **Parameters:**
->> **\*\*kvpairs** ***dict***
+>> **\*\*kvpairs:** ***dict***
 >>> Key value pairs to be sent to the server.
 
 ## Sync
