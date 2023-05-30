@@ -31,6 +31,21 @@ release = '2.0.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+        'sphinx.ext.autodoc',
+        'sphinx.ext.autosummary',
+        'sphinx.ext.githubpages',
+        'sphinx.ext.intersphinx',
+        'sphinx.ext.mathjax',
+        'sphinx.ext.doctest',
+        'sphinx.ext.todo',
+        'sphinx.ext.viewcode',
+        'sphinx_panels',
+        'IPython.sphinxext.ipython_directive',
+        'IPython.sphinxext.ipython_console_highlighting',
+        'matplotlib.sphinxext.plot_directive',
+        'numpydoc',
+        'sphinx_copybutton',
+        'myst_nb',
         'myst_parser',
 ]
 

@@ -103,6 +103,7 @@ CURENT LTB can be found at the `LTB Repository`_.
 ..             :classes: btn-block btn-secondary stretched-link
 
     ---
+    
     :column: col-12 p-3
 
     Using DiME for Research?
