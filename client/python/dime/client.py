@@ -296,6 +296,11 @@ class DimeClient(collections.abc.MutableMapping):
         n : int
            The maximum number of variables to receive, or a negative value to
            receive all variables sent.
+
+        Returns
+        ----------
+        dict
+            Key value pairs sent to the client
         """
         updates = self.sync_r(n)
 
@@ -317,6 +322,11 @@ class DimeClient(collections.abc.MutableMapping):
         n : int (optional)
            The maximum number of variables to receive, or a negative value to
            receive all variables sent.
+
+        Returns
+        ----------
+        dict
+            Key value pairs sent to the client
 
         Raises
         ----------

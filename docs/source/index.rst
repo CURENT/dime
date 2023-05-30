@@ -1,3 +1,25 @@
+===================
+DiME documentation
+===================
+
+**Useful Links**: `Source Repository`_ | `Report Issues`_
+| `Q&A`_ | `LTB Website`_ | `LTB Repository`_
+
+.. _`Source Repository`: https://github.com/CURENT/dime
+.. _`Report Issues`: https://github.com/CURENT/dime/issues
+.. _`Q&A`: https://github.com/CURENT/dime/discussions
+.. _`LTB Website`: https://ltb.curent.org
+.. _`LTB Repository`: https://github.com/CURENT
+.. _`ANDES`: https://github.com/CURENT/andes
+.. _`AGVis`: https://github.com/CURENT/agvis
+
+.. image:: /images/sponsors/CURENT_Logo_NameOnTrans.png
+   :alt: CURENT Logo
+   :width: 300px
+   :height: 74.2px
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 Welcome to DiME
 ###############
 
