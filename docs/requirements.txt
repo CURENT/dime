@@ -1,5 +1,4 @@
 myst-parser==0.15.2
-myst-nb==0.13.2
 sphinx
 sphinx-panels
 sphinx-copybutton
