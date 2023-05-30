@@ -18,8 +18,6 @@ DiME documentation
    :width: 300px
    :height: 74.2px
 
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
 Welcome to DiME
 ###############
 
