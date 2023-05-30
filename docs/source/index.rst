@@ -34,60 +34,70 @@ CURENT LTB can be found at the `LTB Repository`_.
 
     ---
 
-    Getting started
+    Quick Start
     ^^^^^^^^^^^^^^^
 
-    New to DiME? DiME has a few dependencies necessary to get it running, so we've prepared a quick start guide to walk you through installation. 
-    Currently there is a guide for `Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.hmtl>`_. 
+    New to DiME? DiME has a few dependencies necessary to get it running, 
+    so we've prepared a quick start guide to walk you through installation. 
+    Currently there is a guide for 
+    `Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.hmtl>`_. 
 
     +++
 
-    .. link-button:: getting-started
+    .. link-button:: Linux
             :type: ref
-            :text: To the getting started guides
+            :text: Linux start
+            :classes: btn-block btn-secondary stretched-link
+
+    .. link-button:: Windows
+            :type: ref
+            :text: Windows Start
             :classes: btn-block btn-secondary stretched-link
 
     ---
 
-    Advanced usage
+    API Reference
     ^^^^^^^^
 
     The usage provide instructions on how to use AGVis to its various features,
     including Configuration, MultiLayer, and Independent Data Reader. 
 
+    Although the API calls you will be making for each DiME client are fundamentally the same, 
+    there are slight differences between them due to the differences in the languages. 
+    To combat any possible confusion, references have been made for all three 
+    -- `MATLAB <./api/matlab.html>`_, `Python <./api/python.html>`_, and `JavaScript <./api/javascript>`_.
+
+
     +++
 
-    .. link-button:: usage
+    .. link-button:: MATLAB
             :type: ref
-            :text: To the advanced usage
+            :text: To the MATLAB API reference
+            :classes: btn-block btn-secondary stretched-link
+
+    .. link-button:: Python
+            :type: ref
+            :text: To the Python API reference
+            :classes: btn-block btn-secondary stretched-link
+   
+    .. link-button:: JavaScript
+            :type: ref
+            :text: To the JavaScript API reference
             :classes: btn-block btn-secondary stretched-link
 
     ---
 
-    Model development guide
-    ^^^^^^^^^^^^^^^^^^^^^^^
-
-    Looking to implement new functionalities in AGVis?
-    The development guide provides in-depth information on the
-    implementation of the geographical visualization.
-
-    +++
-
-    .. link-button:: development
-            :type: ref
-            :text: To the development guide
-            :classes: btn-block btn-secondary stretched-link
-    ---
-
-    API reference
+    Examples
     ^^^^^^^^^^^^^
 
-    The API reference contains a detailed description of the AGVis package. The
-    reference describes how the methods work and which parameters can be used.
+    After setting up DiME and looking through the API, feel free to check out some 
+    of the examples to get a better understanding of DiME's capabilities. 
+    There are examples for each of the clients, showing interactions with the DiME 
+    server and the passing of variables between instances of the clients. 
 
     +++
 
-    .. link-button:: api_reference
+    .. link-button:: examples
             :type: ref
             :text: To the API reference
             :classes: btn-block btn-secondary stretched-link
@@ -95,9 +105,9 @@ CURENT LTB can be found at the `LTB Repository`_.
     ---
     :column: col-12 p-3
 
-    Using AGVis for Research?
+    Using DiME for Research?
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    Please cite our paper [Parsly2022]_ if AGVis is used in your research for
+    Please cite our paper [Parsly2022]_ if DiME is used in your research for
     publication.
 
 
