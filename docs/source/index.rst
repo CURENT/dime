@@ -93,3 +93,4 @@ CURENT LTB can be found at the `LTB Repository`_.
    JavaScript Examples <examples/jex.md>
    MATLAB Examples <examples/mex.md>
    Python Examples <examples/pex.md>
+   api
