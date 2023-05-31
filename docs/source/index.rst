@@ -57,8 +57,6 @@ CURENT LTB can be found at the `LTB Repository`_.
 
     ---
 
-    :column: col-12 p-3
-
     Examples
     ^^^^^^^^^^^^^
 
@@ -68,8 +66,6 @@ CURENT LTB can be found at the `LTB Repository`_.
     server and the passing of variables between instances of the clients. 
 
     ---
-
-    :column: col-12 p-3
 
     Using DiME for Research?
     ^^^^^^^^^^^^^^^^^^^^^^^^^
