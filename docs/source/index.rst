@@ -85,6 +85,7 @@ CURENT LTB can be found at the `LTB Repository`_.
    :maxdepth: 2
    :hidden:
    
+   api
    Linux Installation <quick_start/linux.md>
    Windows Installation <quick_start/windows.md>
    JavaScript API <api/javascript.md>
@@ -93,4 +94,3 @@ CURENT LTB can be found at the `LTB Repository`_.
    JavaScript Examples <examples/jex.md>
    MATLAB Examples <examples/mex.md>
    Python Examples <examples/pex.md>
-   api
