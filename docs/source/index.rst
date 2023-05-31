@@ -42,18 +42,6 @@ CURENT LTB can be found at the `LTB Repository`_.
     Currently there is a guide for 
     `Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.hmtl>`_. 
 
-..     +++
-
-..     .. link-button:: Linux
-..             :type: ref
-..             :text: Linux start
-..             :classes: btn-block btn-secondary stretched-link
-
-..     .. link-button:: Windows
-..             :type: ref
-..             :text: Windows Start
-..             :classes: btn-block btn-secondary stretched-link
-
     ---
 
     API Reference
@@ -66,24 +54,6 @@ CURENT LTB can be found at the `LTB Repository`_.
     there are slight differences between them due to the differences in the languages. 
     To combat any possible confusion, references have been made for all three 
     -- `MATLAB <./api/matlab.html>`_, `Python <./api/python.html>`_, and `JavaScript <./api/javascript>`_.
-
-
-..     +++
-
-..     .. link-button:: MATLAB
-..             :type: ref
-..             :text: To the MATLAB API reference
-..             :classes: btn-block btn-secondary stretched-link
-
-..     .. link-button:: Python
-..             :type: ref
-..             :text: To the Python API reference
-..             :classes: btn-block btn-secondary stretched-link
-   
-..     .. link-button:: JavaScript
-..             :type: ref
-..             :text: To the JavaScript API reference
-..             :classes: btn-block btn-secondary stretched-link
 
     ---
 
