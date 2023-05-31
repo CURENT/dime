@@ -47,7 +47,7 @@ CURENT LTB can be found at the `LTB Repository`_.
     API Reference
     ^^^^^^^^
 
-    The usage provide instructions on how to use AGVis to its various features,
+    The usages provide instructions on how to use AGVis to its various features,
     including Configuration, MultiLayer, and Independent Data Reader. 
 
     Although the API calls you will be making for each DiME client are fundamentally the same, 
@@ -56,6 +56,8 @@ CURENT LTB can be found at the `LTB Repository`_.
     -- `MATLAB <./api/matlab.html>`_, `Python <./api/python.html>`_, and `JavaScript <./api/javascript>`_.
 
     ---
+
+    :column: col-12 p-3
 
     Examples
     ^^^^^^^^^^^^^
