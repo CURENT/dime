@@ -29,7 +29,7 @@ DiME is the distributed messaging module for the CURENT Largescale Testbed (LTB)
 CURENT LTB can be found at the `LTB Repository`_.
 
 .. panels::
-    :containter: container-lg pb-3
+    :container: container-lg pb-3
     :card: + intro-card text-center
     :column: col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex
 
