@@ -40,7 +40,7 @@ CURENT LTB can be found at the `LTB Repository`_.
     New to DiME? DiME has a few dependencies necessary to get it running, 
     so we've prepared a quick start guide to walk you through installation. 
     Currently there is a guide for 
-    `Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.hmtl>`_. 
+    `Linux <./quick_start/linux.md>`_ and `Windows <./quick_start/windows.md>`_. 
 
     ---
 
@@ -53,7 +53,7 @@ CURENT LTB can be found at the `LTB Repository`_.
     Although the API calls you will be making for each DiME client are fundamentally the same, 
     there are slight differences between them due to the differences in the languages. 
     To combat any possible confusion, references have been made for all three 
-    -- `MATLAB <./api/matlab.html>`_, `Python <./api/python.html>`_, and `JavaScript <./api/javascript>`_.
+    -- `MATLAB <./api/matlab.md>`_, `Python <./api/python.md>`_, and `JavaScript <./api/javascript.md>`_.
 
     ---
 
