@@ -44,6 +44,9 @@ extensions = [
         'myst_nb',
 ]
 
+# Generate the API documentation when building
+autosummary_generate = True
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
