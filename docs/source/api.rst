@@ -7,8 +7,7 @@ API reference
 MATLAB
 ======
 
-.. `dime(protocol, varargin) <api/matlab.html>`
-`matlab <./api/matlab.html>`
+:ref:`dime(protocol, varargin)<api_matlab>`
 
 Python
 ======
