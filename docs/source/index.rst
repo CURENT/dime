@@ -53,8 +53,15 @@ CURENT LTB can be found at the `LTB Repository`_.
 
     Although the API calls you will be making for each DiME client are fundamentally the same, 
     there are slight differences between them due to the differences in the languages. 
-    To combat any possible confusion, references have been made for all three 
+    To combat any possible confusion, references have been made for all three.
     -- `MATLAB <./api/matlab.html>`_, `Python <./api/python.html>`_, and `JavaScript <./api/javascript.html>`_.
+
+   +++
+
+    .. link-button:: api_reference
+            :type: ref
+            :text: To the API reference
+            :classes: btn-block btn-secondary stretched-link
 
     ---
     :column: col-12 p-3
@@ -85,7 +92,6 @@ CURENT LTB can be found at the `LTB Repository`_.
    :maxdepth: 2
    :hidden:
    
-   api
    Linux Installation <quick_start/linux.md>
    Windows Installation <quick_start/windows.md>
    JavaScript API <api/javascript.md>
@@ -94,3 +100,4 @@ CURENT LTB can be found at the `LTB Repository`_.
    JavaScript Examples <examples/jex.md>
    MATLAB Examples <examples/mex.md>
    Python Examples <examples/pex.md>
+   api
