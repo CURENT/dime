@@ -4,18 +4,24 @@
 MATLAB API Reference
 ====================
 
-
-``dime(protocol, varargin)`` Creates a new DiME instance using the specified protocol.
-``delete(obj)`` Deletes a DiME instance and performs cleanup on the connection.
-``dime.join(varargin)`` Instructs the DiME server to add the client to the specified groups.
-
-
-
-
 ------------------------
 dime(protocol, varargin)
 ------------------------
-Creates a new DiME instance using the specified protocol.
+Creates a new DiME instance using the specified protocol:
+
+    Parameters:
+
+        ``protocol``: *string ('ipc' or 'tcp')*
+            The chosen protocol. Must either be 'ipc' or 'tpc'
+
+        ``varargin``: *string or string, integer*
+            Additional parameters. Varies based on teh protocol chosen.
+
+    Returns:
+
+        **dime**
+            The newly created DiME object.
+
 
 -----------
 delete(obj)

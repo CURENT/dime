@@ -100,9 +100,9 @@ CURENT LTB can be found at the `LTB Repository`_.
    
    Linux Installation <quick_start/linux.md>
    Windows Installation <quick_start/windows.md>
-   JavaScript API <api/javascript.md>
-   MATLAB API <api/matlab.md>
-   Python API <api/python.md>
+   api/javascript
+   api/matlab
+   api/python
    JavaScript Examples <examples/jex.md>
    MATLAB Examples <examples/mex.md>
    Python Examples <examples/pex.md>
