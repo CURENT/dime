@@ -73,6 +73,13 @@ CURENT LTB can be found at the `LTB Repository`_.
     There are examples for each of the clients, showing interactions with the DiME 
     server and the passing of variables between instances of the clients. 
 
+    +++
+
+    .. link-button:: examples
+            :type: ref
+            :text: To the examples
+            :classes: btn-block btn-secondary stretched-link
+
     ---
     :column: col-12 p-3
 
@@ -100,3 +107,4 @@ CURENT LTB can be found at the `LTB Repository`_.
    MATLAB Examples <examples/mex.md>
    Python Examples <examples/pex.md>
    api
+   examples/index
