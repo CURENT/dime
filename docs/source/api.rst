@@ -7,16 +7,14 @@ API reference
 MATLAB
 ======
 
-:ref:`dime(protocol, varargin)<api_matlab>`
+:ref:`dime(protocol, varargin)<./api/matlab.html>`
 
 Python
 ======
 
-.. `DimeClient(protocol, varargin <api/python.html>)`
-`python <./api/python.html>`
+:ref:`DimeClient(protocol, varargin)<api/python.html>`
 
 JavaScript
 ======
 
-.. `new dime.DimeClient(hostname, port) <api/javascript.html>`
-`javascript <./api/javascript.html>`
+:ref:`new dime.DimeClient(hostname, port)<api/javascript.html>`
