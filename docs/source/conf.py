@@ -42,6 +42,7 @@ extensions = [
         'sphinx.ext.viewcode',
         'sphinx_panels',
         'sphinx_copybutton',
+        'sphinxcontrib.matlab',
         'myst_nb',
 ]
 
