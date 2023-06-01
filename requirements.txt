@@ -4,5 +4,3 @@ sphinx
 sphinx-panels
 sphinx-copybutton
 pydata-sphinx-theme
-sphinxcontrib-matlabdomain
-dime

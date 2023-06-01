@@ -4,7 +4,6 @@
 API reference
 =============
 
-
 MATLAB
 ======
 
@@ -14,8 +13,6 @@ MATLAB
    :toctree: _generated
    :caption: System
    :template: autosummary/module_toctree.rst
-
-   dime.m
 
 Python
 ======
