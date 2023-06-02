@@ -31,7 +31,7 @@ the function will default to using **'ipc'** and **'tmp/dime.sock'**.
 | varargin         | string or string, integer      | Additional parameters. Varies based on the protocol chosen.             |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
-------------
+|
 
 +-----------------------------------------------------------------------------------------------------+
 | Returns                                                                                             |
@@ -207,7 +207,7 @@ Requests all variables that have been sent to this client by other clients.
 |                  |                                | variables if left unspecified or set to a negative value.               |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
-------------
+|
 
 +-----------------------------------------------------------------------------------------------------+
 | Returns                                                                                             |
@@ -238,7 +238,7 @@ Requests all variables that have been sent to this client by other clients. Does
 |                  |                                | variables if left unspecified or set to a negative value.               |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
-------------
+|
 
 +-----------------------------------------------------------------------------------------------------+
 | Returns                                                                                             |
