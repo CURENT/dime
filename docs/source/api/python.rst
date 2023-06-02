@@ -68,7 +68,7 @@ Instructs the DiME server to add the client to the specified groups.
 +==================+================================+=========================================================================+
 | Name             | Type                           | Description                                                             |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
-| varargin         | string, string, ...            | A tuple of strings containing the group names for the client to leave.  |
+| varargin         | string, string, ...            | A tuple of strings containing the group names for the client to join.   |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
 -----
