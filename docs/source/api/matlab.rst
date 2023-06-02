@@ -10,7 +10,7 @@ DiME Instantiation
 
 ::
     
-    dime(*string* protocol, varargin)
+    dime(protocol, varargin)
 
 Creates a new DiME instance using the specified protocol.
 
