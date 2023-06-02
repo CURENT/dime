@@ -24,13 +24,17 @@ Creates a new DiME instance using the specified protocol.
 | varargin         | string or string, integer      | Additional parameters. Varies based on the protocol chosen.             |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
+**IPC:** The function expects one additional argument--the pathname of the Unix socket to connect to.
+
+**TCP:** The function expects two additional arguments--the hostname (string) and port (integer) of the socket, in that order.
+
 +-----------------------------------------------------------------------------------------------------+
 | Returns                                                                                             |
-+====================+================================================================================+
-| Type               | Description                                                                    |
-+--------------------+--------------------------------------------------------------------------------+
-| dime               | The newly created DiME object                                                  |
-+--------------------+--------------------------------------------------------------------------------+
++================================+====================================================================+
+| Type                           | Description                                                        |
++--------------------------------+--------------------------------------------------------------------+
+| dime                           | The newly created DiME object                                      |
++--------------------------------+--------------------------------------------------------------------+
 
 -----------
 delete(obj)
