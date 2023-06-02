@@ -98,6 +98,9 @@ CURENT LTB can be found at the `LTB Repository`_.
    Linux Installation <quick_start/linux.md>
    Windows Installation <quick_start/windows.md>
    api/javascript
+   api/javascript_dimeclient
+   api/javascript_complex
+   api/javascript_ndarrays
    api/matlab
    api/python
    JavaScript Examples <examples/jex.md>
