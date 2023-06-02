@@ -19,12 +19,12 @@ Creates a new DiME instance using the specified protocol.
 +==================+================================+=========================================================================+
 | Name             | Type                           | Description                                                             |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
-| protocol         | string                         | The chosen protocol. Must either be ``ipc`` or ``tpc``.                 |
+| protocol         | string                         | The chosen protocol. Must either be ``ipc`` or ``tcp``.                 |
 |                  |                                |                                                                         |
-|                  |                                | ``ipc`` expects the pathname of the Unix socket to connect to           |
+|                  |                                | ``ipc``: expects the pathname of the Unix socket to connect to          |
 |                  |                                | as an additional parameter to the function.                             |
 |                  |                                |                                                                         |
-|                  |                                | **TCP:** The function expects two additional arguments -- the           |
+|                  |                                | ``tcp``: The function expects two additional arguments - the            |
 |                  |                                | hostname (string) and port (integer) of the socket, in that order.      |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 | varargin         | string or string, integer      | Additional parameters. Varies based on the protocol chosen.             |
