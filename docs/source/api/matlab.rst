@@ -4,15 +4,16 @@
 MATLAB API Reference
 ====================
 
-------------------------
-DiME Instantiation
-------------------------
+----
+dime
+----
 
 ::
     
-    dime(protocol, varargin)
+    dime(protocol='ipc', varargin)
 
-Creates a new DiME instance using the specified protocol.
+Creates a new DiME instance using the specified protocol. If no arguments are given, 
+the function will default to using **'ipc'** and **'tmp/dime.sock'**.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
@@ -21,8 +22,8 @@ Creates a new DiME instance using the specified protocol.
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 | protocol         | string                         | The chosen protocol. Must either be ``ipc`` or ``tcp``.                 |
 |                  |                                |                                                                         |
-|                  |                                | ``ipc``: expects the pathname of the Unix socket to connect to          |
-|                  |                                | as an additional parameter to the function.                             |
+|                  |                                | ``ipc``: The function expects one additional argument - the pathname    |
+|                  |                                | of the Unix socket to connect to.                                       |
 |                  |                                |                                                                         |
 |                  |                                | ``tcp``: The function expects two additional arguments - the            |
 |                  |                                | hostname (string) and port (integer) of the socket, in that order.      |
@@ -30,68 +31,248 @@ Creates a new DiME instance using the specified protocol.
 | varargin         | string or string, integer      | Additional parameters. Varies based on the protocol chosen.             |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
+
 +-----------------------------------------------------------------------------------------------------+
 | Returns                                                                                             |
 +================================+====================================================================+
 | Type                           | Description                                                        |
 +--------------------------------+--------------------------------------------------------------------+
-| dime                           | The newly created DiME object                                      |
+| dime                           | The newly created DiME object.                                     |
 +--------------------------------+--------------------------------------------------------------------+
 
------------
-delete(obj)
------------
+
+------
+delete
+------
+
+::
+
+    delete(obj)
+
 Deletes a DiME instance and performs cleanup on the connection.
 
--------------------
-dime.join(varargin)
--------------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| obj              | dime                           | The DiME object to be deleted.                                          |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+
+----
+join
+----
+
+::
+
+    dime.join(varargin)
+
+
 Instructs the DiME server to add the client to the specified groups.
 
---------------------
-dime.leave(varargin)
---------------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| varargin         | string, string, ...            | A cell array of strings containing the group names for the              |
+|                  |                                | client to join.                                                         |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+
+-----
+leave
+-----
+
+::
+
+    dime.leave(varargin)
+
 Instructs the DiME server to remove the client from the specified group.
 
--------------------------
-dime.send(name, varargin)
--------------------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| varargin         | string, string, ...            | A cell array of strings containing the group names for the              |
+|                  |                                | client to leave.                                                        |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+
+----
+send
+----
+
+::
+
+    dime.send(name, varargin)
+
 Sends one or more variables to the specified group.
 
----------------------------
-dime.send_r(name, varargin)
----------------------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| name             | string                         | The name of the group to send the variables to.                         |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| varargin         | string, string, ...            | The names of the variables being sent.                                  |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+
+------
+send_r
+------
+
+::
+
+    dime.send_r(name, varargin)
+
 Sends one or more variables passed as either a struct or as key-value pairs to the specified group.
 
-------------------------
-dime.broadcast(varargin)
-------------------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| name             | string                         | The name of the group to send the variables to.                         |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| varargin         | cell array                     | A single argument: a struct whose field names are variable names and    |
+|                  |                                | values are the variables themselves OR two or more arguments            |
+|                  |                                | alternating between strings specifying the variable names and arbitrary |
+|                  |                                | values representing the variables (similar to the struct constructor    |
+|                  |                                | with one or more initial fields)                                        |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+---------
+broadcast
+---------
+
+::
+
+    dime.broadcast(varargin)
+
 Sends one or more variables to all other clients.
 
---------------------------
-dime.broadcast_r(varargin)
---------------------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| varargin         | string, string, ...            | The names of the variables being sent.                                  |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+
+-----------
+broadcast_r
+-----------
+
+::
+
+    dime.broadcast_r(varargin)
+
 Sends one or more variables to all other clients.
 
-------------
-dime.sync(n)
-------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| varargin         | string, string, ...            | A single argument: a struct whose field names are variable names and    |
+|                  |                                | values are the variables themselves OR two or more arguments            |
+|                  |                                | values representing the variables (similar to the struct constructor    |
+|                  |                                | with one or more initial fields)                                        |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
+
+----
+sync
+----
+
+::
+
+    dime.sync(n)
+
 Requests all variables that have been sent to this client by other clients.
 
---------------
-dime.sync_r(n)
---------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| n                | scalar                         | Number of variables to retrieve from the server. Retrieves all          |
+|                  |                                | variables if left unspecified or set to a negative value.               |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
++-----------------------------------------------------------------------------------------------------+
+| Returns                                                                                             |
++================================+====================================================================+
+| Type                           | Description                                                        |
++--------------------------------+--------------------------------------------------------------------+
+| struct                         | A struct of the retrieved variable names and their                 |
+|                                | corresponding values.                                              |
++--------------------------------+--------------------------------------------------------------------+
+
+
+------
+sync_r
+------
+
+::
+
+    dime.sync_r(n)
+
 Requests all variables that have been sent to this client by other clients. Does not access the workspace.
 
------------
-dime.wait()
------------
++-----------------------------------------------------------------------------------------------------------------------------+
+| Parameters                                                                                                                  |
++==================+================================+=========================================================================+
+| Name             | Type                           | Description                                                             |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+| n                | scalar                         | Number of variables to retrieve from the server. Retrieves all          |
+|                  |                                | variables if left unspecified or set to a negative value.               |
++------------------+--------------------------------+-------------------------------------------------------------------------+
+
++-----------------------------------------------------------------------------------------------------+
+| Returns                                                                                             |
++================================+====================================================================+
+| Type                           | Description                                                        |
++--------------------------------+--------------------------------------------------------------------+
+| struct                         | A struct of the retrieved variable names and their                 |
+|                                | corresponding values.                                              |
++--------------------------------+--------------------------------------------------------------------+
+
+
+----
+wait
+----
+
+::
+
+    dime.wait()
+
 Requests that the server sends a message to the client once a message has been received for said client.
 This call will block the current thread until the message is received.
 
---------------
-dime.devices()
---------------
+-------
+devices
+-------
+
+::
+
+    dime.devices()
+
 Requests a list of all named, nonempty groups from the server.
+
++-----------------------------------------------------------------------------------------------------+
+| Returns                                                                                             |
++================================+====================================================================+
+| Type                           | Description                                                        |
++--------------------------------+--------------------------------------------------------------------+
+| {string, string, ...}          | A cell array containing names of all the groups connected to the   |
+|                                | DiME server.                                                       |
++--------------------------------+--------------------------------------------------------------------+
 
 
