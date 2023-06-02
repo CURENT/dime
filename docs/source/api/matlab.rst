@@ -7,6 +7,21 @@ MATLAB API Reference
 ------------------------
 dime(protocol, varargin)
 ------------------------
+
+::
+    dime(protocol, varargin)
+
++-----------------------------------------------------------------------------------------------------+
+| Parameters                                                                                          |
++====================+================================================================================+
+| Name               | Description                                                                    |
++--------------------+--------------------------------------------------------------------------------+
+| protocol           | The chosen protocol. Must either be ``ipc`` or ``tpc``                         |
++--------------------+--------------------------------------------------------------------------------+
+| varargin           | Additional parameters. Varies based on the protocol chosen.                    |
++--------------------+--------------------------------------------------------------------------------+
+
+
 Creates a new DiME instance using the specified protocol:
 
     Parameters:
@@ -15,7 +30,7 @@ Creates a new DiME instance using the specified protocol:
             The chosen protocol. Must either be 'ipc' or 'tpc'
 
         ``varargin``: *string or string, integer*
-            Additional parameters. Varies based on teh protocol chosen.
+            Additional parameters. Varies based on the protocol chosen.
 
     Returns:
 
