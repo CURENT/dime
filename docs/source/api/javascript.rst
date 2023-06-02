@@ -18,7 +18,6 @@ DiME also uses two custom JavaScript objects to handle interactions between the 
 
 ----------
 
--------
 Complex
 -------
 
@@ -29,3 +28,9 @@ NDArrays
 --------
 
 :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
+
+----------
+
+-----
+Other
+-----

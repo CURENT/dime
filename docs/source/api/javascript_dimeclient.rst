@@ -5,6 +5,8 @@ JavaScript API Reference
 ============================
 
 ----------
+
+----------
 DimeClient
 ----------
 
