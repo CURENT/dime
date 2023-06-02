@@ -5,12 +5,14 @@ MATLAB API Reference
 ====================
 
 ------------------------
-dime(protocol, varargin)
+DiME Instantiation
 ------------------------
 
 ::
     
     dime(protocol, varargin)
+
+Creates a new DiME instance using the specified protocol.
 
 +-----------------------------------------------------------------------------------------------------+
 | Parameters                                                                                          |
@@ -22,22 +24,13 @@ dime(protocol, varargin)
 | varargin           | Additional parameters. Varies based on the protocol chosen.                    |
 +--------------------+--------------------------------------------------------------------------------+
 
-
-Creates a new DiME instance using the specified protocol:
-
-    Parameters:
-
-        ``protocol``: *string ('ipc' or 'tcp')*
-            The chosen protocol. Must either be 'ipc' or 'tpc'
-
-        ``varargin``: *string or string, integer*
-            Additional parameters. Varies based on the protocol chosen.
-
-    Returns:
-
-        **dime**
-            The newly created DiME object.
-
++-----------------------------------------------------------------------------------------------------+
+| Returns                                                                                             |
++====================+================================================================================+
+| Type               | Description                                                                    |
++--------------------+--------------------------------------------------------------------------------+
+| dime               | The newly created DiME object                                                  |
++--------------------+--------------------------------------------------------------------------------+
 
 -----------
 delete(obj)
