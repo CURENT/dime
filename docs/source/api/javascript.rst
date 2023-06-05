@@ -12,11 +12,7 @@ DiME uses two custom JavaScript objects to handle interactions between the JavaS
 DimeClient
 ----------
 
-.. code-block:: rst
-
-    .. raw:: html
-
-        :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
+    :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
 
 ----------
 
@@ -24,10 +20,10 @@ DimeClient
 Complex
 -------
 
-:ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`
+    :ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`
 
 --------
 NDArrays
 --------
 
-:ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
+    :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
