@@ -101,15 +101,13 @@ CURENT LTB can be found at the `LTB Repository`_.
    :maxdepth: 2
    :hidden:
    
-   Linux Installation <quick_start/linux.md>
-   Windows Installation <quick_start/windows.md>
    quick_start/index
-   api/javascript
-   api/javascript_dimeclient
-   api/javascript_complex
-   api/javascript_ndarrays
-   api/matlab
-   api/python
+   api/javascript/index
+   api/javascript/client
+   api/javascript/complex
+   api/javascript/ndarrays
+   api/matlab/index
+   api/python/index
    JavaScript Examples <examples/jex.md>
    MATLAB Examples <examples/mex.md>
    Python Examples <examples/pex.md>
