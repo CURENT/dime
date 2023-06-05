@@ -103,9 +103,6 @@ CURENT LTB can be found at the `LTB Repository`_.
    
    quick_start/index
    api/javascript/index
-   api/javascript/client
-   api/javascript/complex
-   api/javascript/ndarrays
    api/matlab/index
    api/python/index
    JavaScript Examples <examples/jex.md>

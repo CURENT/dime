@@ -50,4 +50,4 @@ See our quick start guides for Linux and Windows.
             :text: To the Windows quick start guide
             :classes: btn-block btn-secondary stretched-link
 
-`Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.html>`_
+`Linux <./linux.html>`_ and `Windows <./windows.html>`_
