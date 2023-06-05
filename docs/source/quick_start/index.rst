@@ -15,17 +15,7 @@
 Getting Started
 ============================
 
-.. toctree::
-    :maxdepth: 2
-    :hidden:
-
-    linux
-    windows
-
-Quick Start
-===========
-
-See our guides for Linux and Windows.
+See our quick start guides for Linux and Windows.
 
 .. panels::
     :container: container-lg pb-2
@@ -43,7 +33,7 @@ See our guides for Linux and Windows.
 
     .. link-button:: quick_start
             :type: ref
-            :text: To the quick start guide
+            :text: To the Linux quick start guide
             :classes: btn-block btn-secondary stretched-link
 
     ---
@@ -51,15 +41,13 @@ See our guides for Linux and Windows.
     Windows
     ^^^^^^^^^^^^^^^
 
-    Click here for windows users.
+    Click here for Windows users.
 
     +++
 
     .. link-button:: quick_start
             :type: ref
-            :text: To the quick start guide
+            :text: To the Windows quick start guide
             :classes: btn-block btn-secondary stretched-link
-
-    ---
 
 `Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.html>`_
