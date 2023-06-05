@@ -13,18 +13,18 @@ To combat any possible confusion, references have been made for all three.
 MATLAB
 ------
 
-:ref:`dime(protocol, varargin)<api_matlab>`
+    :ref:`dime(protocol, varargin)<api_matlab>`
 
 ----------
 
 Python
 ------
 
-:ref:`DimeClient(protocol, varargin)<api_python>`
+    :ref:`DimeClient(protocol, varargin)<api_python>`
 
 ----------
 
 JavaScript
 ----------
 
-:ref:`new dime.DimeClient(hostname, port)<api_javascript>`
+    :ref:`new dime.DimeClient(hostname, port)<api_javascript>`
