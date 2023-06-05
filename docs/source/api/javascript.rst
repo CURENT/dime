@@ -13,28 +13,16 @@ The JavaScript client also has a few specialty functions for handling data.
 DimeClient
 ----------
 
-::
-
-    .. parsed-literal::
-
-        :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
+    :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
 
 -------
 Complex
 -------
-
-::
-
-    .. parsed-literal::
     
-        :ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`
+    :ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`
 
 --------
 NDArrays
 --------
 
-::
-
-    .. parsed-literal::
-    
-        :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
+    :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
