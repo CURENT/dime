@@ -91,7 +91,7 @@ Sets the given value at the index of the NDArray.
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 | value            | number                         | The value you are storing.                                              |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
-| index            | number, ...                    | The index that you intend to store **value** in. In a 2D NDArray, for   |
+| index            | number, ...                    | The index that you intend to store ``value`` in. In a 2D NDArray, for   |
 |                  |                                | example, it would be *(number, number)*.                                |
 +------------------+--------------------------------+-------------------------------------------------------------------------+
 
