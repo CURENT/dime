@@ -10,21 +10,20 @@ To combat any possible confusion, references have been made for all three.
 
 ----------
 
-MATLAB
-------
-
 :ref:`MATLAB API Reference<api_matlab>`
+---------------------------------------
+
+
 
 ----------
-
-Python
-------
 
 :ref:`Python API Reference<api_python>`
+---------------------------------------
 
-----------
 
-JavaScript
+
 ----------
 
 :ref:`JavaScript API Reference<api_javascript>`
+-----------------------------------------------
+
