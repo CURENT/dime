@@ -17,9 +17,9 @@ Client
     :align: left
     :widths: auto
 
-    ================================================= ================
-    :ref:`dime.DimeClient<api_javascript_dimeclient>` The DiME client.
-    ================================================= ================
+    +----------------------------------------------------+------------------+
+    |  :ref:`dime.DimeClient<api_javascript_dimeclient>` | The DiME client. |
+    +----------------------------------------------------+------------------+
 
 ------
 Others
@@ -29,12 +29,12 @@ Others
     :align: left
     :widths: auto
 
-    ============================================ =================================================
-    :ref:`dime.Complex<api_javascript_complex>`  A custom object that represents complex numbers.
-    ============================================ =================================================
-    :ref:`dime.NDArray<api_javascript_ndarrays>` A custom N-dimensional array object that acts 
-                                                 similarly to the numpy object with the same name.  
-    ============================================ =================================================     
+    +----------------------------------------------+---------------------------------------------------------------------------+
+    | :ref:`dime.Complex<api_javascript_complex>`  | A custom object that represents complex numbers.                          |
+    +----------------------------------------------+---------------------------------------------------------------------------+
+    | :ref:`dime.NDArray<api_javascript_ndarrays>` | A custom N-dimensional array object that acts similarly to the numpy      |
+    |                                              | object with the same name.                                                | 
+    +----------------------------------------------+---------------------------------------------------------------------------+       
 
 
 
