@@ -40,8 +40,14 @@ CURENT LTB can be found at the `LTB Repository`_.
 
     New to DiME? DiME has a few dependencies necessary to get it running, 
     so we've prepared a quick start guide to walk you through installation. 
-    Currently there is a guide for 
-    `Linux <./quick_start/linux.html>`_ and `Windows <./quick_start/windows.html>`_. 
+    Currently there is a guide for Linux and Windows. 
+
+    +++
+
+    .. link-button:: quick_start
+            :type: ref
+            :text: To the quick start guide
+            :classes: btn-block btn-secondary stretched-link
 
     ---
 
@@ -97,6 +103,7 @@ CURENT LTB can be found at the `LTB Repository`_.
    
    Linux Installation <quick_start/linux.md>
    Windows Installation <quick_start/windows.md>
+   quick_start/index
    api/javascript
    api/javascript_dimeclient
    api/javascript_complex
