@@ -29,9 +29,10 @@ NDArrays
 
 
 +--------------------------------------------+---------------------------------------------------------------------------+
-| :ref:`dime.DimeClient<api_javascript_>`  | Creates a new DiME instance and connects to the server.                     |
+| :ref:`dime.DimeClient<api_javascript_>`    | Creates a new DiME instance and connects to the server.                   |
 +--------------------------------------------+---------------------------------------------------------------------------+
-| ``dime.Complex``     | A custom object that represents complex numbers.                                                |
+| ``dime.Complex``                           | A custom object that represents complex numbers.                          |
 +--------------------------------------------+---------------------------------------------------------------------------+
-| ``dime.NDArray``     | A custom N-dimensional array object that acts similarly to the numpy object with the same name. | 
+| ``dime.NDArray``                           | A custom N-dimensional array object that acts similarly to the numpy      |
+|                                            | object with the same name.                                                | 
 +--------------------------------------------+---------------------------------------------------------------------------+       
