@@ -14,7 +14,7 @@ DimeClient
 
 .. code-block:: rst
 
-    ..raw:: html
+    .. raw:: html
 
         :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
 
