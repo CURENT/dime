@@ -13,13 +13,28 @@ The JavaScript client also has a few specialty functions for handling data.
 Client
 ------
 
-+--------------------------------------------+------------------------------------------------------------------------+
-| :ref:`dime.DimeClient<api_javascript_>`    | Dime client.                                                           |
-+--------------------------------------------+------------------------------------------------------------------------+
+.. table::
+    :align: left
+    :widths: auto
+
+    ===================================================================== ================
+    :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>` The DiME client.
+    ===================================================================== ================
 
 ------
 Others
 ------
+
+.. table::
+    :align: left
+    :widths: auto
+
+    ============================================================================== =================================================
+    :ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`               A custom object that represents complex numbers.
+    ============================================================================== =================================================
+    :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>` A custom N-dimensional array object that acts 
+                                                                                   similarly to the numpy object with the same name.  
+    ============================================================================== =================================================
 
 +--------------------------------------------+---------------------------------------------------------------------------+
 | ``dime.Complex``                           | A custom object that represents complex numbers.                          |
