@@ -29,12 +29,12 @@ Others
     :align: left
     :widths: auto
 
-    ============================================================================== =================================================
-    :ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`               A custom object that represents complex numbers.
-    ============================================================================== =================================================
-    :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>` A custom N-dimensional array object that acts 
-                                                                                   similarly to the numpy object with the same name.  
-    ============================================================================== =================================================
+    ================================================ =================================================
+    :ref:`new dime.Complex<api_javascript_complex>`  A custom object that represents complex numbers.
+    ================================================ =================================================
+    :ref:`new dime.NDArray<api_javascript_ndarrays>` A custom N-dimensional array object that acts 
+                                                     similarly to the numpy object with the same name.  
+    ================================================ =================================================
 
 +--------------------------------------------+---------------------------------------------------------------------------+
 | ``dime.Complex``                           | A custom object that represents complex numbers.                          |
