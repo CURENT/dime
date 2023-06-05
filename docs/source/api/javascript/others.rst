@@ -4,11 +4,11 @@
 JavaScript API Reference
 ============================
 
+.. _api_javascript_jsonloads:
+
 ---------
 jsonloads
 ---------
-
-.. _api_javascript_jsonloads:
 
 ::
     
@@ -34,12 +34,11 @@ Loads a new object loaded from the JSON passed in ``obj``.
 | obj                            | The Object that the JSON decoded to.                               |
 +--------------------------------+--------------------------------------------------------------------+
 
+.. _api_javascript_jsondumps:
 
 ---------
 jsondumps
 ---------
-
-.. _api_javascript_jsondumps:
 
 ::
 
@@ -66,11 +65,11 @@ Returns the JSON string for an object.
 +--------------------------------+--------------------------------------------------------------------+
 
 
+.. _api_javascript_dimebloads:
+
 ----------
 dimebloads
 ----------
-
-.. _api_javascript_dimebloads:
 
 ::
 
@@ -95,11 +94,11 @@ dimebloads
 +--------------------------------+--------------------------------------------------------------------+
 
 
+.. _api_javascript_dimebdumps:
+
 ----------
 dimebdumps
 ----------
-
-.. _api_javascript_dimebdumps:
 
 ::
 
