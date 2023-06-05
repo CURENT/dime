@@ -10,20 +10,21 @@ To combat any possible confusion, references have been made for all three.
 
 ----------
 
-:ref:`MATLAB API Reference<api_matlab>`
----------------------------------------
+MATLAB
+------
 
-
-
-----------
-
-:ref:`Python API Reference<api_python>`
----------------------------------------
-
-
+:ref:`dime(protocol, varargin)<api_matlab>`
 
 ----------
 
-:ref:`JavaScript API Reference<api_javascript>`
------------------------------------------------
+Python
+------
 
+:ref:`DimeClient(protocol, varargin)<api_python>`
+
+----------
+
+JavaScript
+----------
+
+:ref:`new dime.DimeClient(hostname, port)<api_javascript>`
