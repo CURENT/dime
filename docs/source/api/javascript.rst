@@ -4,16 +4,19 @@
 JavaScript API Reference
 ============================
 
-DiME uses two custom JavaScript objects to handle interactions between the JavaScript client and the MATLAB and Python clients--Complex and NDArray.
+DiME uses two custom JavaScript objects to handle interactions between the JavaScript client and the MATLAB and Python clients: Complex and NDArray.
 
 ----------
 
 ----------
 DimeClient
 ----------
-::
 
-    :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
+.. code-block:: rst
+
+    ..raw:: html
+
+        :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
 
 ----------
 
