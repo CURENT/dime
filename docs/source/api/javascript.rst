@@ -7,17 +7,15 @@ JavaScript API Reference
 DiME uses two custom JavaScript objects to handle interactions between the JavaScript client and the MATLAB and Python clients: Complex and NDArray.
 The JavaScript client also has a few specialty functions for handling data.
 
-----------
+-------------
 
 -------------
 Instantiation
 -------------
 
-+--------------------------------------------+--------------+
-| :ref:`dime.DimeClient<api_javascript_>`    | Dime client. |
-+--------------------------------------------+--------------+
-
-----------
++--------------------------------------------+------------------------------------------------------------------------+
+| :ref:`dime.DimeClient<api_javascript_>`    | Dime client.                                                           |
++--------------------------------------------+------------------------------------------------------------------------+
 
 -----
 Other
@@ -29,6 +27,8 @@ Other
 | ``dime.NDArray``                           | A custom N-dimensional array object that acts similarly to the numpy      |
 |                                            | object with the same name.                                                | 
 +--------------------------------------------+---------------------------------------------------------------------------+       
+
+
 
 ----------
 
