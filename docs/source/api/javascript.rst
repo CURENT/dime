@@ -9,6 +9,29 @@ The JavaScript client also has a few specialty functions for handling data.
 
 ----------
 
+-------------
+Instantiation
+-------------
+
++--------------------------------------------+--------------+
+| :ref:`dime.DimeClient<api_javascript_>`    | Dime client. |
++--------------------------------------------+--------------+
+
+----------
+
+-----
+Other
+-----
+
++--------------------------------------------+---------------------------------------------------------------------------+
+| ``dime.Complex``                           | A custom object that represents complex numbers.                          |
++--------------------------------------------+---------------------------------------------------------------------------+
+| ``dime.NDArray``                           | A custom N-dimensional array object that acts similarly to the numpy      |
+|                                            | object with the same name.                                                | 
++--------------------------------------------+---------------------------------------------------------------------------+       
+
+----------
+
 ----------
 DimeClient
 ----------
@@ -26,27 +49,3 @@ NDArrays
 --------
 
     :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
-
-
--------------
-Instantiation
--------------
-
-+--------------------------------------------+---------------------------------------------------------------------------+
-| :ref:`dime.DimeClient<api_javascript_>`    | Creates a new DiME instance and connects to the server.                   |
-+--------------------------------------------+---------------------------------------------------------------------------+
-
-----------
-
------
-Other
------
-
-DiME uses two custom JavaScript objects to handle interactions between the JavaScript client and the MATLAB and Python clients: Complex and NDArray.
-
-+--------------------------------------------+---------------------------------------------------------------------------+
-| ``dime.Complex``                           | A custom object that represents complex numbers.                          |
-+--------------------------------------------+---------------------------------------------------------------------------+
-| ``dime.NDArray``                           | A custom N-dimensional array object that acts similarly to the numpy      |
-|                                            | object with the same name.                                                | 
-+--------------------------------------------+---------------------------------------------------------------------------+       
