@@ -26,3 +26,12 @@ NDArrays
 --------
 
     :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
+
+
++----------------------+-------------------------------------------------------------------------------------------------+
+| ``dime.DimeClient``  | Creates a new DiME instance and connects to the server.                                         |
++----------------------+-------------------------------------------------------------------------------------------------+
+| ``dime.Complex``     | A custom object that represents complex numbers.                                                |
++----------------------+-------------------------------------------------------------------------------------------------+
+| ``dime.NDArray``     | A custom N-dimensional array object that acts similarly to the numpy object with the same name. | 
++----------------------+-------------------------------------------------------------------------------------------------+           
