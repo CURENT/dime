@@ -34,26 +34,12 @@ Others
     +----------------------------------------------+---------------------------------------------------------------------------+
     | :ref:`dime.NDArray<api_javascript_ndarrays>` | A custom N-dimensional array object that acts similarly to the numpy      |
     |                                              | object with the same name.                                                | 
-    +----------------------------------------------+---------------------------------------------------------------------------+       
-
-
-
-----------
-
-----------
-DimeClient
-----------
-
-    :ref:`new dime.DimeClient(hostname, port)<api_javascript_dimeclient>`
-
--------
-Complex
--------
-    
-    :ref:`new dime.Complex(real, imaginary)<api_javascript_complex>`
-
---------
-NDArrays
---------
-
-    :ref:`new dime.NDArray(order, shape, array, complex)<api_javascript_ndarrays>`
+    +----------------------------------------------+---------------------------------------------------------------------------+
+    | :ref:`jsonloads<api_javascript_jsonloads>`   | Loads a new object from JSON.                                             |
+    +----------------------------------------------+---------------------------------------------------------------------------+
+    | :ref:`jsondumps<api_javascript_jsondumps>`   | Returns the JSON string for an object.                                    |
+    +----------------------------------------------+---------------------------------------------------------------------------+
+    | :ref:`dimebloads<api_javascript_dimebloads>` | Loads an object from bytes.                                               |
+    +----------------------------------------------+---------------------------------------------------------------------------+
+    | :ref:`dimebdumps<api_javascript_dimebdumps>` | Returns the bytes of an object.                                           |
+    +----------------------------------------------+---------------------------------------------------------------------------+
