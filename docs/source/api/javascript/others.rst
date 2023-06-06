@@ -1,8 +1,8 @@
 .. _api_javascript_others:
 
-============================
+========================
 JavaScript API Reference
-============================
+========================
 
 .. _api_javascript_jsonloads:
 
