@@ -25,9 +25,8 @@ From the terminal you just opened, enter the command:
 
     pacman -Syuu
 
-.. note::
 
-    Keep running the command until there is nothing left to be updated or installed. 
+Keep running the command until there is nothing left to be updated or installed. 
 
 Now run the following commands:
 
@@ -94,6 +93,7 @@ Open config.mk. There are three lines at the bottom of the file:
 Change the last two so that they are uncommented:
 
 .. code::
+
     # Uncomment the lines below to compile for Windows
     CC := x86_64-w64-mingw32-gcc
     LDFLAGS += -lws2_32
@@ -101,12 +101,14 @@ Change the last two so that they are uncommented:
 Now you need to make one final change to Makefile. You need to make sure libssp gets linked. You can do this by changing
 
 .. code::
+
     dime: ${OBJS}
 	    ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
 
 to
 
 .. code::
+    
     dime: ${OBJS}
 	    ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lssp -lcrypto -lz ${LDFLAGS}
 
