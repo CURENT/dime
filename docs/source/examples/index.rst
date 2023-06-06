@@ -11,6 +11,7 @@ running on the default Linux settings.
 
 .. toctree::
     :maxdepth: 2
+    :hidden:
     
     mex
     pex
