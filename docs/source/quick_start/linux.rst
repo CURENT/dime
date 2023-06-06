@@ -47,7 +47,7 @@ Download `zlib <https://zlib.net/>`_ and extract its files. Then run:
     make install
 
 Jansson
-^^^^^^
+^^^^^^^
 Download `Jansson <http://digip.org/jansson/releases/>`_ and extract its files. Then run:
 
 .. code::
