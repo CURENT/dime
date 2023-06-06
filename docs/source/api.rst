@@ -11,7 +11,7 @@ To combat any possible confusion, references have been made for all three.
 ----------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     
     api/matlab/index
     api/python/index
