@@ -102,8 +102,8 @@ CURENT LTB can be found at the `LTB Repository`_.
    :hidden:
    
    quick_start/index
+   examples/index
+   api
    api/javascript/index
    api/matlab/index
    api/python/index
-   examples/index
-   api
