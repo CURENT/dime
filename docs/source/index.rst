@@ -45,9 +45,9 @@ CURENT LTB can be found at the `LTB Repository`_.
     +++
 
     .. link-button:: quick_start
-            :type: ref
-            :text: To the getting started guides
-            :classes: btn-block btn-secondary stretched-link
+        :type: ref
+        :text: To the getting started guides
+        :classes: btn-block btn-secondary stretched-link
 
     ---
 
@@ -61,9 +61,9 @@ CURENT LTB can be found at the `LTB Repository`_.
     +++
 
     .. link-button:: api_reference
-            :type: ref
-            :text: To the API reference
-            :classes: btn-block btn-secondary stretched-link
+        :type: ref
+        :text: To the API reference
+        :classes: btn-block btn-secondary stretched-link
 
     ---
     :column: col-12 p-3
@@ -79,9 +79,9 @@ CURENT LTB can be found at the `LTB Repository`_.
     +++
 
     .. link-button:: examples
-            :type: ref
-            :text: To the examples
-            :classes: btn-block btn-secondary stretched-link
+        :type: ref
+        :text: To the examples
+        :classes: btn-block btn-secondary stretched-link
 
     ---
     :column: col-12 p-3
