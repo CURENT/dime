@@ -10,21 +10,28 @@ To combat any possible confusion, references have been made for all three.
 
 ----------
 
-MATLAB
-------
+.. toctree::
+    :maxdepth: 2
+    
+    api/matlab/index
+    api/python/index
+    api/javascript/index
 
-:ref:`dime(protocol, varargin)<api_matlab>`
+.. MATLAB
+.. ------
 
-----------
+.. :ref:`dime(protocol, varargin)<api_matlab>`
 
-Python
-------
+.. ----------
 
-:ref:`DimeClient(protocol, varargin)<api_python>`
+.. Python
+.. ------
 
-----------
+.. :ref:`DimeClient(protocol, varargin)<api_python>`
 
-JavaScript
-----------
+.. ----------
 
-:ref:`new dime.DimeClient(hostname, port)<api_javascript>`
+.. JavaScript
+.. ----------
+
+.. :ref:`new dime.DimeClient(hostname, port)<api_javascript>`
