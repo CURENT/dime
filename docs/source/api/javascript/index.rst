@@ -1,8 +1,8 @@
 .. _api_javascript:
 
-============================
+========================
 JavaScript API Reference
-============================
+========================
 
 DiME uses two custom JavaScript objects to handle interactions between the JavaScript client and the MATLAB and Python clients: Complex and NDArray.
 The JavaScript client also has a few specialty functions for handling data.
