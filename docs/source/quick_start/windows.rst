@@ -80,7 +80,7 @@ DiME
 
     With all of the Setup done, making and installing DiME is quite similar to how its done in the Linux version. 
     There are just a few more changes that need to be made. Assuming you are in the dime folder, move to the 
-    server folder. There are two files that are going to need changes --- Makefile and config.mk. 
+    server folder. There are two files that are going to need changes: Makefile and config.mk. 
 
 Open config.mk. There are three lines at the bottom of the file:
 
