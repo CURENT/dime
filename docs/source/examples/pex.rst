@@ -251,7 +251,7 @@ Wait
 ----
 The Wait command forces a client to wait until another client Sends or Broadcasts a variable to it. 
 Once the Wait is done, the client can Sync the variables that were sent to it. 
-This example will use three snippets --- ``testa.py``, ``testb.py``, and ``testc.py``.
+This example will use three snippets: ``testa.py``, ``testb.py``, and ``testc.py``.
 
 .. note::
 
