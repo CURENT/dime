@@ -127,7 +127,7 @@ Using the JavaScript Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Add the following to your HTML ``<head>`` element:
 
-.. code::
+.. code:: HTML
 
     <script src="https://cdn.jsdelivr.net/gh/TheHashTableSlasher/dime2/client/javascript/dime.min.js" type="text/javascript" crossorigin=""></script>
 
