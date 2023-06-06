@@ -22,10 +22,10 @@ Getting Started
     linux
     windows
 
-See our quick start guides for Linux and Windows.
-
 Quick Start
 =============
+
+See our quick start guides for Linux and Windows.
 
 .. panels::
     :container: container-lg pb-2
