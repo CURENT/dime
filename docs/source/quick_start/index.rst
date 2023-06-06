@@ -31,7 +31,7 @@ See our quick start guides for Linux and Windows.
 
     +++
 
-    .. link-button:: quick_start
+    .. link-button:: quick_start_linux
             :type: ref
             :text: To the Linux quick start guide
             :classes: btn-block btn-secondary stretched-link
@@ -45,7 +45,7 @@ See our quick start guides for Linux and Windows.
 
     +++
 
-    .. link-button:: quick_start
+    .. link-button:: quick_start_windows
             :type: ref
             :text: To the Windows quick start guide
             :classes: btn-block btn-secondary stretched-link
