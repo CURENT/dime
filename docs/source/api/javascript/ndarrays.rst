@@ -10,7 +10,7 @@ JavaScript API Reference
 NDArray
 -------
 
-::
+.. code:: javascript
 
     new dime.NDArray(order, shape, array, complex)
 
@@ -47,7 +47,7 @@ Creates a new DiME NDArray object.
 set
 ---
 
-::
+.. code:: javascript
 
     NDArray.get(index)
 
@@ -78,7 +78,7 @@ Returns the value of the NDArray at the given index.
 get
 ---
 
-::
+.. code:: javascript
 
     NDArray.set(value, index)
 
@@ -100,7 +100,7 @@ Sets the given value at the index of the NDArray.
 column
 ------
 
-::
+.. code:: javascript
 
     NDArray.column(n)
 
@@ -129,7 +129,7 @@ Returns a given column from an NDArray. Only works for Fortran-style, 2D arrays.
 row
 ---
 
-::
+.. code:: javascript
 
     NDArray.row(n)
 
@@ -158,7 +158,7 @@ Returns a given row from an NDArray. Only works for C-style, 2D arrays. Does not
 extents
 -------
 
-::
+.. code:: javascript
 
     NDArray.extents()
 
@@ -177,7 +177,7 @@ Returns the starting and ending point of an NDarray formated like a column vecto
 subarray
 --------
 
-::
+.. code:: javascript
 
     NDArray.subarray({being, end})
 
@@ -206,7 +206,7 @@ Returns the subarray of the NDArray based on the beginning and ending points pro
 subindex
 --------
 
-::
+.. code:: javascript
 
     NDArray.subindex(idx)
 
