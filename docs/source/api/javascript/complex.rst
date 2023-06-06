@@ -10,7 +10,7 @@ JavaScript API Reference
 complex
 -------
 
-::
+.. code:: javascript
 
     new dime.Complex(real, imaginary)
 
@@ -41,7 +41,7 @@ Creates a new DiME Complex object.
 add
 ---
 
-::
+.. code:: javascript
 
     Complex.add(rhs)
 
@@ -70,7 +70,7 @@ Adds two Complex objects.
 sub
 ---
 
-::
+.. code:: javascript
 
     Complex.sub(rhs)
 
@@ -100,7 +100,7 @@ Subtracts two Complex objects.
 mul
 ---
 
-::
+.. code:: javascript
 
     Complex.mul(rhs)
 
@@ -129,7 +129,7 @@ Multiplies two Complex objects.
 div
 ---
 
-::
+.. code:: javascript
 
     Complex.div(rhs)
 
