@@ -103,7 +103,7 @@ Now you need to make one final change to Makefile. You need to make sure libssp 
 .. code:: javascript
 
     dime: ${OBJS}
-	    ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
+	  ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
 
 to
 
