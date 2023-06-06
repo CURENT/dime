@@ -46,9 +46,9 @@ Download `zlib <https://zlib.net/>`_ and extract its files. Then run:
     make 
     make install
 
-Janson
+Jansson
 ^^^^^^
-Download `Janson <http://digip.org/jansson/releases/>`_ and extract its files. Then run:
+Download `Jansson <http://digip.org/jansson/releases/>`_ and extract its files. Then run:
 
 .. code::
     cd [jansson directory]
