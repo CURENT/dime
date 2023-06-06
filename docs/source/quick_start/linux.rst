@@ -35,7 +35,7 @@ if ``make test`` returns successful, then run:
 
     make install
 
-Zlib
+zlib
 ^^^^
 Download `zlib <https://zlib.net/>`_ and extract its files. Then run:
 
