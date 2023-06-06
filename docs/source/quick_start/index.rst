@@ -15,7 +15,17 @@
 Getting Started
 ===============
 
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    linux
+    windows
+
 See our quick start guides for Linux and Windows.
+
+Quick Start
+=============
 
 .. panels::
     :container: container-lg pb-2
