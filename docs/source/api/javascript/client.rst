@@ -10,7 +10,7 @@ JavaScript API Reference
 DimeClient
 ----------
 
-::
+.. code:: javascript
 
     new dime.DimeClient(hostname, port)
 
@@ -41,7 +41,7 @@ Creates a new DiME instance and connects to the server.
 close
 -----
 
-::
+.. code:: javascript
 
     DimeClient.close()
 
@@ -52,7 +52,7 @@ Performs cleanup on the DimeClient connection.
 join
 ----
 
-::
+.. code:: javascript
 
     DimeClient.join(varargin)
 
@@ -71,7 +71,7 @@ Instructs the DiME server to add the client to the specified groups.
 leave
 -----
 
-::
+.. code:: javascript
 
     DimeClient.leave(varargin)
 
@@ -90,7 +90,7 @@ Instructs the DiME server to remove the client from the specified groups.
 send
 ----
 
-::
+.. code:: javascript
 
     DimeClient.send(name, varargin)
 
@@ -111,7 +111,7 @@ Sends one or more variables to the specified group.
 send_r
 ------
 
-::
+.. code:: javascript
 
     DimeClient.send_r(name, kvpairs)
 
@@ -132,7 +132,7 @@ Sends one or more variables to all clients in a specified group.
 broadcast
 ---------
 
-::
+.. code:: javascript
 
     DimeClient.broadcast(varargin)
 
@@ -151,7 +151,7 @@ Sends one or more variables to all other clients.
 broadcast_r
 -----------
 
-::
+.. code:: javascript
 
     DimeClient.broadcast_r(kvpairs)
 
@@ -170,7 +170,7 @@ Sends one or more key value pairs to all other clients.
 sync
 ----
 
-::
+.. code:: javascript
 
     DimeClient.sync(n)
 
@@ -193,7 +193,7 @@ Sync will retrieve all variables if n is left unspecified or set to a negative v
 sync_r
 ------
 
-::
+.. code:: javascript
 
     DimeClient.sync_r(n)
 
@@ -213,7 +213,7 @@ Sync will retrieve all variables if n is left unspecified or set to a negative v
 wait
 ----
 
-::
+.. code:: javascript
 
     DimeClient.wait()
 
@@ -225,7 +225,7 @@ This call will block the current thread until the message is received.
 devices
 -------
 
-::
+.. code:: javascript
 
     DimeClient.devices()
 
