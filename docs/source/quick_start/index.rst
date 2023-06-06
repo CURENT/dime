@@ -11,9 +11,9 @@
 
 .. _quick_start:
 
-============================
+===============
 Getting Started
-============================
+===============
 
 See our quick start guides for Linux and Windows.
 

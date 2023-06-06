@@ -1,6 +1,6 @@
-===================
+==================
 DiME documentation
-===================
+==================
 
 **Useful Links**: `Source Repository`_ | `Report Issues`_
 | `Q&A`_ | `LTB Website`_ | `LTB Repository`_
@@ -35,7 +35,7 @@ CURENT LTB can be found at the `LTB Repository`_.
 
     ---
 
-    Quick Start
+    Getting Started
     ^^^^^^^^^^^^^^^
 
     New to DiME? DiME has a few dependencies necessary to get it running, 
@@ -46,13 +46,13 @@ CURENT LTB can be found at the `LTB Repository`_.
 
     .. link-button:: quick_start
             :type: ref
-            :text: To the quick start guide
+            :text: To the getting started guides
             :classes: btn-block btn-secondary stretched-link
 
     ---
 
     API Reference
-    ^^^^^^^^
+    ^^^^^^^^^^^^^
 
     The API reference contains a detailed description of the DiME package.
     The reference describes how the methods work and which parameters can be used
@@ -69,7 +69,7 @@ CURENT LTB can be found at the `LTB Repository`_.
     :column: col-12 p-3
 
     Examples
-    ^^^^^^^^^^^^^
+    ^^^^^^^^
 
     After setting up DiME and looking through the API, feel free to check out some 
     of the examples to get a better understanding of DiME's capabilities. 
@@ -87,7 +87,7 @@ CURENT LTB can be found at the `LTB Repository`_.
     :column: col-12 p-3
 
     Using DiME for Research?
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^^^^^^^^^^^^^^^^^^^^^^^
     Please cite our paper [Parsly2022]_ if DiME is used in your research for
     publication.
 
