@@ -10,7 +10,7 @@ JavaScript API Reference
 jsonloads
 ---------
 
-::
+.. code:: javascript
     
     jsonloads(obj)
 
@@ -40,7 +40,7 @@ Loads a new object loaded from the JSON passed in ``obj``.
 jsondumps
 ---------
 
-::
+.. code:: javascript
 
     jsondumps(obj)
 
@@ -71,7 +71,7 @@ Returns the JSON string for an object.
 dimebloads
 ----------
 
-::
+.. code:: javascript
 
     dimebloads(bytes)
 
@@ -100,7 +100,7 @@ dimebloads
 dimebdumps
 ----------
 
-::
+.. code:: javascript
 
     dimebdumps(obj)
 
