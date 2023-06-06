@@ -10,7 +10,7 @@ MATLAB API Reference
 dime
 ----
 
-::
+.. code:: matlab
     
     dime(protocol='ipc', varargin)
 
@@ -48,7 +48,7 @@ the function will default to using ``ipc`` and ``tmp/dime.sock``.
 delete
 ------
 
-::
+.. code:: matlab
 
     delete(obj)
 
@@ -67,7 +67,7 @@ Deletes a DiME instance and performs cleanup on the connection.
 join
 ----
 
-::
+.. code:: matlab
 
     dime.join(varargin)
 
@@ -88,7 +88,7 @@ Instructs the DiME server to add the client to the specified groups.
 leave
 -----
 
-::
+.. code:: matlab
 
     dime.leave(varargin)
 
@@ -108,7 +108,7 @@ Instructs the DiME server to remove the client from the specified group.
 send
 ----
 
-::
+.. code:: matlab
 
     dime.send(name, varargin)
 
@@ -129,7 +129,7 @@ Sends one or more variables to the specified group.
 send_r
 ------
 
-::
+.. code:: matlab
 
     dime.send_r(name, varargin)
 
@@ -153,7 +153,7 @@ Sends one or more variables passed as either a struct or as key-value pairs to t
 broadcast
 ---------
 
-::
+.. code:: matlab
 
     dime.broadcast(varargin)
 
@@ -172,7 +172,7 @@ Sends one or more variables to all other clients.
 broadcast_r
 -----------
 
-::
+.. code:: matlab
 
     dime.broadcast_r(varargin)
 
@@ -194,7 +194,7 @@ Sends one or more variables to all other clients.
 sync
 ----
 
-::
+.. code:: matlab
 
     dime.sync(n)
 
@@ -225,7 +225,7 @@ Requests all variables that have been sent to this client by other clients.
 sync_r
 ------
 
-::
+.. code:: matlab
 
     dime.sync_r(n)
 
@@ -256,7 +256,7 @@ Requests all variables that have been sent to this client by other clients. Does
 wait
 ----
 
-::
+.. code:: matlab
 
     dime.wait()
 
