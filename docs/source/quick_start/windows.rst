@@ -103,14 +103,14 @@ Now you need to make one final change to Makefile. You need to make sure libssp 
 .. code::
 
     dime: ${OBJS}
-	    ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
+	  ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
 
 to
 
 .. code::
-    
+
     dime: ${OBJS}
-	    ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lssp -lcrypto -lz ${LDFLAGS}
+      ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lssp -lcrypto -lz ${LDFLAGS}
 
 Now to finally make and install DiME, exit the Makefile and run:
 
