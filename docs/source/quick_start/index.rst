@@ -25,7 +25,7 @@ See our quick start guides for Linux and Windows.
     ---
 
     Linux
-    ^^^^^^^^^^^^^^^
+    ^^^^^
 
     Click here for Linux users.
 
@@ -39,7 +39,7 @@ See our quick start guides for Linux and Windows.
     ---
 
     Windows
-    ^^^^^^^^^^^^^^^
+    ^^^^^^^
 
     Click here for Windows users.
 
@@ -49,5 +49,3 @@ See our quick start guides for Linux and Windows.
             :type: ref
             :text: To the Windows quick start guide
             :classes: btn-block btn-secondary stretched-link
-
-`Linux <./linux.html>`_ and `Windows <./windows.html>`_
