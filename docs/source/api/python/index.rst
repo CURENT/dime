@@ -10,7 +10,7 @@ Python API Reference
 DimeClient
 ----------
 
-::
+.. code:: python
 
     DimeClient(protocol, varargin)
 
@@ -48,7 +48,7 @@ the function will default to using ``ipc`` and ``tmp/dime.sock``.
 close
 -----
 
-::
+.. code:: python
 
     DimeClient.close()
 
@@ -59,7 +59,7 @@ Closes the connection for the DimeClient instance.
 join
 ----
 
-::
+.. code:: python
 
     DimeClient.join(varargin)
 
@@ -77,7 +77,7 @@ Instructs the DiME server to add the client to the specified groups.
 leave
 -----
 
-::
+.. code:: python
 
     DimeClient.leave(varargin)
 
@@ -96,7 +96,7 @@ Instructs the DiME server to remove the client from the specified groups.
 Send
 ----
 
-::
+.. code:: python
 
     DimeClient.send(name, varargin)
 
@@ -119,7 +119,7 @@ Sends one or more variables from the mapping of this instance to all clients in 
 send_r
 ------
 
-::
+.. code:: python
 
     DimeClient.send_r(name, **kvpairs)
 
@@ -140,7 +140,7 @@ Sends one or more key value pairs to all clients in a specified group.
 broadcast
 ---------
 
-::
+.. code:: python
 
     DimeClient.broadcast(varargin)
 
@@ -159,7 +159,7 @@ Sends one or more variables to all other clients.
 broadcast_r
 -----------
 
-::
+.. code:: python
 
     DimeClient.broadcast_r(**kvpairs)
 
@@ -178,7 +178,7 @@ Sends one or more key value pairs to all other clients.
 sync
 ----
 
-::
+.. code:: python
 
     DimeClient.sync(n)
 
@@ -199,7 +199,7 @@ Sync will retrieve all variables if n is left unspecified or set to a negative v
 sync_r
 ------
 
-::
+.. code:: python
 
     DimeClient.sync_r
 
@@ -230,7 +230,7 @@ Sync will retrieve all variables if n is left unspecified or set to a negative v
 wait
 ----
 
-::
+.. code:: python
 
     DimeClient.wait()
 
