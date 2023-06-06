@@ -101,7 +101,6 @@ Change the last two so that they are uncommented:
 Now you need to make one final change to Makefile. You need to make sure libssp gets linked. You can do this by changing
 
 .. code:: javascript
-    :
 
     dime: ${OBJS}
 	    ${CC} ${OBJS} -o $@ -ljansson -lev -lssl -lcrypto -lz ${LDFLAGS}
