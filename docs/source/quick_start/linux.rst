@@ -37,7 +37,7 @@ if ``make test`` returns successful, then run:
 
 Zlib
 ^^^^
-Download `zlib<https://zlib.net/>` and extract its files. Then run:
+Download `zlib <https://zlib.net/>` and extract its files. Then run:
 
 .. code::
 
@@ -48,7 +48,7 @@ Download `zlib<https://zlib.net/>` and extract its files. Then run:
 
 Janson
 ^^^^^^
-Download `Janson<http://digip.org/jansson/releases/>` and extract its files. Then run:
+Download `Janson <http://digip.org/jansson/releases/>` and extract its files. Then run:
 
 .. code::
     cd [jansson directory]
@@ -161,4 +161,4 @@ The following types can be transmitted between MATLAB, Python, and Javascript cl
 
 Further Information
 -------------------
-`DiME README<https://github.com/CURENT/dime/blob/master/README.md>`
+`DiME README <https://github.com/CURENT/dime/blob/master/README.md>`
