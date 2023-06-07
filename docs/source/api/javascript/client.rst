@@ -231,8 +231,6 @@ devices
 
 Requests a list of all named, nonempty groups from the server.
 
-DiME also uses two custom JavaScript objects to handle interactions between the JavaScript client and the MATLAB and Python clients--Complex and NDArray.
-
 +-----------------------------------------------------------------------------------------------------+
 | Returns                                                                                             |
 +================================+====================================================================+

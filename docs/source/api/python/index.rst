@@ -100,9 +100,7 @@ Send
 
     DimeClient.send(name, varargin)
 
-Send a "send" command to the server.
-
-Sends one or more variables from the mapping of this instance to all clients in a specified group.
+Send a "send" command to the server. Sends one or more variables from the mapping of this instance to all clients in a specified group.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
@@ -182,9 +180,7 @@ sync
 
     DimeClient.sync(n)
 
-Requests all variables that have been sent to this client by other clients.
-
-Sync will retrieve all variables if n is left unspecified or set to a negative value.
+Requests all variables that have been sent to this client by other clients. Sync will retrieve all variables if n is left unspecified or set to a negative value.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
@@ -203,9 +199,7 @@ sync_r
 
     DimeClient.sync_r
 
-Requests all variables that have been sent to this client by other clients.
-
-Sync will retrieve all variables if n is left unspecified or set to a negative value.
+Requests all variables that have been sent to this client by other clients. Sync will retrieve all variables if n is left unspecified or set to a negative value.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
