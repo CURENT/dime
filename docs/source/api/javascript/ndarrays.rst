@@ -44,7 +44,7 @@ Creates a new DiME NDArray object.
 
 
 ---
-set
+get
 ---
 
 .. code:: javascript
@@ -75,7 +75,7 @@ Returns the value of the NDArray at the given index.
 
 
 ---
-get
+set
 ---
 
 .. code:: javascript
