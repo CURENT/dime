@@ -130,6 +130,7 @@ Your output should look like this:
 
     3
     20
+    900
 
 .. note::
 
@@ -187,7 +188,6 @@ The output is this:
 
     The values d2 and d3's *c* variables are synced to is d1's *c* variable before it was changed to have 
     a value of 0.
-
 
 Self-Sending
 ^^^^^^^^^^^^
