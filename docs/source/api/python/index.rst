@@ -12,7 +12,7 @@ DimeClient
 
 .. code:: python
 
-    DimeClient(protocol="ipc", varargin)
+    DimeClient(protocol, varargin)
 
 Creates a new DiME instance using the specified protocol. If no arguments are given, 
 the function will default to using ``ipc`` and ``tmp/dime.sock``.
