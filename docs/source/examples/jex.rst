@@ -127,6 +127,10 @@ Your output should look like this:
     20
     600
 
+    3
+    20
+    900
+
 .. note::
 
     Note how d2 and d3's *b* variables have both been changed, meanwhile only d2's *a* variable has been 
@@ -251,7 +255,7 @@ Wait
 ----
 The Wait command forces a client to wait until another client Sends or Broadcasts a variable to it. 
 Once the Wait is done, the client can Sync the variables that were sent to it. Note that Wait does not 
-automatically Sync variables. This example will use three snippets--testa, testb, and testc.
+automatically Sync variables. This example will use three snippets: ``testa``, ``testb``, and ``testc``.
 
 testa:
 
