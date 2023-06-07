@@ -184,7 +184,9 @@ sync
 
 Requests all variables that have been sent to this client by other clients.
 
-Sync will retrieve all variables if n is left unspecified or set to a negative value.
+.. note::
+    
+    Sync will retrieve all variables if n is left unspecified or set to a negative value.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
@@ -205,7 +207,9 @@ sync_r
 
 Requests all variables that have been sent to this client by other clients.
 
-Sync will retrieve all variables if n is left unspecified or set to a negative value.
+.. note::
+    
+    Sync will retrieve all variables if n is left unspecified or set to a negative value.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
