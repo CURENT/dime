@@ -12,7 +12,7 @@ DimeClient
 
 .. code:: python
 
-    DimeClient(protocol, varargin)
+    DimeClient(protocol="ipc", varargin)
 
 Creates a new DiME instance using the specified protocol. If no arguments are given, 
 the function will default to using ``ipc`` and ``tmp/dime.sock``.
@@ -184,9 +184,7 @@ sync
 
 Requests all variables that have been sent to this client by other clients.
 
-.. note::
-    
-    Sync will retrieve all variables if n is left unspecified or set to a negative value.
+Sync will retrieve all variables if n is left unspecified or set to a negative value.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
@@ -207,9 +205,7 @@ sync_r
 
 Requests all variables that have been sent to this client by other clients.
 
-.. note::
-    
-    Sync will retrieve all variables if n is left unspecified or set to a negative value.
+Sync will retrieve all variables if n is left unspecified or set to a negative value.
 
 +-----------------------------------------------------------------------------------------------------------------------------+
 | Parameters                                                                                                                  |
