@@ -90,7 +90,7 @@ From this point onward, the examples will differ substantially from those in the
 pages. Basically every example from here on will have at least two instances of MATLAB running since, 
 unlike JavaScript and Python, the variables sent over DiME are associated with each MATLAB instance as 
 opposed to each DimeClient instance. Each separate instance will run a single MATLAB file. The first 
-instance will run "testa.m", the second will run "testb.m", and so on. While a single MATLAB instance 
+instance will run ``testa.m``, the second will run ``testb.m``, and so on. While a single MATLAB instance 
 can be used to demonstrate things like Joining and Leaving, it cannot be used to show anything that 
 involves sending data since all variables would already be available to all DimeClient instances. 
 Because of this difference, we will talk about Wait first.
@@ -204,7 +204,7 @@ testb.m:
     disp(b);
     disp(c);
 
-testc.m
+testc.m:
 
 .. code:: matlab
 
