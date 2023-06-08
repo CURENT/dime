@@ -33,7 +33,7 @@ Use the following resources to get involved:
 + Ask a question in the [GitHub Discussions][Github Discussions].
 + Report bugs or issues by submitting a [GitHub issue][GitHub Issues].
 + Submit contributions using [pull requests][Github Pull Requests].
-+ Check out and cit our [paper][arxiv paper].
++ Check out and cite our [paper][arxiv paper].
 
 # Citing DiME
 
