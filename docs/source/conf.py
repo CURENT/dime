@@ -31,8 +31,21 @@ release = '2.0.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-        'myst_parser'
+        'sphinx.ext.autodoc',
+        'sphinx.ext.githubpages',
+        'sphinx.ext.intersphinx',
+        'sphinx.ext.mathjax',
+        'sphinx.ext.doctest',
+        'sphinx.ext.todo',
+        'sphinx.ext.viewcode',
+        'sphinx_panels',
+        'sphinx_copybutton',
+        'myst_nb',
 ]
+
+# Generate the API documentation when building
+autosummary_generate = True
+numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -42,6 +55,8 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+master_doc = 'index'
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -50,12 +65,68 @@ exclude_patterns = []
 #
 html_theme = 'pydata_sphinx_theme'
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_theme_options = {
+    "use_edit_page_button": True,
+}
 
 html_sidebars = {
 
         '**': [ 'localtoc.html',]
 }
+
+html_context = {
+    "github_url": "https://github.com",
+    "github_user": "nparsly",
+    "github_repo": "dime",
+    "github_version": "master",
+    "doc_path": "docs/source",
+
+}
+
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
+htmlhelp_basename = 'dime'
+
+# -- Options for LaTeX output ---------------------------------------------
+
+# latex_elements = {
+#     # The paper size ('letterpaper' or 'a4paper').
+#     #
+#     # 'preamble': r'\DeclareUnicodeCharacter{2588}{-}',
+#     'papersize': 'letterpaper',
+
+#     # The font size ('10pt', '11pt' or '12pt').
+#     #
+#     'pointsize': '11pt',
+
+#     # Additional stuff for the LaTeX preamble.
+#     #
+#     # 'preamble': '',
+
+#     # Latex figure (float) alignment
+#     #
+#     # 'figure_align': 'htbp',
+# }
+
+# # Grouping the document tree into LaTeX files. List of tuples
+# # (source start file, target name, title,
+# #  author, documentclass [howto, manual, or own class]).
+# latex_documents = [
+#     (master_doc, 'dime.tex', 'DiME Manual',
+#      'Nicholas Parsly, Jinning Wang', 'manual'),
+# ]
+
+# Favorite icon
+html_favicon = 'images/curent.ico'
+
+# Disable smartquotes to display double dashes correctly
+smartquotes = False
+
+jupyter_execute_notebooks = "off"
+
+# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
+# already loads it
+panels_add_bootstrap_css = False

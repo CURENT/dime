@@ -1,8 +1,12 @@
-# DiME
+# LTB DiME
 
-**L**arge-scale **T**est**B**ed - **Di**stributed **M**essaging **E**nvironment (short as LTB-DiME or DiME), data exchange environment for [CURENT](https://github.com/CURENT) [Large-scale Testbed](https://github.com/CURENT/ltb2).
+<img src="docs/source/images/sponsors/CURENT_Logo_NameOnTrans.png" alt="CURENT ERC Logo" width="300" height="auto">
 
-Online documentation is available at [DiME](https://ltbdime.readthedocs.io).
+**Di**stributed **M**essaging **E**nvironment &mdash; The data exchange module for the [CURENT Largescale Testbed][LTB Repository].
+
+|               | Latest                                                                                                                                   | Stable                                                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation | [![Latest Documentation](https://readthedocs.org/projects/dime/badge/?version=stable)](https://dime.readthedocs.io/en/latest/?badge=stable) | [![Documentation Status](https://readthedocs.org/projects/dime/badge/?version=latest)](https://dime.readthedocs.io/en/latest/?badge=latest) |
 
 # Why DiME
 
@@ -30,14 +34,21 @@ If you use DiME for research or consulting, please cite the following publicatio
 
 Please refer as **LTB DiME** for the first occurence and then refer as **DiME**.
 
-# Sponsors
+# Sponsors and Contributors
 
-This work was funded by NSF and Department of Energy under NSF Award EEC-1041877.
+This work was supported in part by the Engineering Research Center
+Program of the National Science Foundation and the Department of Energy under NSF Award Number EEC-1041877 and the CURENT Industry Partnership Program.
 
-# Contributors
+DiME is originally developed by Nicholas West and Nicholas Parsly, and currently developed and maintained by Zack Malkmus.
 
-DiME is originally developed by Nicholas West and currently developed and maintained by Nicholas Parsly.
+See [Github contributors] for the contributor list.
 
 # License
 
 DiME is licensed under [GPL v3 License](./LICENSE)
+
+---
+
+[LTB Repository]: https://github.com/CURENT
+[DiME]: https://ltbdime.readthedocs.io
+[GitHub contributors]: https://github.com/CURENT/dime/graphs/contributors
