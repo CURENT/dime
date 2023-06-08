@@ -4,7 +4,7 @@
 
 **Di**stributed **M**essaging **E**nvironment &mdash; The data exchange module for the [CURENT Largescale Testbed][LTB Repository].
 
-View the [Latest Documentation][Latest Documentation]. 
+View the [latest documentation][Latest Documentation]. 
 
 <!-- |               | Latest                                                                                                                                   | Stable                                                                                                                                   |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
