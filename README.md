@@ -8,7 +8,6 @@
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Documentation | [![Latest Documentation](https://readthedocs.org/projects/dime/badge/?version=stable)](https://dime.readthedocs.io/en/latest/?badge=stable) | [![Documentation Status](https://readthedocs.org/projects/dime/badge/?version=latest)](https://dime.readthedocs.io/en/latest/?badge=latest) |
 
-
 # Why DiME
 
 DiME enables **high-concurrency**, **high-volume** **real-time** data exchange in **large-scale power** system simulations using a **shared workspace**.
