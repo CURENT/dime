@@ -4,11 +4,9 @@
 
 **Di**stributed **M**essaging **E**nvironment &mdash; The data exchange module for the [CURENT Largescale Testbed][LTB Repository].
 
-View the [latest documentation][Latest Documentation]. 
-
-<!-- |               | Latest                                                                                                                                   | Stable                                                                                                                                   |
+|               | Latest                                                                                                                                   | Stable                                                                                                                                   |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Documentation | [![Latest Documentation](https://readthedocs.org/projects/dime/badge/?version=stable)](https://dime.readthedocs.io/en/latest/?badge=stable) | [![Documentation Status](https://readthedocs.org/projects/dime/badge/?version=latest)](https://dime.readthedocs.io/en/latest/?badge=latest) | -->
+| Documentation | [![Latest Documentation](https://readthedocs.org/projects/ltbdime/badge/?version=latest)](https://ltbdime.readthedocs.io/en/latest/?badge=latest) | [![Documentation Status](https://readthedocs.org/projects/ltbdime/badge/?version=stable)](https://ltbdime.readthedocs.io/en/latest/?badge=stable) |
 
 # Why DiME
 
@@ -23,6 +21,19 @@ Interactions between server and clients in DiME:
 Data exchange in DiME:
 
 <img width="500" alt="image" src="https://user-images.githubusercontent.com/79226045/203223229-229a1321-64a7-4751-8261-7372a2b19128.png">
+
+# Quick Start
+
+DiME runs on Linux and Windows, a [quick start][Quick Start] guide is available for both.
+
+Use the following resources to get involved:
+
++ Start from the [documentation][Documentation] for installation and tutorial.
++ Check out the [examples][Examples].
++ Ask a question in the [GitHub Discussions][Github Discussions].
++ Report bugs or issues by submitting a [GitHub issue][GitHub Issues].
++ Submit contributions using [pull requests][Github Pull Requests].
++ Check out and cite our [paper][arxiv paper].
 
 # Citing DiME
 
@@ -43,7 +54,7 @@ Program of the National Science Foundation and the Department of Energy under NS
 
 DiME is originally developed by Nicholas West and Nicholas Parsly, and currently developed and maintained by Zack Malkmus.
 
-See [Github contributors] for the contributor list.
+See [GitHub contributors][Github contributors] for the contributor list.
 
 # License
 
@@ -53,6 +64,12 @@ DiME is licensed under [GPL v3 License](./LICENSE)
 
 [LTB Repository]: https://github.com/CURENT
 [DiME]: https://ltbdime.readthedocs.io
-[GitHub contributors]: https://github.com/CURENT/dime/graphs/contributors
-[Latest Documentation]: https://ltb.readthedocs.io/projects/dime/en/latest/
+[Documentation]: https://ltb.readthedocs.io/projects/dime/en/latest/
 [Examples]: https://ltb.readthedocs.io/projects/dime/en/latest/examples/index.html#examples
+[Quick Start]: https://ltb.readthedocs.io/projects/dime/en/latest/quick_start/index.html#quick-start
+[Github contributors]: https://github.com/CURENT/dime/graphs/contributors
+[Github Discussions]: https://github.com/CURENT/dime/discussions
+[Github Issues]: https://github.com/CURENT/dime/issues
+[Github Insights]: https://github.com/CURENT/dime/pulse
+[Github Pull Requests]: https://github.com/CURENT/dime/pulls
+[arxiv paper]: https://arxiv.org/abs/2211.11990
