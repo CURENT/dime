@@ -4,9 +4,11 @@
 
 **Di**stributed **M**essaging **E**nvironment &mdash; The data exchange module for the [CURENT Largescale Testbed][LTB Repository].
 
-|               | Latest                                                                                                                                   | Stable                                                                                                                                   |
+View the [latest documentation][Latest Documentation]. 
+
+<!-- |               | Latest                                                                                                                                   | Stable                                                                                                                                   |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Documentation | [![Latest Documentation](https://readthedocs.org/projects/dime/badge/?version=stable)](https://dime.readthedocs.io/en/latest/?badge=stable) | [![Documentation Status](https://readthedocs.org/projects/dime/badge/?version=latest)](https://dime.readthedocs.io/en/latest/?badge=latest) |
+| Documentation | [![Latest Documentation](https://readthedocs.org/projects/dime/badge/?version=stable)](https://dime.readthedocs.io/en/latest/?badge=stable) | [![Documentation Status](https://readthedocs.org/projects/dime/badge/?version=latest)](https://dime.readthedocs.io/en/latest/?badge=latest) | -->
 
 # Why DiME
 
@@ -52,3 +54,5 @@ DiME is licensed under [GPL v3 License](./LICENSE)
 [LTB Repository]: https://github.com/CURENT
 [DiME]: https://ltbdime.readthedocs.io
 [GitHub contributors]: https://github.com/CURENT/dime/graphs/contributors
+[Latest Documentation]: https://ltb.readthedocs.io/projects/dime/en/latest/
+[Examples]: https://ltb.readthedocs.io/projects/dime/en/latest/examples/index.html#examples
