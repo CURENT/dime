@@ -4,7 +4,7 @@
 sudo apt-get install -y build-essential autotools-dev autoconf libev-dev libtool
 
 # Build openssl
-(cd openssl && ./config && make && sudo make install)
+(cd openssl-* && ./config && make && sudo make install)
 
 # Build zlib
 (cd zlib-* && chmod +x configure && ./configure && make && sudo make install)
