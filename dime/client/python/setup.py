@@ -7,8 +7,8 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 setup(
-    name = "dime",
-    version = "0.0.2",
+    name = "dime-client",
+    version = "0.0.1",
     description = "DiME client for Python",
     long_description = long_description,
     long_description_content_type = "text/markdown",
