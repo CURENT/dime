@@ -40,7 +40,7 @@ echo "    Building zlib:                ✓"
 
 # Build jansson
 start_spinner "Building jansson:"
-(cd jansson* && autoreconf -i --force && chmod +x configure && ./configure && make && sudo make install) &> /dev/null
+(cd jansson* && sudo autoreconf -i --force && chmod +x configure && ./configure && make && sudo make install) &> /dev/null
 stop_spinner
 echo "    Building jansson:             ✓"
 
