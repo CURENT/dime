@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+
+# If including data files in the package, add them like:
+# include path/to/data_file

@@ -8,15 +8,21 @@ with open("README.md", "r") as file:
 
 setup(
     name = "dime",
-    version = "0.0.1",
-
+    version = "0.0.2",
     description = "DiME client for Python",
     long_description = long_description,
     long_description_content_type = "text/markdown",
-
-    author = "Nicholas West",
-    author_email = "nwest13@vols.utk.edu",
-
-    url = "https://github.com/TheHashTableSlasher/dime2",
-    packages = ["dime"]
+    author = "Zack Malkmus",
+    author_email = "zmalkmus@vols.utk.edu",
+    license = "GNU License V3",
+    url = "https://github.com/zmalkmus/dimedev",
+    packages = ["dime"],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+    ],
+    install_requires = [
+        "numpy",
+    ]
 )
