@@ -22,32 +22,32 @@ printf "Building dime from source... This may take a while."
 # Install dependencies
 printf "\n"
 start_spinner "Installing dependencies:"
-sudo apt-get install -y build-essential autotools-dev autoconf libev-dev libtool &> /dev/null
+sudo apt-get install -y build-essential autotools-dev autoconf libev-dev libtool 1> /dev/null
 stop_spinner
 echo "    Installing dependencies:      ✓"
 
 # Build openssl
 start_spinner "Building openssl:"
-(cd openssl* && chmod +x config Configure && ./config && make && sudo make install) &> /dev/null
+(cd openssl* && sudo chmod +x config Configure && ./config && make && sudo make install) 1> /dev/null
 stop_spinner
 echo "    Building openssl:             ✓"
 
 # Build zlib
 start_spinner "Building zlib:"
-(cd zlib* && chmod +x configure && ./configure && make && sudo make install) &> /dev/null
+(cd zlib* && sudo chmod +x configure && ./configure && make && sudo make install) 1> /dev/null
 stop_spinner
 echo "    Building zlib:                ✓"
 
 # Build jansson
 start_spinner "Building jansson:"
-(cd jansson* && sudo autoreconf -i --force && chmod +x configure && ./configure && make && sudo make install) &> /dev/null
+(cd jansson* && sudo autoreconf -i --force && sudo chmod +x configure && ./configure && make && sudo make install) &> /dev/null
 stop_spinner
 echo "    Building jansson:             ✓"
 
 # Build dime
 start_spinner "Building dime:"
-(cd dime/server && make && sudo make install) &> /dev/null
-(cd dime/client/python && python3 setup.py install) &> /dev/null
+(cd dime/server && make && sudo make install) 1> /dev/null
+(cd dime/client/python && python3 setup.py install) 1> /dev/null
 stop_spinner
 echo "    Building dime:                ✓"
 
