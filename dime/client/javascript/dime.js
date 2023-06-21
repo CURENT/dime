@@ -1058,3 +1058,5 @@ return {
 };
 
 })();
+
+module.exports = dime;
