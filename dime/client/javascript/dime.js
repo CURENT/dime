@@ -1,3 +1,5 @@
+import { WebSocket } from 'ws';
+
 const dime = (function() {
 
 class Complex {
