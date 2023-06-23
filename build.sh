@@ -1,5 +1,4 @@
 #!/bin/bash -e
-
 function start_spinner {
     set +m
     printf "%-36s" "    $1 "
@@ -17,11 +16,17 @@ trap stop_spinner EXIT
 
 spinner_pid=
 
+if [ $EUID != 0 ]; then
+    sudo "$0" "$@"
+    exit $?
+fi
+
 printf "Building dime from source... This may take a while."
 
 # Install dependencies
 printf "\n"
 start_spinner "Installing dependencies:"
+sudo apt-get update &> /dev/null
 sudo apt-get install -y build-essential autotools-dev autoconf libev-dev libtool 1> /dev/null
 stop_spinner
 echo "    Installing dependencies:      ✓"
@@ -40,15 +45,15 @@ echo "    Building zlib:                ✓"
 
 # Build jansson
 start_spinner "Building jansson:"
-(cd jansson* && sudo autoreconf -i --force && sudo chmod +x configure && ./configure && make && sudo make install) &> /dev/null
+(cd jansson* && sudo autoreconf --install --force && sudo chmod +x configure && ./configure && make && sudo make install) 1> /dev/null
 stop_spinner
 echo "    Building jansson:             ✓"
 
 # Build dime
 start_spinner "Building dime:"
-(cd dime/server && make && sudo make install) 1> /dev/null
-(cd dime/client/python && python3 setup.py install) 1> /dev/null
+(cd dime/server && make && sudo make install) &> /dev/null
+(cd dime/client/python && python3 setup.py install) &> /dev/null
 stop_spinner
 echo "    Building dime:                ✓"
 
-printf "\nBuild process completed successfully! \n\nYou can now run the server from the dime/server directory with 'dime &'.\n\n"
+printf "\nBuild process completed successfully! \n\nYou can now run the server from the terminal with 'dime &'.\n\n"
