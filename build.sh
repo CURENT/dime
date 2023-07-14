@@ -26,7 +26,7 @@ printf "Building dime from source... This may take a while."
 # Install dependencies
 printf "\n"
 start_spinner "Installing dependencies:"
-sudo apt-get update &> /dev/null
+sudo apt-get update && sudo apt-get upgrade &> /dev/null
 sudo apt-get install -y build-essential autotools-dev autoconf libev-dev libtool 1> /dev/null
 stop_spinner
 echo "    Installing dependencies:      ✓"
