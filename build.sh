@@ -29,6 +29,8 @@ start_spinner "Installing dependencies:"
 sudo apt-get update &> /dev/null
 sudo apt-get upgrade -y &> /dev/null
 sudo apt-get install -y build-essential autotools-dev autoconf libev-dev libtool 1> /dev/null
+sudo apt-get install -y python3-pip 1> /dev/null
+sudo pip install setuptools
 stop_spinner
 echo "    Installing dependencies:      ✓"
 
@@ -46,14 +48,14 @@ echo "    Building zlib:                ✓"
 
 # Build jansson
 start_spinner "Building jansson:"
-(cd jansson* && sudo autoreconf --install --force && sudo chmod 777 configure && ./configure && make && sudo make install) &> /dev/null
+(cd jansson* && sudo autoreconf --install --force && sudo chmod 777 configure && ./configure && make && sudo make install) #&> /dev/null
 stop_spinner
 echo "    Building jansson:             ✓"
 
 # Build dime
 start_spinner "Building dime:"
-(cd dime/server && make && sudo make install) &> /dev/null
-(cd dime/client/python && python3 setup.py install) &> /dev/null
+(cd dime/server && make && sudo make install) #&> /dev/null
+(cd dime/client/python && python3 setup.py install) #&> /dev/null
 stop_spinner
 echo "    Building dime:                ✓"
 
