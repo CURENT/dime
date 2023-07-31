@@ -58,13 +58,13 @@ echo "    Installing dependencies:      ✓"
 
 # Build dime
 start_spinner "Building dime:"
-(cd dime/server && make && make install) &> /dev/null
+(cd server && make && make install) &> /dev/null
 
 if [ $? -ne 0 ]; then
     handle_error "Failed to build dime server."
 fi
 
-(cd dime/client/python && python3 setup.py install) &> /dev/null
+(cd client/python && python3 setup.py install) &> /dev/null
 
 stop_spinner
 echo "    Building dime:                ✓"
