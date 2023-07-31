@@ -15,7 +15,7 @@ DiME can be easily installed from the base directory by running:
 
 .. note::
 
-    If the build script does not work, refer to the manual installation.
+    If the build script fails, refer to the manual installation.
 
 Manual installation
 -------------------
