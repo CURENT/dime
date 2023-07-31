@@ -99,7 +99,7 @@ Now run the following:
 
 .. code::
 
-    cd dime/server
+    cd dime/dime/server
     make
     make install
 
@@ -123,7 +123,7 @@ First, add ``dime/client/matlab`` to your search path in MATLAB. Then run:
 
 .. code::
 
-    cd dime/client/matlab
+    cd dime/dime/client/matlab
     make
 
 Using the Python Client
@@ -132,7 +132,7 @@ Run the following commands:
 
 .. code::
 
-    cd dime/client/python
+    cd dime/dime/client/python
     python3 setup.py install
 
 The python client also uses the numpy library, so ensure that is installed before using it.
