@@ -13,6 +13,12 @@ function stop_spinner {
     echo -en "\033[2K\r"
 }
 
+function handle_error {
+    stop_spinner
+    echo -e "\nError: $1"
+    exit 1
+}
+
 trap stop_spinner EXIT
 spinner_pid=
 
@@ -37,7 +43,15 @@ start_spinner "Installing dependencies:"
     && rm -rf /var/lib/apt/lists/*
 ) &> /dev/null
 
+if [ $? -ne 0 ]; then
+    handle_error "Failed to install dependencies."
+fi
+
 python3 -m pip install --upgrade pip setuptools wheel &> /dev/null
+
+if [ $? -ne 0 ]; then
+    handle_error "Failed to install dependencies."
+fi
 
 stop_spinner
 echo "    Installing dependencies:      ✓"
@@ -45,7 +59,13 @@ echo "    Installing dependencies:      ✓"
 # Build dime
 start_spinner "Building dime:"
 (cd dime/server && make && make install) &> /dev/null
+
+if [ $? -ne 0 ]; then
+    handle_error "Failed to build dime server."
+fi
+
 (cd dime/client/python && python3 setup.py install) &> /dev/null
+
 stop_spinner
 echo "    Building dime:                ✓"
 
