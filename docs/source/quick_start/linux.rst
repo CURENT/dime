@@ -6,6 +6,20 @@ Linux Quick Start Guide
 
 Setup
 -----
+
+DiME can be easily installed from the base directory by running:
+
+.. code::
+
+    ./build.sh
+
+.. note::
+
+    If the build script does not work, refer to the manual installation.
+
+Manual installation
+-------------------
+
 DiME has several dependencies that need to be install for it to compile. First, run these commands:
 
 .. code::

@@ -1,9 +1,9 @@
 package:
-    name: dime2
+    name: dime-server
     version: "0.0.1"
 
 source:
-    path: .
+    path: ./dime/server
 
 requirements:
     build:
@@ -12,6 +12,8 @@ requirements:
     host:
         - {{ compiler('c') }}
         - python
+        - autoconf
+        - libtool
         - setuptools
         - zlib
         - openssl
